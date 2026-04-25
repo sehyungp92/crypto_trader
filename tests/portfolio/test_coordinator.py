@@ -95,6 +95,7 @@ class TestBrokerProxy:
         )
         proxy.submit_order(order)
         assert order.qty == pytest.approx(0.05)
+        assert order.metadata["risk_R"] == pytest.approx(0.25)
 
     def test_cancel_delegates(self):
         broker, manager, _ = _make_components()

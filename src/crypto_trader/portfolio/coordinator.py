@@ -63,6 +63,7 @@ class BrokerProxy:
             # Apply size multiplier from drawdown tiers
             if result.size_multiplier != 1.0:
                 order.qty = order.qty * result.size_multiplier
+                order.metadata["risk_R"] = risk_R * result.size_multiplier
                 log.debug(
                     "portfolio.size_adjusted",
                     strategy=self.strategy_id,
@@ -101,6 +102,19 @@ class BrokerProxy:
 
     def get_fills_since(self, since: datetime) -> list[Fill]:
         return self._broker.get_fills_since(since)
+
+    def get_portfolio_snapshot(self, symbol: str, direction: Side) -> dict[str, float | int]:
+        """Capture a compact pre-entry portfolio snapshot for instrumentation."""
+        state = self._manager.state
+        return {
+            "heat_R": state.total_heat_R(),
+            "heat_cap_R": self._manager.config.heat_cap_R,
+            "open_risk_count": state.total_positions(),
+            "directional_risk_R": state.directional_risk_R(direction),
+            "symbol_risk_R": state.symbol_risk_R(symbol, direction),
+            "portfolio_daily_pnl_R": state.portfolio_daily_pnl_R,
+            "strategy_daily_pnl_R": state.strategy_daily_pnl_R(self.strategy_id),
+        }
 
     # Delegate SimBroker-specific methods for backtest compatibility
     def __getattr__(self, name: str) -> Any:

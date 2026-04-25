@@ -11,10 +11,14 @@
   "symbols": ["BTC", "ETH", "SOL"],
   "data_dir": "data",
   "state_dir": "data/live_state",
+  "bot_id": "paper_bot_01",
+  "relay_url": "",
+  "relay_secret": "",
   "strategy_configs": {
     "momentum": "config/strategies/momentum.json",
     "trend": "config/strategies/trend.json",
     "breakout": "config/strategies/breakout.json"
   },
-  "portfolio_config_path": "config/portfolio_config.json"
+  "portfolio_config_path": "config/portfolio_config.json",
+  "postgres_dsn": "postgresql://trading_writer:changeme_writer@postgres:5432/trading"
 }

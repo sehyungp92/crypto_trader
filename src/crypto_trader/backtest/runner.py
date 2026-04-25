@@ -23,23 +23,23 @@ from crypto_trader.exchange.meta import AssetMeta
 log = structlog.get_logger()
 
 
-def _create_strategy(strategy_type: str, strategy_config):
+def _create_strategy(strategy_type: str, strategy_config, bot_id: str = ""):
     """Factory: create strategy instance, timeframes list, and primary TF."""
     if strategy_type == "trend":
         from crypto_trader.strategy.trend.config import TrendConfig
         from crypto_trader.strategy.trend.strategy import TrendStrategy
         cfg = strategy_config if isinstance(strategy_config, TrendConfig) else TrendConfig()
-        return TrendStrategy(cfg), [TimeFrame.M15, TimeFrame.H1, TimeFrame.D1], TimeFrame.M15
+        return TrendStrategy(cfg, bot_id=bot_id), [TimeFrame.M15, TimeFrame.H1, TimeFrame.D1], TimeFrame.M15
     elif strategy_type == "breakout":
         from crypto_trader.strategy.breakout.config import BreakoutConfig
         from crypto_trader.strategy.breakout.strategy import BreakoutStrategy
         cfg = strategy_config if isinstance(strategy_config, BreakoutConfig) else BreakoutConfig()
-        return BreakoutStrategy(cfg), [TimeFrame.M30, TimeFrame.H4], TimeFrame.M30
+        return BreakoutStrategy(cfg, bot_id=bot_id), [TimeFrame.M30, TimeFrame.H4], TimeFrame.M30
     else:
         from crypto_trader.strategy.momentum.config import MomentumConfig
         from crypto_trader.strategy.momentum.strategy import MomentumStrategy
         cfg = strategy_config if isinstance(strategy_config, MomentumConfig) else MomentumConfig()
-        return MomentumStrategy(cfg), [TimeFrame.M15, TimeFrame.H1, TimeFrame.H4], TimeFrame.M15
+        return MomentumStrategy(cfg, bot_id=bot_id), [TimeFrame.M15, TimeFrame.H1, TimeFrame.H4], TimeFrame.M15
 
 
 @dataclass

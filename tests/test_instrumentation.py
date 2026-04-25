@@ -779,6 +779,25 @@ class TestDailyAggregator:
         snap2 = agg.compute_snapshot("2025-01-02")
         assert snap2.total_trades == 0  # Reset after first snapshot
 
+    def test_compute_snapshot_dedupes_missed_updates_by_event_id(self):
+        from crypto_trader.instrumentation.daily_aggregator import DailyAggregator
+
+        agg = DailyAggregator(bot_id="test")
+        ts = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        meta = EventMetadata.create("test", "momentum", ts, "missed", "BTC")
+        agg.record_missed(MissedOpportunityEvent(metadata=meta, pair="BTC"))
+        agg.record_missed(MissedOpportunityEvent(
+            metadata=meta,
+            pair="BTC",
+            backfill_status="complete",
+            would_have_hit_tp=True,
+        ))
+
+        snap = agg.compute_snapshot("2025-01-01")
+
+        assert snap.missed_count == 1
+        assert snap.missed_would_have_won == 1
+
 
 # ===========================================================================
 # Phase 5: Backfiller

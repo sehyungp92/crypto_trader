@@ -13,6 +13,7 @@ from crypto_trader.core.models import (
     Bar,
     Fill,
     Order,
+    OrderStatus,
     OrderType,
     SetupGrade,
     Side,
@@ -164,6 +165,7 @@ class MomentumStrategy:
             meta = self._position_meta.get(sym)
             if meta:
                 meta.entry_price = fill.fill_price
+                meta.original_qty = fill.qty
                 # Submit protective stop
                 stop_price = meta.stop_level
                 stop_dist = abs(fill.fill_price - stop_price) if stop_price else 0
@@ -266,6 +268,23 @@ class MomentumStrategy:
     def _entry_window_open(self, bar: Bar, ctx: StrategyContext) -> bool:
         measurement_start = self._measurement_start(ctx)
         return measurement_start is None or bar.timestamp >= measurement_start
+
+    @staticmethod
+    def _scaled_risk_units(actual_risk_pct: float, baseline_risk_pct: float) -> float:
+        if baseline_risk_pct <= 0:
+            return 1.0
+        return actual_risk_pct / baseline_risk_pct
+
+    @staticmethod
+    def _portfolio_snapshot(
+        ctx: StrategyContext,
+        sym: str,
+        direction: Side,
+    ) -> dict | None:
+        snapshot_fn = getattr(ctx.broker, "get_portfolio_snapshot", None)
+        if not callable(snapshot_fn):
+            return None
+        return snapshot_fn(sym, direction)
 
     def enrich_terminal_marks(self, terminal_marks: list[TerminalMark]) -> None:
         for mark in terminal_marks:
@@ -529,20 +548,35 @@ class MomentumStrategy:
             self._collector.end_bar(sym)
             return
 
+        baseline_risk_pct = (
+            self._cfg.risk.risk_pct_a
+            if setup.grade == SetupGrade.A
+            else self._cfg.risk.risk_pct_b
+        )
+        entry_order.metadata["risk_R"] = self._scaled_risk_units(
+            sizing.risk_pct_actual,
+            baseline_risk_pct,
+        )
+
         # Record entry with full context
         signal_strength = (setup.room_r or 1.0) * (1.0 if setup.grade == SetupGrade.A else 0.7)
         self._collector.record_signal_factor(sym, "setup_room_r", setup.room_r or 0.0)
         self._collector.record_signal_factor(sym, "confluences", len(setup.confluences) / 6.0)
         self._collector.record_signal_factor(sym, "confirmation_volume",
             1.0 if confirmation.volume_confirmed else 0.5)
+        portfolio_state = self._portfolio_snapshot(ctx, sym, bias.direction)
         self._collector.record_entry(sym, self._cfg.to_dict(),
             sizing_inputs={"risk_pct": sizing.risk_pct_actual, "leverage": sizing.leverage,
                            "stop_distance": stop_dist, "atr": m15_ind.atr,
                            "equity": ctx.broker.get_equity()},
+            portfolio_state=portfolio_state,
             signal_strength=signal_strength)
 
         # 12. Submit and store metadata
         oid = ctx.broker.submit_order(entry_order)
+        if entry_order.status == OrderStatus.REJECTED:
+            self._collector.end_bar(sym)
+            return
         self._position_meta[sym] = _PositionMeta(
             setup_grade=setup.grade,
             confluences=setup.confluences,
@@ -637,7 +671,7 @@ class MomentumStrategy:
                 if state.current_stop_order_id:
                     cancelled = ctx.broker.cancel_order(state.current_stop_order_id)
                     if not cancelled:
-                        log.warning("strategy.cancel_failed", symbol=sym, order_id=state.current_stop_order_id, context="trail_resubmit")
+                        log.warning("strategy.cancel_failed", symbol=pos.symbol, order_id=state.current_stop_order_id, context="trail_resubmit")
                 close_side = Side.SHORT if pos.direction == Side.LONG else Side.LONG
                 trail_stop = Order(
                     order_id="",
@@ -691,7 +725,7 @@ class MomentumStrategy:
                     trade.r_multiple = (trade.exit_price - trade.entry_price) / meta.stop_distance
                 else:
                     trade.r_multiple = (trade.entry_price - trade.exit_price) / meta.stop_distance
-                initial_risk = meta.original_qty * meta.stop_distance
+                initial_risk = trade.qty * meta.stop_distance
                 if initial_risk > 0:
                     trade.realized_r_multiple = trade.net_pnl / initial_risk
 

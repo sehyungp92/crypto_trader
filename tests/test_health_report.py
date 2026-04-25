@@ -1,7 +1,11 @@
 """Tests for the structured health report."""
 
+import json
 import time
 
+from click.testing import CliRunner
+
+from crypto_trader.cli import cli
 from crypto_trader.live.health_report import HealthAlert, HealthReport, HealthReportBuilder
 
 
@@ -167,3 +171,34 @@ class TestHealthReportBuilder:
         )
         assert report.portfolio["heat_R"] == 1.5
         assert report.portfolio["open_risk_count"] == 2
+
+
+class TestStatusCli:
+    def test_status_renders_scalar_daily_pnl_from_jsonl(self, tmp_path):
+        health_report = {
+            "timestamp": "2026-04-25T12:00:00+00:00",
+            "uptime_sec": 3600.0,
+            "data_flow": {},
+            "signal_funnels": {},
+            "gate_breakdown": {},
+            "positions": [],
+            "portfolio": {
+                "heat_R": 1.5,
+                "heat_cap_R": 5.0,
+                "daily_pnl_R": 0.3,
+                "open_risk_count": 2,
+            },
+            "system": {"total_errors": 0, "stale_feed_count": 0},
+            "alerts": [],
+            "assessment": "healthy",
+        }
+        (tmp_path / "health_reports.jsonl").write_text(
+            json.dumps({"timestamp": health_report["timestamp"], "report": health_report}) + "\n",
+            encoding="utf-8",
+        )
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["status", "--state-dir", str(tmp_path)])
+
+        assert result.exit_code == 0
+        assert "Daily P&L: +0.3R" in result.output

@@ -145,7 +145,7 @@ class TestTrendStrategy:
             entry_price=50000,
             stop_level=49500,
             stop_distance=500,
-            original_qty=0.1,
+            original_qty=0.2,
         )
 
         fill = Fill(
@@ -163,7 +163,9 @@ class TestTrendStrategy:
         stop_order = ctx.broker.submit_order.call_args[0][0]
         assert stop_order.tag == "protective_stop"
         assert stop_order.order_type == OrderType.STOP
+        assert stop_order.qty == pytest.approx(fill.qty)
         assert stop_order.stop_price == 49500
+        assert s._position_meta["BTC"].original_qty == pytest.approx(fill.qty)
 
     def test_position_closed_enriches_trade(self):
         cfg = TrendConfig(symbols=["BTC"])
@@ -224,7 +226,7 @@ class TestTrendStrategy:
             entry_price=50000,
             stop_level=49500,
             stop_distance=500,
-            original_qty=0.1,
+            original_qty=0.2,
         )
         exit_state = MagicMock()
         exit_state.mae_r = -0.3

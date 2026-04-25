@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -31,9 +32,18 @@ class LiveConfig:
     data_dir: Path = field(default_factory=lambda: Path("data"))
     state_dir: Path = field(default_factory=lambda: Path("data/live_state"))
 
+    # Instrumentation / relay (optional)
+    bot_id: str = ""
+    relay_url: str = ""
+    relay_secret: str = ""
+
+    # PostgreSQL (optional; empty string = disabled)
+    postgres_dsn: str = ""
+
     @property
     def base_url(self) -> str:
         from hyperliquid.utils import constants
+
         return constants.TESTNET_API_URL if self.is_testnet else constants.MAINNET_API_URL
 
     def validate(self) -> list[str]:
@@ -45,6 +55,13 @@ class LiveConfig:
             errors.append("private_key is required for trading (None = read-only)")
         if not self.symbols:
             errors.append("at least one symbol required")
+        if any((self.relay_url, self.relay_secret)):
+            if not self.bot_id:
+                errors.append("bot_id is required when relay is configured")
+            if not self.relay_url:
+                errors.append("relay_url is required when relay is configured")
+            if not self.relay_secret:
+                errors.append("relay_secret is required when relay is configured")
         return errors
 
     @classmethod
@@ -68,6 +85,10 @@ class LiveConfig:
             symbols=d.get("symbols", ["BTC", "ETH", "SOL"]),
             data_dir=Path(d.get("data_dir", "data")),
             state_dir=Path(d.get("state_dir", "data/live_state")),
+            bot_id=d.get("bot_id", ""),
+            relay_url=d.get("relay_url", ""),
+            relay_secret=d.get("relay_secret", ""),
+            postgres_dsn=os.environ.get("POSTGRES_DSN") or d.get("postgres_dsn", ""),
         )
 
     def to_dict(self) -> dict:
@@ -86,4 +107,8 @@ class LiveConfig:
             "symbols": self.symbols,
             "data_dir": str(self.data_dir),
             "state_dir": str(self.state_dir),
+            "bot_id": self.bot_id,
+            "relay_url": self.relay_url,
+            "relay_secret": self.relay_secret,
+            "postgres_dsn": self.postgres_dsn,
         }

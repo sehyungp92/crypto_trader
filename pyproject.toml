@@ -23,6 +23,10 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
 ]
+live = [
+    "psycopg[binary]>=3.1",
+    "psycopg-pool>=3.1",
+]
 
 [project.scripts]
 crypto-trader = "crypto_trader.cli:cli"

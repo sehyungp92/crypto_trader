@@ -14,6 +14,7 @@ from crypto_trader.core.models import (
     Bar,
     Fill,
     Order,
+    OrderStatus,
     OrderType,
     SetupGrade,
     Side,
@@ -174,7 +175,8 @@ class BreakoutStrategy:
             pass  # Exit fills — position closed event handles bookkeeping
 
     def on_shutdown(self, ctx: StrategyContext) -> None:
-        pass
+        self._journal.save()
+        log.info("strategy.shutdown", trades=len(self._journal.entries))
 
     def export_diagnostic_context(self) -> dict[str, object]:
         """Expose strategy-side diagnostic context for report generation."""
@@ -199,6 +201,23 @@ class BreakoutStrategy:
     def _entry_window_open(self, timestamp: datetime, ctx: StrategyContext) -> bool:
         measurement_start = self._measurement_start(ctx)
         return measurement_start is None or timestamp >= measurement_start
+
+    @staticmethod
+    def _scaled_risk_units(actual_risk_pct: float, baseline_risk_pct: float) -> float:
+        if baseline_risk_pct <= 0:
+            return 1.0
+        return actual_risk_pct / baseline_risk_pct
+
+    @staticmethod
+    def _portfolio_snapshot(
+        ctx: StrategyContext,
+        sym: str,
+        direction: Side,
+    ) -> dict | None:
+        snapshot_fn = getattr(ctx.broker, "get_portfolio_snapshot", None)
+        if not callable(snapshot_fn):
+            return None
+        return snapshot_fn(sym, direction)
 
     def enrich_terminal_marks(self, terminal_marks: list[TerminalMark]) -> None:
         for mark in terminal_marks:
@@ -588,15 +607,29 @@ class BreakoutStrategy:
             log.warning("breakout.entry_aborted", symbol=sym, reason="entry_generation_failed")
             return False
 
+        if setup.is_a_plus:
+            baseline_risk_pct = self._cfg.risk.risk_pct_a_plus
+        elif setup.grade == SetupGrade.A:
+            baseline_risk_pct = self._cfg.risk.risk_pct_a
+        else:
+            baseline_risk_pct = self._cfg.risk.risk_pct_b
+        entry_order.metadata["risk_R"] = self._scaled_risk_units(
+            sizing.risk_pct_actual,
+            baseline_risk_pct,
+        )
+
         # Record entry instrumentation just before submission
+        portfolio_state = self._portfolio_snapshot(ctx, sym, setup.direction)
         self._collector.record_entry(sym, self._cfg.to_dict(), {
             "equity": equity,
             "stop_distance": stop_distance,
             "risk_scale": setup.risk_scale,
-        })
+        }, portfolio_state=portfolio_state)
 
         # Submit and store meta
         ctx.broker.submit_order(entry_order)
+        if entry_order.status == OrderStatus.REJECTED:
+            return False
 
         self._position_meta[sym] = _PositionMeta(
             setup_grade=setup.grade,
@@ -799,6 +832,7 @@ class BreakoutStrategy:
 
         # Update with actual fill price
         meta.entry_price = fill.fill_price
+        meta.original_qty = fill.qty
         meta.stop_distance = abs(fill.fill_price - meta.stop_level)
         if meta.stop_distance <= 0:
             meta.stop_distance = 0.001  # Safety
@@ -930,7 +964,7 @@ class BreakoutStrategy:
                     trade.r_multiple = (trade.exit_price - trade.entry_price) / meta.stop_distance
                 else:
                     trade.r_multiple = (trade.entry_price - trade.exit_price) / meta.stop_distance
-                initial_risk = meta.original_qty * meta.stop_distance
+                initial_risk = trade.qty * meta.stop_distance
                 if initial_risk > 0:
                     trade.realized_r_multiple = trade.net_pnl / initial_risk
 

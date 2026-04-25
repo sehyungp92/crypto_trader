@@ -41,7 +41,7 @@ class TestMomentumStrategyClosePath:
             entry_price=50_000.0,
             stop_level=49_500.0,
             stop_distance=500.0,
-            original_qty=0.1,
+            original_qty=0.2,
         )
 
         trade = Trade(

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,7 @@ from crypto_trader.core.clock import WallClock
 from crypto_trader.core.engine import MultiTimeFrameBars, StrategyContext
 from crypto_trader.core.events import EventBus
 from crypto_trader.core.events import PositionClosedEvent
-from crypto_trader.core.models import Bar, Fill, Position, Side, TimeFrame, Trade
+from crypto_trader.core.models import Bar, Fill, OrderStatus, Position, Side, TimeFrame, Trade
 from crypto_trader.live.broker import HyperliquidBroker
 from crypto_trader.live.config import LiveConfig
 from crypto_trader.live.feed import LiveFeed
@@ -27,6 +27,7 @@ from crypto_trader.portfolio.config import PortfolioConfig
 from crypto_trader.portfolio.coordinator import StrategyCoordinator
 from crypto_trader.portfolio.manager import PortfolioManager
 from crypto_trader.portfolio.state import PortfolioState
+from crypto_trader.instrumentation.backfill import MissedOpportunityBackfiller
 from crypto_trader.instrumentation.emitter import EventEmitter
 from crypto_trader.instrumentation.sinks import JsonlSink
 from crypto_trader.instrumentation.sidecar import SidecarForwarder
@@ -57,6 +58,42 @@ _STRATEGY_PRIMARY_TF = {
     "trend": TimeFrame.H1,
     "breakout": TimeFrame.M30,
 }
+
+
+class _WarmupBrokerProxy:
+    """Null broker that silently rejects orders during warmup.
+
+    Prevents strategies from placing real orders while processing
+    historical warmup bars with stale data.
+    """
+
+    def submit_order(self, order):
+        order.status = OrderStatus.REJECTED
+        return order.order_id
+
+    def cancel_order(self, order_id: str) -> bool:
+        return True
+
+    def cancel_all(self, symbol: str = "") -> int:
+        return 0
+
+    def get_position(self, symbol: str):
+        return None
+
+    def get_positions(self) -> list:
+        return []
+
+    def get_open_orders(self, symbol: str = "") -> list:
+        return []
+
+    def get_equity(self) -> float:
+        return 0.0
+
+    def get_fills_since(self, since) -> list:
+        return []
+
+    def get_portfolio_snapshot(self, symbol: str, direction: Side) -> None:
+        return None
 
 
 class _StrategySlot:
@@ -102,6 +139,7 @@ class LiveEngine:
         self._persistent = PersistentState(config.state_dir)
         self._last_fill_check = datetime.now(timezone.utc)
         self._tracked_positions: dict[str, dict] = {}  # sym → tracked entry data
+        self._pending_missed: dict[str, Any] = {}
         self._last_funnels: dict[str, dict] = {}  # strategy_id → last funnel dict
         self._report_builder = HealthReportBuilder()
 
@@ -111,6 +149,17 @@ class LiveEngine:
         self._daily_aggregator = DailyAggregator(bot_id=getattr(config, "bot_id", ""))
         self._emitter.add_sink(self._daily_aggregator)  # aggregator receives all events
         self._sidecar: SidecarForwarder | None = None
+
+        # PostgreSQL sink (optional — wired as additional Sink for trades/daily/health)
+        self._pg_sink = None
+        if config.postgres_dsn:
+            try:
+                from crypto_trader.instrumentation.postgres_sink import PostgresSink
+                self._pg_sink = PostgresSink(config.postgres_dsn)
+                self._emitter.add_sink(self._pg_sink)
+                log.info("engine.postgres_sink_enabled")
+            except Exception:
+                log.exception("engine.postgres_sink_init_failed")
 
     async def start(self) -> None:
         """Initialize all components."""
@@ -154,7 +203,8 @@ class LiveEngine:
             strategy_config = self._load_strategy_config(strategy_id, config_path)
             strategy_config.symbols = self._config.symbols
 
-            strategy, feed_tfs, primary_tf = _create_strategy(strategy_id, strategy_config)
+            bot_id = getattr(self._config, "bot_id", "")
+            strategy, feed_tfs, primary_tf = _create_strategy(strategy_id, strategy_config, bot_id=bot_id)
             strategy_tfs[strategy_id] = feed_tfs
 
             proxy = self._coordinator.get_proxy(strategy_id)
@@ -167,6 +217,7 @@ class LiveEngine:
                 clock=clock,
                 bars=bars,
                 events=events,
+                config=strategy_config,
             )
 
             self._slots.append(_StrategySlot(
@@ -186,17 +237,31 @@ class LiveEngine:
         # Load warmup bars
         warmup_bars = self._feed.load_warmup_bars(info, _WARMUP_COUNTS)
 
-        # Wire instrumentation into each strategy's collector
-        for slot in self._slots:
-            collector = getattr(slot.strategy, "_collector", None)
-            if collector is not None:
-                collector.emitter = self._emitter
-
-        # Init strategies
+        # Init strategies with real broker (strategies may check initial state)
         for slot in self._slots:
             slot.strategy.on_init(slot.ctx)
 
-        # Feed warmup bars (suppress orders by not processing fills)
+        # Swap to warmup proxy — silently rejects all orders during warmup
+        warmup_proxy = _WarmupBrokerProxy()
+        real_brokers: list[Any] = []
+        for slot in self._slots:
+            real_brokers.append(slot.ctx.broker)
+            slot.ctx.broker = warmup_proxy
+
+        warmup_measurement_start = None
+        if warmup_bars:
+            warmup_measurement_start = max(
+                bar.timestamp for bar in warmup_bars
+            ) + timedelta(microseconds=1)
+
+        original_start_dates: list[tuple[bool, Any]] = []
+        for slot in self._slots:
+            had_start_date = hasattr(slot.ctx.config, "start_date")
+            original_start_dates.append((had_start_date, getattr(slot.ctx.config, "start_date", None)))
+            if warmup_measurement_start is not None:
+                setattr(slot.ctx.config, "start_date", warmup_measurement_start)
+
+        # Feed warmup bars (orders silently rejected, no emitter wired)
         log.info("engine.warmup_start", bars=len(warmup_bars))
         for bar in warmup_bars:
             for slot in self._slots:
@@ -204,6 +269,32 @@ class LiveEngine:
                     slot.bars.append(bar)
                     slot.strategy.on_bar(bar, slot.ctx)
         log.info("engine.warmup_complete")
+
+        # Restore real brokers after warmup
+        for slot, real_broker, (had_start_date, original_start_date) in zip(
+            self._slots,
+            real_brokers,
+            original_start_dates,
+        ):
+            slot.ctx.broker = real_broker
+            if had_start_date:
+                setattr(slot.ctx.config, "start_date", original_start_date)
+            elif hasattr(slot.ctx.config, "start_date"):
+                delattr(slot.ctx.config, "start_date")
+
+        # Discard warmup-only instrumentation before wiring the live emitter.
+        for slot in self._slots:
+            collector = getattr(slot.strategy, "_collector", None)
+            if collector is None:
+                continue
+            collector.flush_missed()
+            collector.pipeline.snapshot_and_reset()
+
+        # Wire instrumentation AFTER warmup (no stale telemetry)
+        for slot in self._slots:
+            collector = getattr(slot.strategy, "_collector", None)
+            if collector is not None:
+                collector.emitter = self._emitter
 
         # Initial reconciliation — compare portfolio state expectations with exchange
         reconciler = PositionReconciler()
@@ -229,7 +320,7 @@ class LiveEngine:
         relay_url = getattr(self._config, "relay_url", "")
         relay_secret = getattr(self._config, "relay_secret", "")
         bot_id = getattr(self._config, "bot_id", "")
-        if relay_url and relay_secret:
+        if relay_url and relay_secret and bot_id:
             self._sidecar = SidecarForwarder(
                 state_dir=self._config.state_dir,
                 relay_url=relay_url,
@@ -280,6 +371,10 @@ class LiveEngine:
         if self._sidecar is not None:
             self._sidecar.stop()
 
+        # Close PostgreSQL connection pool
+        if self._pg_sink is not None:
+            self._pg_sink.close()
+
         # Persist final state
         if self._manager:
             self._persistent.save_portfolio_state(self._manager.state.to_dict())
@@ -321,13 +416,31 @@ class LiveEngine:
                         if slot:
                             # Track entry fills for position lifecycle
                             if fill.tag == "entry":
-                                self._tracked_positions[fill.symbol] = {
-                                    "strategy_id": strategy_id,
-                                    "direction": fill.side,
-                                    "entry_price": fill.fill_price,
-                                    "entry_time": fill.timestamp,
-                                    "qty": fill.qty,
-                                }
+                                tracked = self._tracked_positions.get(fill.symbol)
+                                if (
+                                    tracked is not None
+                                    and tracked.get("strategy_id") == strategy_id
+                                    and tracked.get("direction") == fill.side
+                                ):
+                                    prev_qty = float(tracked.get("qty", 0.0))
+                                    total_qty = prev_qty + fill.qty
+                                    if total_qty > 0:
+                                        tracked["entry_price"] = (
+                                            (tracked.get("entry_price", 0.0) * prev_qty)
+                                            + (fill.fill_price * fill.qty)
+                                        ) / total_qty
+                                    tracked["qty"] = total_qty
+                                    tracked["entry_time"] = min(tracked["entry_time"], fill.timestamp)
+                                    tracked["entry_commission"] = tracked.get("entry_commission", 0.0) + fill.commission
+                                else:
+                                    self._tracked_positions[fill.symbol] = {
+                                        "strategy_id": strategy_id,
+                                        "direction": fill.side,
+                                        "entry_price": fill.fill_price,
+                                        "entry_time": fill.timestamp,
+                                        "qty": fill.qty,
+                                        "entry_commission": fill.commission,
+                                    }
 
                             slot.strategy.on_fill(fill, slot.ctx)
                             self._coordinator.on_fill(fill)
@@ -368,7 +481,13 @@ class LiveEngine:
                 equity = self._broker.get_equity()
                 self._manager.update_equity(equity)
                 self._persistent.append_equity_snapshot(equity)
+                self._daily_aggregator.record_equity(datetime.now(timezone.utc), equity)
                 self._persistent.save_portfolio_state(self._manager.state.to_dict())
+
+                # Write equity + positions to PostgreSQL
+                if self._pg_sink is not None:
+                    self._pg_sink.write_equity(equity, datetime.now(timezone.utc))
+                    self._pg_sink.upsert_positions(self._build_positions_snapshot())
             except Exception:
                 self._health.on_error("equity_snapshot")
 
@@ -429,6 +548,74 @@ class LiveEngine:
             if bar.timeframe in slot.subscribed_tfs and bar.symbol in slot.strategy.symbols:
                 slot.bars.append(bar)
                 slot.strategy.on_bar(bar, slot.ctx)
+        self._drain_and_backfill_missed()
+
+    def _drain_and_backfill_missed(self) -> None:
+        pending = getattr(self, "_pending_missed", {})
+        for slot in self._slots:
+            collector = getattr(slot.strategy, "_collector", None)
+            if collector is None:
+                continue
+            for event in collector.flush_missed():
+                pending[event.metadata.event_id] = event
+
+        if not pending:
+            self._pending_missed = pending
+            return
+
+        bars_by_symbol = self._bars_by_symbol_for_backfill()
+        if not bars_by_symbol:
+            self._pending_missed = pending
+            return
+
+        for event_id, event in list(pending.items()):
+            before = (
+                event.outcome_1h,
+                event.outcome_4h,
+                event.outcome_24h,
+                event.backfill_status,
+            )
+            MissedOpportunityBackfiller.backfill_from_bars([event], bars_by_symbol)
+            after = (
+                event.outcome_1h,
+                event.outcome_4h,
+                event.outcome_24h,
+                event.backfill_status,
+            )
+            if after != before:
+                self._emitter.emit_missed(event)
+            if event.backfill_status == "complete":
+                pending.pop(event_id, None)
+
+        self._pending_missed = pending
+
+    def _bars_by_symbol_for_backfill(self) -> dict[str, list[Bar]]:
+        bars_by_symbol: dict[str, tuple[int, list[Bar]]] = {}
+        for slot in self._slots:
+            for tf in slot.subscribed_tfs:
+                for sym in slot.strategy.symbols:
+                    bars = slot.bars.get(sym, tf)
+                    if not bars:
+                        continue
+                    current = bars_by_symbol.get(sym)
+                    if current is None or tf.minutes < current[0]:
+                        bars_by_symbol[sym] = (tf.minutes, bars)
+        return {sym: bars for sym, (_, bars) in bars_by_symbol.items()}
+
+    def _derive_bars_held(
+        self,
+        strategy_id: str,
+        entry_time: datetime,
+        exit_time: datetime,
+    ) -> int:
+        primary_tf = _STRATEGY_PRIMARY_TF.get(strategy_id)
+        if primary_tf is None:
+            return 0
+        interval_sec = _TF_INTERVALS.get(primary_tf.value)
+        if not interval_sec or exit_time <= entry_time:
+            return 0
+        elapsed_sec = (exit_time - entry_time).total_seconds()
+        return max(1, int((elapsed_sec + interval_sec - 1) // interval_sec))
 
     def _detect_position_closures(self, recent_fills: list[Fill]) -> None:
         """Check tracked positions against exchange; emit PositionClosedEvent for closures."""
@@ -455,13 +642,20 @@ class LiveEngine:
             meta = getattr(slot.strategy, "_position_meta", {}).get(sym)
             entry_price = meta.entry_price if meta and hasattr(meta, "entry_price") else tracked["entry_price"]
             direction = tracked["direction"]
-            qty = meta.original_qty if meta and hasattr(meta, "original_qty") else tracked["qty"]
+            qty = tracked["qty"]
             stop_distance = meta.stop_distance if meta and hasattr(meta, "stop_distance") else 0.0
 
             if direction == Side.LONG:
                 pnl = (exit_fill.fill_price - entry_price) * qty
             else:
                 pnl = (entry_price - exit_fill.fill_price) * qty
+
+            commission = tracked.get("entry_commission", 0.0) + exit_fill.commission
+            bars_held = self._derive_bars_held(
+                tracked["strategy_id"],
+                tracked["entry_time"],
+                exit_fill.timestamp,
+            )
 
             trade = Trade(
                 trade_id=f"live_{sym}_{exit_fill.timestamp.strftime('%Y%m%d_%H%M%S')}",
@@ -474,8 +668,8 @@ class LiveEngine:
                 exit_time=exit_fill.timestamp,
                 pnl=pnl,
                 r_multiple=None,
-                commission=0.0,
-                bars_held=0,
+                commission=commission,
+                bars_held=bars_held,
                 setup_grade=None,
                 exit_reason=exit_fill.tag or "exchange_fill",
                 confluences_used=None,
@@ -570,9 +764,9 @@ class LiveEngine:
                 portfolio_state = {}
                 if self._manager:
                     portfolio_state = {
-                        "heat_R": sum(r.r_risked for r in self._manager.state.open_risks),
-                        "heat_cap_R": self._manager._config.max_portfolio_heat_R,
-                        "daily_pnl_R": self._manager.state.daily_pnl_R,
+                        "heat_R": sum(r.risk_R for r in self._manager.state.open_risks),
+                        "heat_cap_R": self._manager.config.heat_cap_R,
+                        "daily_pnl_R": self._manager.state.portfolio_daily_pnl_R,
                         "open_risk_count": len(self._manager.state.open_risks),
                     }
 
@@ -648,6 +842,37 @@ class LiveEngine:
             return BreakoutConfig.from_dict(data)
         else:
             raise ValueError(f"Unknown strategy: {strategy_id}")
+
+    def _build_positions_snapshot(self) -> list[dict]:
+        """Build position snapshot for PG upsert."""
+        result = []
+        if not self._broker:
+            return result
+        for pos in self._broker.get_positions():
+            if pos.qty == 0:
+                continue
+            tracked = self._tracked_positions.get(pos.symbol, {})
+            strategy_id = tracked.get("strategy_id", "unknown")
+            risk_r = 0.0
+            stop_price = None
+            if self._manager:
+                for risk in self._manager.state.open_risks:
+                    if risk.symbol == pos.symbol:
+                        risk_r = risk.risk_R
+                        stop_price = getattr(risk, "stop_price", None)
+                        break
+            result.append({
+                "strategy_id": strategy_id,
+                "symbol": pos.symbol,
+                "direction": pos.direction.value if pos.direction else "unknown",
+                "qty": pos.qty,
+                "avg_entry": pos.avg_entry,
+                "unrealized_pnl": pos.unrealized_pnl,
+                "risk_r": risk_r,
+                "stop_price": stop_price,
+                "entry_time": pos.open_time if hasattr(pos, "open_time") else None,
+            })
+        return result
 
     def _default_strategy_config(self, strategy_id: str) -> Any:
         """Create default config for a strategy."""

@@ -22,7 +22,9 @@ RUN pip wheel --wheel-dir /wheels \
     "click>=8.1" \
     "pydantic>=2.6" \
     "structlog>=24.0" \
-    "PyYAML>=6.0"
+    "PyYAML>=6.0" \
+    "psycopg[binary]>=3.1" \
+    "psycopg-pool>=3.1"
 
 # ---------- Runtime stage ----------
 FROM python:3.12-slim

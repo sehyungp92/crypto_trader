@@ -3,6 +3,8 @@
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from crypto_trader.core.events import EventBus, PositionClosedEvent
 from crypto_trader.core.models import Fill, Position, Side, Trade
 
@@ -138,6 +140,57 @@ class TestDetectPositionClosures:
 
         # BTC still tracked since no matching exit fill
         assert "BTC" in engine._tracked_positions
+
+    def test_closure_uses_entry_and_exit_commission_and_derives_bars_held(self):
+        """Synthesized live trades should preserve commission and holding duration."""
+        from crypto_trader.live.engine import LiveEngine, _StrategySlot
+
+        engine = object.__new__(LiveEngine)
+        engine._tracked_positions = {
+            "BTC": {
+                "strategy_id": "momentum",
+                "direction": Side.LONG,
+                "entry_price": 50_000.0,
+                "entry_time": datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc),
+                "qty": 0.1,
+                "entry_commission": 0.8,
+            },
+        }
+        engine._coordinator = MagicMock()
+
+        events = EventBus()
+        received_events = []
+        events.subscribe(PositionClosedEvent, lambda e: received_events.append(e))
+
+        slot = _StrategySlot(
+            strategy_id="momentum",
+            strategy=MagicMock(_position_meta={}),
+            ctx=MagicMock(events=events),
+            bars=MagicMock(),
+            subscribed_tfs=set(),
+            primary_tf=MagicMock(),
+        )
+        engine._slots = [slot]
+
+        engine._broker = MagicMock()
+        engine._broker.get_positions.return_value = []
+
+        exit_fill = Fill(
+            order_id="ord_exit_BTC",
+            symbol="BTC",
+            side=Side.LONG,
+            qty=0.1,
+            fill_price=49_500.0,
+            commission=0.5,
+            timestamp=datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc),
+            tag="protective_stop",
+        )
+
+        engine._detect_position_closures([exit_fill])
+
+        trade = received_events[0].trade
+        assert trade.commission == pytest.approx(1.3)
+        assert trade.bars_held == 8
 
 
 class TestFillRaceCondition:

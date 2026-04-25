@@ -64,7 +64,10 @@ class DailyAggregator:
     def compute_snapshot(self, date_str: str) -> DailySnapshot:
         """Build a DailySnapshot from today's accumulated events."""
         trades = self._today_trades
-        missed = self._today_missed
+        missed = list({
+            event.metadata.event_id: event
+            for event in self._today_missed
+        }.values())
 
         win_count = sum(1 for t in trades if t.pnl > 0)
         loss_count = sum(1 for t in trades if t.pnl <= 0)

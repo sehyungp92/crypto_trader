@@ -9,6 +9,7 @@ import pytest
 
 from crypto_trader.core.events import PositionClosedEvent
 from crypto_trader.core.models import Bar, Fill, SetupGrade, Side, TimeFrame, Trade
+from crypto_trader.strategy.breakout.balance import BalanceZone
 from crypto_trader.strategy.breakout.config import BreakoutConfig
 from crypto_trader.strategy.breakout.strategy import BreakoutStrategy, _PositionMeta
 from crypto_trader.strategy.momentum.journal import TradeJournal
@@ -186,6 +187,38 @@ class TestBreakoutStrategyBehavior:
         fill = _make_fill(tag="unknown_tag_xyz")
         s.on_fill(fill, ctx)
 
+    def test_on_fill_entry_uses_actual_fill_qty_for_stop_management(self):
+        s = BreakoutStrategy(BreakoutConfig(symbols=["BTC"]))
+        ctx = _MockCtx()
+        ctx.broker = MagicMock()
+        s.on_init(ctx)
+
+        s._position_meta["BTC"] = _PositionMeta(
+            setup_grade=SetupGrade.B,
+            entry_price=100.0,
+            stop_level=95.0,
+            stop_distance=5.0,
+            original_qty=0.2,
+            balance_zone=BalanceZone(
+                center=100.0,
+                upper=101.0,
+                lower=99.0,
+                bars_in_zone=5,
+                touches=2,
+                formation_bar_idx=10,
+                volume_contracting=True,
+                width_atr=0.8,
+            ),
+        )
+
+        fill = _make_fill(tag="entry")
+        s.on_fill(fill, ctx)
+
+        stop_order = ctx.broker.submit_order.call_args[0][0]
+        assert stop_order.tag == "protective_stop"
+        assert stop_order.qty == pytest.approx(fill.qty)
+        assert s._position_meta["BTC"].original_qty == pytest.approx(fill.qty)
+
     def test_position_closed_records_recent_net_loss_from_realized_r(self):
         s = BreakoutStrategy(BreakoutConfig(symbols=["BTC"]))
         ctx = _MockCtx()
@@ -207,7 +240,7 @@ class TestBreakoutStrategyBehavior:
             entry_price=100.0,
             stop_level=95.0,
             stop_distance=5.0,
-            original_qty=1.0,
+            original_qty=2.0,
         )
 
         trade = Trade(
