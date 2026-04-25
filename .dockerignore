@@ -1,0 +1,42 @@
+# Git
+.git/
+.gitignore
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Data (mounted as volume, not baked into image)
+data/candles/
+data/funding/
+data/live_state/
+
+# Output
+output/
+
+# Tests (not needed in production image)
+tests/
+
+# References (not needed in production)
+_references/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets
+*.env
+live_config.json
+
+# Documentation
+docs/
+*.md

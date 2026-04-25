@@ -1,0 +1,54 @@
+# Data (large parquet files, mounted as volume in Docker)
+data/
+*.parquet
+
+# Output (backtest results, optimization rounds, reports)
+output/
+
+# Documentation (generated/internal design docs)
+docs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets (NEVER commit)
+.env
+config/live_config.json
+
+# Docker volumes / runtime state
+data/live_state/
+
+# Claude Code
+.claude/
+
+# References
+_references/

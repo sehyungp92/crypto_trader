@@ -1,0 +1,20 @@
+{
+  "wallet_address": "0xYOUR_WALLET_ADDRESS_HERE",
+  "private_key": "0xYOUR_PRIVATE_KEY_HERE",
+  "is_testnet": true,
+  "poll_interval_sec": 15.0,
+  "fill_poll_interval_sec": 30.0,
+  "equity_snapshot_interval_sec": 300.0,
+  "health_check_interval_sec": 60.0,
+  "rate_limit_per_sec": 5.0,
+  "max_slippage_pct": 0.005,
+  "symbols": ["BTC", "ETH", "SOL"],
+  "data_dir": "data",
+  "state_dir": "data/live_state",
+  "strategy_configs": {
+    "momentum": "config/strategies/momentum.json",
+    "trend": "config/strategies/trend.json",
+    "breakout": "config/strategies/breakout.json"
+  },
+  "portfolio_config_path": "config/portfolio_config.json"
+}

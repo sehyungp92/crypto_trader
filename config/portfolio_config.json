@@ -1,0 +1,31 @@
+{
+  "initial_equity": 10000.0,
+  "heat_cap_R": 6.0,
+  "max_total_positions": 6,
+  "max_correlation_cluster": 2,
+  "daily_loss_limit_pct": 5.0,
+  "symbol_exposure_cap_R": 3.0,
+  "strategies": [
+    {
+      "strategy_id": "momentum",
+      "enabled": true,
+      "weight": 0.40,
+      "max_concurrent": 3,
+      "max_risk_per_trade_R": 1.0
+    },
+    {
+      "strategy_id": "trend",
+      "enabled": true,
+      "weight": 0.35,
+      "max_concurrent": 3,
+      "max_risk_per_trade_R": 1.0
+    },
+    {
+      "strategy_id": "breakout",
+      "enabled": true,
+      "weight": 0.25,
+      "max_concurrent": 3,
+      "max_risk_per_trade_R": 1.0
+    }
+  ]
+}
