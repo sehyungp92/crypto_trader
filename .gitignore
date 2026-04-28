@@ -47,5 +47,8 @@ data/live_state/
 # Claude Code
 .claude/
 
+# Optimization archives
+output/**/archive/
+
 # References
 _references/
