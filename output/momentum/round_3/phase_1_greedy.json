@@ -1,0 +1,27 @@
+{
+  "accepted": [
+    "followthrough_flat_inflection_only"
+  ],
+  "rejected": [
+    "proof_lock_soft",
+    "proof_lock_flat",
+    "proof_lock_positive",
+    "followthrough_soft",
+    "followthrough_flat",
+    "followthrough_flat_continuation_only",
+    "mfe_retrace_150_gb125_min075_b6",
+    "mfe_retrace_200_gb150_min100_b8",
+    "mfe_retrace_250_gb175_min125_b10",
+    "mfe_retrace_200_gb150_min100_b8_inflection_only",
+    "mfe_retrace_200_gb150_min100_b8_continuation_only",
+    "followthrough_flat__mfe_retrace_150_gb125",
+    "followthrough_flat__mfe_retrace_200_gb150",
+    "proof_lock_flat_followthrough_soft",
+    "proof_lock_positive_followthrough_flat",
+    "proof_lock_flat_followthrough_flat"
+  ],
+  "final_score": 0.6496008288884513,
+  "base_score": 0.6354586013596712,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,20 @@
+{
+  "accepted": [
+    "model1_vol_120"
+  ],
+  "rejected": [
+    "body_ratio_070",
+    "model1_vol_110",
+    "model1_vol_115",
+    "min_conf_b_1",
+    "require_vol_surge",
+    "min_bo_atr_025",
+    "min_bo_atr_030",
+    "quality_bundle_light",
+    "quality_bundle_strict"
+  ],
+  "final_score": 0.7835728606186211,
+  "base_score": 0.7228572709305444,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

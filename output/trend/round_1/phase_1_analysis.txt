@@ -1,0 +1,35 @@
+======== PHASE 1 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 0 experiments
+Final score: 0.0000
+Base score: 0.0000
+Rounds: 1
+
+Strengths: profit_factor, max_drawdown_pct, exit_efficiency
+Weaknesses: net_return_pct, total_trades
+Diagnostic Gaps: Confirmation 'hammer' has avg_r=-0.31 (n=3). [D4] Consider disabling.
+
+Goal Progress:
+  net_return_pct: 14.50 / 30.00 (48%)
+  total_trades: 26.00 / 72.00 (36%)
+  profit_factor: 2.51 / 2.30 (109%)
+  max_drawdown_pct: 5.29 / 8.00 (151%)
+  sharpe_ratio: 3.24 / 4.25 (76%)
+  calmar_ratio: 2.74 / 3.75 (73%)
+  exit_efficiency: 0.48 / 0.60 (80%)
+
+Extra Analysis:
+  confirmation_breakdown:
+    none: {'n': 23, 'avg_r': 0.3718760395043485}
+    hammer: {'n': 3, 'avg_r': -0.30819724585367636}
+  confluence_ladder:
+    1: {'n': 2, 'avg_r': -0.8468173201325758}
+    2: {'n': 16, 'avg_r': 0.3304377588228371}
+    3: {'n': 8, 'avg_r': 0.5043984587673428}
+  per_asset_edge:
+    ETH: {'n': 14, 'avg_r': 0.3308579066672386}
+    BTC: {'n': 8, 'avg_r': 0.4099933863131593}
+    SOL: {'n': 4, 'avg_r': -0.07085015320190759}

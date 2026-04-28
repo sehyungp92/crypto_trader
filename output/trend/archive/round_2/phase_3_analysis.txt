@@ -1,0 +1,31 @@
+======== PHASE 3 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 1 experiments
+Final score: 0.7922
+Base score: 0.7598
+Rounds: 2
+
+Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+Weaknesses: total_trades
+Diagnostic Gaps: Low MFE capture (0%). [D1] Trail too wide or exits too early.
+
+Goal Progress:
+  net_return_pct: 32.66 / 22.00 (148%)
+  total_trades: 53.00 / 90.00 (59%)
+  profit_factor: 2.70 / 1.55 (174%)
+  max_drawdown_pct: 6.56 / 12.00 (183%)
+  sharpe_ratio: 5.13 / 3.00 (171%)
+  calmar_ratio: 4.98 / 2.20 (200%)
+  exit_efficiency: 0.60 / 0.60 (100%)
+
+Extra Analysis:
+  avg_mfe_r: 0.9667
+  capture_pct: 0.4810
+  giveback_pct: 0.5190
+  exit_reasons:
+    protective_stop: 35
+    scratch_exit: 18
+  avg_bars_held: 16.7736

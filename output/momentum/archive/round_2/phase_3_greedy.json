@@ -1,0 +1,21 @@
+{
+  "accepted": [
+    "trail_activate_4_r04",
+    "trail_lock_025"
+  ],
+  "rejected": [
+    "mfe_floor_075",
+    "mfe_floor_100",
+    "mfe_floor_150",
+    "quick_exit_5",
+    "quick_exit_4",
+    "tp_balance_100_25_200_40",
+    "tp_balance_080_20_200_35",
+    "be_accept_1_buffer_010",
+    "be_accept_1_buffer_020"
+  ],
+  "final_score": 0.758580941402308,
+  "base_score": 0.7470905716384126,
+  "rounds": 3,
+  "elapsed_seconds": 0.0
+}

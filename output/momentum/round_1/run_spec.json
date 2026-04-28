@@ -1,0 +1,237 @@
+{
+  "strategy": "momentum",
+  "baseline_seed": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\revalidated\\20260421T192408Z\\momentum\\cleaned_seed\\cleaned_seed_config.json",
+  "rerun_reason": "Cleaned-seed rerun after manifest replay, ablation, and perturbation.",
+  "immutable_scoring_weights": {
+    "coverage": 0.24,
+    "returns": 0.22,
+    "edge": 0.18,
+    "capture": 0.16,
+    "entry_quality": 0.1,
+    "risk": 0.1
+  },
+  "immutable_scoring_ceilings": {
+    "coverage": 30.0,
+    "returns": 22.0,
+    "edge": 4.0,
+    "risk": 10.0
+  },
+  "hard_rejects": {
+    "total_trades": [
+      ">=",
+      16.0
+    ],
+    "profit_factor": [
+      ">=",
+      1.15
+    ],
+    "max_drawdown_pct": [
+      "<=",
+      12.0
+    ],
+    "exit_efficiency": [
+      ">=",
+      0.42
+    ]
+  },
+  "phase_gate_criteria": {
+    "1": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 18.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2,
+        "weight": 1.0
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.45,
+        "weight": 1.0
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0,
+        "weight": 1.0
+      }
+    ],
+    "2": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 18.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2,
+        "weight": 1.0
+      },
+      {
+        "metric": "avg_mae_r",
+        "operator": ">=",
+        "threshold": -0.4,
+        "weight": 1.0
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.45,
+        "weight": 1.0
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0,
+        "weight": 1.0
+      }
+    ],
+    "3": [
+      {
+        "metric": "net_return_pct",
+        "operator": ">=",
+        "threshold": 16.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 18.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2,
+        "weight": 1.0
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.5,
+        "weight": 1.0
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0,
+        "weight": 1.0
+      }
+    ],
+    "4": [
+      {
+        "metric": "net_return_pct",
+        "operator": ">=",
+        "threshold": 16.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 20.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.15,
+        "weight": 1.0
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.48,
+        "weight": 1.0
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0,
+        "weight": 1.0
+      }
+    ],
+    "5": [
+      {
+        "metric": "net_return_pct",
+        "operator": ">=",
+        "threshold": 18.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 20.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2,
+        "weight": 1.0
+      },
+      {
+        "metric": "sharpe_ratio",
+        "operator": ">=",
+        "threshold": 2.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.48,
+        "weight": 1.0
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 10.0,
+        "weight": 1.0
+      }
+    ],
+    "6": [
+      {
+        "metric": "net_return_pct",
+        "operator": ">=",
+        "threshold": 18.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 20.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2,
+        "weight": 1.0
+      },
+      {
+        "metric": "sharpe_ratio",
+        "operator": ">=",
+        "threshold": 2.0,
+        "weight": 1.0
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.48,
+        "weight": 1.0
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 10.0,
+        "weight": 1.0
+      }
+    ]
+  }
+}

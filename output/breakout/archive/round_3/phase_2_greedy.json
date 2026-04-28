@@ -1,0 +1,15 @@
+{
+  "accepted": [
+    "relaxed_strong_pockets"
+  ],
+  "rejected": [
+    "relaxed_btc_sol_short",
+    "relaxed_btc",
+    "relaxed_sol_short",
+    "relaxed_strong_pockets_body_040"
+  ],
+  "final_score": 0.7715127212934085,
+  "base_score": 0.7361446106058224,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

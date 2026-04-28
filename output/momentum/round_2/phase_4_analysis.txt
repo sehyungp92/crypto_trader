@@ -1,0 +1,26 @@
+======== PHASE 4 ANALYSIS ========
+Recommendation: advance
+Reason: Gate failed after accepted mutations, but the score is intentionally immutable for this round
+Scoring assessment: MISALIGNED
+
+Accepted: 2 experiments
+Final score: 0.7837
+Base score: 0.7099
+Rounds: 3
+
+Strengths: net_return_pct, total_trades, profit_factor, exit_efficiency, avg_mae_r, max_drawdown_pct
+Diagnostic Gaps: Single-trade concentration risk (D3) — risk sizing review needed
+
+Goal Progress:
+  net_return_pct: 12.13 / 12.00 (101%)
+  total_trades: 24.00 / 28.00 (86%)
+  profit_factor: 4.08 / 2.60 (157%)
+  exit_efficiency: 0.47 / 0.55 (85%)
+  avg_mae_r: -0.27 / -0.28 (100%)
+  max_drawdown_pct: 3.42 / 8.00 (200%)
+
+Extra Analysis:
+  confirmation_types: 3
+  positive_confirmations: 3
+  negative_confirmations: 0
+  confluence_levels: 4

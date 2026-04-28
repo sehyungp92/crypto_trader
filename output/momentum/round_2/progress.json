@@ -1,0 +1,39 @@
+{
+  "1": {
+    "name": "Signal Discrimination",
+    "accepted": 0,
+    "final_score": 0.5789922208174012,
+    "gate_passed": false
+  },
+  "last_updated": "2026-04-21T20:50:37.532853+00:00",
+  "2": {
+    "name": "Entry Quality",
+    "accepted": 0,
+    "final_score": 0.5789922208174012,
+    "gate_passed": false
+  },
+  "3": {
+    "name": "Capture & Management",
+    "accepted": 3,
+    "final_score": 0.7099260691020952,
+    "gate_passed": false
+  },
+  "4": {
+    "name": "Frequency Expansion",
+    "accepted": 2,
+    "final_score": 0.783712110691766,
+    "gate_passed": false
+  },
+  "5": {
+    "name": "Risk Validation & Scaling",
+    "accepted": 0,
+    "final_score": 0.783712110691766,
+    "gate_passed": false
+  },
+  "6": {
+    "name": "Finetune",
+    "accepted": 0,
+    "final_score": 0.783712110691766,
+    "gate_passed": false
+  }
+}

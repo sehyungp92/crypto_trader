@@ -1,0 +1,143 @@
+{
+  "current_phase": 2,
+  "completed_phases": [
+    1
+  ],
+  "cumulative_mutations": {
+    "profile.lookback_bars": 36,
+    "risk.risk_pct_b": 0.02645,
+    "exits.tp1_r": 1.0
+  },
+  "phase_metrics": {
+    "1": {
+      "net_profit": 844.1452362264445,
+      "net_return_pct": 8.441452362264444,
+      "realized_pnl_net": 844.1452362264473,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 20.0,
+      "win_rate": 50.0,
+      "avg_winner_r": 0.9975897394508155,
+      "avg_loser_r": -0.45244918759730235,
+      "expectancy_r": 0.27257027592675664,
+      "profit_factor": 1.7913531409883217,
+      "max_drawdown_pct": 6.934357645132899,
+      "max_drawdown_duration": 6107.0,
+      "sharpe_ratio": 1.7021378144512982,
+      "sortino_ratio": 1.386891004819569,
+      "calmar_ratio": 1.2173373215310501,
+      "avg_bars_held": 6.75,
+      "avg_mae_r": -0.3577598032331714,
+      "avg_mfe_r": 0.9594485177721384,
+      "exit_efficiency": 0.4822132884969887,
+      "a_setup_win_rate": 25.0,
+      "b_setup_win_rate": 56.25,
+      "long_win_rate": 40.0,
+      "short_win_rate": 60.0,
+      "funding_cost_total": 0.2714497815204348,
+      "edge_ratio": 2.681823136924116,
+      "payoff_ratio": 1.7913531409883217,
+      "recovery_factor": 1.2173373215310501,
+      "max_consecutive_losses": 4.0
+    }
+  },
+  "round_name": "",
+  "scoring_retries": {},
+  "diagnostic_retries": {},
+  "retry_count": {},
+  "phase_results": {
+    "1": {
+      "focus": "Return + Frequency Union",
+      "base_mutations": {},
+      "final_mutations": {
+        "profile.lookback_bars": 36,
+        "risk.risk_pct_b": 0.02645,
+        "exits.tp1_r": 1.0
+      },
+      "base_score": 0.31460300222296517,
+      "final_score": 0.827511543262097,
+      "kept_features": [
+        "profile__lookback_bars__36",
+        "risk__risk_pct_b__0_02645",
+        "exits__tp1_r__1_0"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "profile__lookback_bars__36",
+          "best_score": 0.4756339220012215,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "risk__risk_pct_b__0_02645",
+          "best_score": 0.5959478948510505,
+          "kept": true
+        },
+        {
+          "round_num": 3,
+          "best_name": "exits__tp1_r__1_0",
+          "best_score": 0.827511543262097,
+          "kept": true
+        },
+        {
+          "round_num": 4,
+          "best_name": "exits__be_buffer_r__0_46",
+          "best_score": 0.8291718062323259,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 844.1452362264445,
+        "net_return_pct": 8.441452362264444,
+        "realized_pnl_net": 844.1452362264473,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 20.0,
+        "win_rate": 50.0,
+        "avg_winner_r": 0.9975897394508155,
+        "avg_loser_r": -0.45244918759730235,
+        "expectancy_r": 0.27257027592675664,
+        "profit_factor": 1.7913531409883217,
+        "max_drawdown_pct": 6.934357645132899,
+        "max_drawdown_duration": 6107.0,
+        "sharpe_ratio": 1.7021378144512982,
+        "sortino_ratio": 1.386891004819569,
+        "calmar_ratio": 1.2173373215310501,
+        "avg_bars_held": 6.75,
+        "avg_mae_r": -0.3577598032331714,
+        "avg_mfe_r": 0.9594485177721384,
+        "exit_efficiency": 0.4822132884969887,
+        "a_setup_win_rate": 25.0,
+        "b_setup_win_rate": 56.25,
+        "long_win_rate": 40.0,
+        "short_win_rate": 60.0,
+        "funding_cost_total": 0.2714497815204348,
+        "edge_ratio": 2.681823136924116,
+        "payoff_ratio": 1.7913531409883217,
+        "recovery_factor": 1.2173373215310501,
+        "max_consecutive_losses": 4.0
+      },
+      "accepted_count": 3,
+      "new_mutations": {
+        "profile.lookback_bars": 36,
+        "risk.risk_pct_b": 0.02645,
+        "exits.tp1_r": 1.0
+      },
+      "suggested_experiments": []
+    }
+  },
+  "phase_gate_results": {
+    "1": {
+      "passed": true,
+      "failure_reasons": [],
+      "failure_category": null
+    }
+  },
+  "phase_timestamps": {
+    "1": {
+      "started": "2026-04-21T02:54:46.740949+00:00",
+      "completed": "2026-04-21T03:01:11.581575+00:00"
+    }
+  }
+}

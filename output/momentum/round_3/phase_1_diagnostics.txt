@@ -1,0 +1,149 @@
+Phase 1 Diagnostics (Trail & Stop Calibration)
+  Accepted: 1
+  Rejected: 16
+  Score: 0.6355 -> 0.6496
+
+  Focus metrics:
+    exit_efficiency: 0.47
+    avg_bars_held: 10.21
+    avg_mfe_r: 1.48
+
+  Confirmation breakdown:
+    micro_structure_shift: n=11, WR=64%, avg_r=+0.619
+    inside_bar_break: n=10, WR=50%, avg_r=+0.333
+    hammer: n=3, WR=67%, avg_r=+0.615
+
+  Per-asset edge:
+    BTC: n=7, WR=57%, avg_r=+0.329
+    ETH: n=10, WR=60%, avg_r=+0.506
+    SOL: n=7, WR=57%, avg_r=+0.660
+
+  Exit attribution (top 3 by P&L share):
+    trailing_stop: n=16, avg_r=+0.418, P&L share=46%
+    reversal_candle: n=2, avg_r=+2.795, P&L share=39%
+    structure_break: n=2, avg_r=+1.671, P&L share=39%
+
+  MFE capture:
+    avg_capture=46.7%
+    avg_giveback=53.3%
+
+======================================================================
+  PHASE 1 TARGETED SECTIONS
+  24 realized trades | 0 terminal marks | modules: D1, D6
+======================================================================
+
+══════════════════════════════════════════════════════════════════════
+  1. Overview
+══════════════════════════════════════════════════════════════════════
+  Closed Trades:  24  (W:14 / L:10)
+  Win Rate:       58.3%
+  Profit Factor:  4.32
+  Mean R:         +0.500
+  Median R:       +0.197
+  Total R:        +11.99
+  Avg Hold:       2.6h  (10.2 bars)
+  Realized P&L:   $1,236.32  (+12.36%)
+  Net Liq P&L:    $1,236.32  (+12.36%)
+
+  ⚠ Flags:
+    - LOW SAMPLE (n=24) — statistical significance limited
+
+══════════════════════════════════════════════════════════════════════
+  2. Winner vs Loser Profiles
+══════════════════════════════════════════════════════════════════════
+  Metric                          Winners     Losers      Delta
+  --------------------------------------------------------------
+  Avg R                             1.162     -0.427     +1.589
+  Avg P&L ($)                     114.923    -37.261   +152.184
+  Avg Hold (h)                      3.750      0.875     +2.875
+  Avg Bars Held                    15.000      3.500    +11.500
+  Avg MFE R                         2.269      0.374     +1.895
+  Avg MAE R                        -0.255     -0.265     +0.010
+
+  Setup Grade Distribution:
+    A-grade:  W=1  L=1
+    B-grade:  W=13  L=9
+
+  Confirmation Distribution:
+                       hammer:  W=2  L=1
+             inside_bar_break:  W=5  L=5
+        micro_structure_shift:  W=7  L=4
+
+══════════════════════════════════════════════════════════════════════
+  R-Multiple Distribution
+══════════════════════════════════════════════════════════════════════
+          < -1.0 |   3 █████████████████
+    -1.0 to -0.5 |   0 
+       -0.5 to 0 |   7 ████████████████████████████████████████
+        0 to 0.5 |   6 ██████████████████████████████████
+      0.5 to 1.0 |   2 ███████████
+      1.0 to 2.0 |   2 ███████████
+           > 2.0 |   4 ██████████████████████
+
+  Mean: +0.500  Median: +0.197  Std: 1.166  Skew: +0.94
+
+══════════════════════════════════════════════════════════════════════
+  3. MFE/MAE & Capture Efficiency
+══════════════════════════════════════════════════════════════════════
+  Overall (23 trades with MFE data):
+    Avg MFE:               1.544R
+    Avg MAE:               -0.259R
+    Winner capture efficiency: 46.7%
+    All-trades capture:       -1484.3%
+    Winner avg giveback:      1.107R
+
+  Capture by Exit Reason:
+    Exit Reason               n  Avg MFE    Avg R  Capture  Giveback
+    ----------------------------------------------------------------
+    trailing_stop            16    1.243   +0.418     18%    +0.825
+    reversal_candle           2    4.383   +2.795     63%    +1.588
+    protective_stop           2    0.016   -1.115 -17294%    +1.131
+    structure_break           2    3.205   +1.671     52%    +1.534
+    followthrough_exit        1    0.405   -0.311    -77%    +0.716
+
+  Winner Giveback: avg +1.107R (range 0.132 to 3.291)
+  Losers with positive MFE: 9/10 (avg peak 0.415R before reversal)
+
+══════════════════════════════════════════════════════════════════════
+  4. Stop Calibration
+══════════════════════════════════════════════════════════════════════
+  Stop exits: 19/24 (79%)
+      n=19, WR=52.6%, Mean R=+0.177, Median R=+0.048, PF=1.86, Total R=+3.37
+    Avg MAE at stop: -0.234R
+    Median MAE:      -0.134R
+
+  Non-stop exits: 5/24
+      n=5, WR=80.0%, Mean R=+1.724, Median R=+1.972, PF=34.02, Total R=+8.62
+
+  MAE Distribution (stop tightness check):
+    MAE <= -1.0R:  0% of trades
+    MAE <= -0.5R:  17% of trades
+    → Stops rarely hit -1R but many stop exits — consider if trailing is too tight
+
+══════════════════════════════════════════════════════════════════════
+  14. Trade Duration Analysis
+══════════════════════════════════════════════════════════════════════
+  Bars held:  avg=10.2, median=4, range=[0, 56]
+  Hours:      avg=2.6h, median=1.0h
+
+  Duration Buckets:
+    ≤2 bars   : n=6, WR=67%, avg R=-0.190
+    3-5 bars  : n=7, WR=14%, avg R=-0.170
+    >5 bars   : n=11, WR=82%, avg R=+1.302
+
+══════════════════════════════════════════════════════════════════════
+  VERDICT & RECOMMENDATIONS
+══════════════════════════════════════════════════════════════════════
+  Net liquidation P&L: $1,236.32 (+12.36%)
+  Realized closed-trade P&L: $1,236.32
+
+  STRENGTHS:
+    + Strong profit factor (4.32)
+    + Good expectancy (+0.500R)
+
+  WEAKNESSES:
+    - Low sample size (n=24) — results not statistically robust
+    - High giveback (+1.107R avg) — exits too late or trail too slow
+
+  RECOMMENDATIONS:
+    → Extend data period to increase sample size before drawing conclusions

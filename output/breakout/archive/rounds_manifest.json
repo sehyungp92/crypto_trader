@@ -1,0 +1,64 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "timestamp": "2026-04-21T03:01:11.612576+00:00",
+      "mutations_count": 3,
+      "mutations": {
+        "profile.lookback_bars": 36,
+        "risk.risk_pct_b": 0.02645,
+        "exits.tp1_r": 1.0
+      },
+      "total_trades": 20.0,
+      "win_rate": 50.0,
+      "profit_factor": 1.7913531409883217,
+      "max_drawdown_pct": 6.934357645132899,
+      "sharpe_ratio": 1.7021378144512982,
+      "calmar_ratio": 1.2173373215310501,
+      "net_return_pct": 8.441452362264444
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-04-21T03:42:51.331955+00:00",
+      "mutations_count": 3,
+      "mutations": {
+        "setup.body_ratio_min": 0.55,
+        "confirmation.retest_max_bars": 3,
+        "trail.trail_buffer_tight": 0.1
+      },
+      "total_trades": 14.0,
+      "win_rate": 57.14285714285714,
+      "profit_factor": 3.4867760007754645,
+      "max_drawdown_pct": 4.117762015658249,
+      "sharpe_ratio": 2.685135943564964,
+      "calmar_ratio": 3.3631675031973653,
+      "net_return_pct": 13.848723396962303
+    },
+    {
+      "round": 3,
+      "timestamp": "2026-04-21T09:28:58.684302+00:00",
+      "mutations_count": 12,
+      "mutations": {
+        "exits.tp1_frac": 0.25,
+        "trail.trail_buffer_tight": 0.09,
+        "setup.relaxed_body_enabled": true,
+        "setup.relaxed_body_min": 0.35,
+        "setup.relaxed_body_min_confluences": 5,
+        "setup.relaxed_body_min_room_r": 1.4,
+        "setup.relaxed_body_require_volume_surge": true,
+        "setup.relaxed_body_risk_scale": 0.5,
+        "symbol_filter.btc_relaxed_body_direction": "both",
+        "symbol_filter.eth_relaxed_body_direction": "long_only",
+        "symbol_filter.sol_relaxed_body_direction": "short_only",
+        "balance.max_zone_age_bars": 30
+      },
+      "total_trades": 17.0,
+      "win_rate": 58.82352941176471,
+      "profit_factor": 3.516445295886729,
+      "max_drawdown_pct": 4.117762015658249,
+      "sharpe_ratio": 2.9466486019333233,
+      "calmar_ratio": 4.661703820252063,
+      "net_return_pct": 19.19578691928289
+    }
+  ]
+}

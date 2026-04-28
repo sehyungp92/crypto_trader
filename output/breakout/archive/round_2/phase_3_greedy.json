@@ -1,0 +1,30 @@
+{
+  "accepted": [
+    "trail_tight_010"
+  ],
+  "rejected": [
+    "quick_exit_on",
+    "quick_exit_stack",
+    "quick_exit_bars_6",
+    "trail_act_r_025",
+    "trail_act_r_035",
+    "trail_act_bars_3",
+    "trail_act_bars_4",
+    "trail_tight_015",
+    "trail_tight_020",
+    "structure_trail_off",
+    "tp1_frac_025",
+    "tp1_frac_040",
+    "be_buffer_010",
+    "be_buffer_020",
+    "be_buffer_035",
+    "time_stop_reduce",
+    "time_stop_12",
+    "stop_use_farther_off",
+    "stop_atr_08"
+  ],
+  "final_score": 0.7937209655070969,
+  "base_score": 0.7893711771847399,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

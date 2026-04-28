@@ -1,0 +1,23 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_trail_buffer_tight_0_038",
+    "finetune_trail_buffer_tight_0_042",
+    "finetune_tp1_frac_0_19",
+    "finetune_tp1_frac_0_21",
+    "finetune_max_zone_age_bars_34",
+    "finetune_max_zone_age_bars_38",
+    "finetune_relaxed_body_min_0_3325",
+    "finetune_relaxed_body_min_0_3675",
+    "finetune_relaxed_body_min_room_r_1_33",
+    "finetune_relaxed_body_min_room_r_1_47",
+    "finetune_body_ratio_min_0_6175",
+    "finetune_body_ratio_min_0_6825",
+    "finetune_lookback_bars_36",
+    "finetune_lookback_bars_40"
+  ],
+  "final_score": 0.88309067922354,
+  "base_score": 0.88309067922354,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,370 @@
+{
+  "description": "Breakout round 2 phased auto run seeded from breakout round_1 and optimized for stronger signal discrimination, higher capture efficiency, and controlled trade-frequency expansion.",
+  "symbols": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ],
+  "max_workers": 2,
+  "window": {
+    "common_start_utc": "2026-01-04T06:30:00+00:00",
+    "common_end_utc": "2026-04-20T16:00:00+00:00",
+    "start_date": "2026-01-04",
+    "end_date": "2026-04-20"
+  },
+  "immutable_scoring_weights": {
+    "coverage": 0.25,
+    "returns": 0.2,
+    "edge": 0.18,
+    "capture": 0.15,
+    "sharpe": 0.12,
+    "risk": 0.1
+  },
+  "immutable_scoring_ceilings": {
+    "coverage": 24.0,
+    "returns": 12.0,
+    "edge": 2.5,
+    "sharpe": 2.0,
+    "risk": 12.0
+  },
+  "hard_rejects": {
+    "total_trades": {
+      "operator": ">=",
+      "threshold": 14.0
+    },
+    "profit_factor": {
+      "operator": ">=",
+      "threshold": 1.1
+    },
+    "max_drawdown_pct": {
+      "operator": "<=",
+      "threshold": 12.0
+    }
+  },
+  "phase_gate_criteria": {
+    "1": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 16.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.15
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0
+      }
+    ],
+    "2": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 16.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.15
+      },
+      {
+        "metric": "avg_mae_r",
+        "operator": ">=",
+        "threshold": -0.4
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0
+      }
+    ],
+    "3": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 16.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.58
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0
+      }
+    ],
+    "4": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 18.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.2
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.58
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 12.0
+      }
+    ],
+    "5": [
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 18.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.35
+      },
+      {
+        "metric": "sharpe_ratio",
+        "operator": ">=",
+        "threshold": 1.4
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.58
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 10.0
+      }
+    ],
+    "6": [
+      {
+        "metric": "net_return_pct",
+        "operator": ">=",
+        "threshold": 9.0
+      },
+      {
+        "metric": "total_trades",
+        "operator": ">=",
+        "threshold": 18.0
+      },
+      {
+        "metric": "profit_factor",
+        "operator": ">=",
+        "threshold": 1.35
+      },
+      {
+        "metric": "sharpe_ratio",
+        "operator": ">=",
+        "threshold": 1.4
+      },
+      {
+        "metric": "exit_efficiency",
+        "operator": ">=",
+        "threshold": 0.58
+      },
+      {
+        "metric": "max_drawdown_pct",
+        "operator": "<=",
+        "threshold": 10.0
+      }
+    ]
+  },
+  "baseline_strategy": {
+    "m30_indicators": {
+      "ema_fast": 20,
+      "ema_mid": 50,
+      "ema_slow": 100,
+      "adx_period": 14,
+      "atr_period": 14,
+      "rsi_period": 14,
+      "volume_ma_period": 20,
+      "atr_avg_period": 20
+    },
+    "h4_indicators": {
+      "ema_fast": 20,
+      "ema_mid": 50,
+      "ema_slow": 50,
+      "adx_period": 14,
+      "atr_period": 14,
+      "rsi_period": 14,
+      "volume_ma_period": 20,
+      "atr_avg_period": 20
+    },
+    "profile": {
+      "lookback_bars": 36,
+      "num_bins": 50,
+      "value_area_pct": 0.7,
+      "hvn_threshold_pct": 1.5,
+      "lvn_threshold_pct": 0.5,
+      "recalc_interval_bars": 2,
+      "min_bars": 20
+    },
+    "balance": {
+      "min_bars_in_zone": 6,
+      "zone_width_atr": 1.2,
+      "min_touches": 2,
+      "max_zone_age_bars": 24,
+      "require_volume_contraction": false,
+      "contraction_threshold": 0.8,
+      "dedup_atr_frac": 0.3
+    },
+    "context": {
+      "h4_adx_threshold": 12.0,
+      "allow_countertrend": true,
+      "require_ema_alignment": false,
+      "strong_min_adx": 20.0
+    },
+    "setup": {
+      "min_breakout_atr": 0.2,
+      "max_breakout_atr": 2.0,
+      "require_volume_surge": false,
+      "volume_surge_mult": 1.3,
+      "min_lvn_runway_atr": 0.3,
+      "min_confluences_a_plus": 4,
+      "min_confluences_a": 2,
+      "min_confluences_b": 0,
+      "min_room_r_a": 1.8,
+      "min_room_r_b": 1.2,
+      "body_ratio_min": 0.3
+    },
+    "confirmation": {
+      "enable_model1": true,
+      "enable_model2": true,
+      "retest_max_bars": 6,
+      "retest_zone_atr": 0.5,
+      "retest_require_rejection": false,
+      "retest_require_volume_decline": false,
+      "volume_decline_threshold": 0.8,
+      "model1_require_volume": true,
+      "model1_min_volume_mult": 1.0,
+      "model1_require_direction_close": true
+    },
+    "entry": {
+      "model1_entry_on_close": true,
+      "model2_entry_on_close": true,
+      "model2_entry_on_break": false,
+      "max_bars_after_signal": 3
+    },
+    "stops": {
+      "use_balance_edge": true,
+      "use_retest_extreme": true,
+      "use_atr_stop": true,
+      "atr_mult": 1.0,
+      "use_farther": true,
+      "min_stop_atr": 0.8,
+      "buffer_pct": 0.001
+    },
+    "exits": {
+      "tp1_r": 1.0,
+      "tp1_frac": 0.65,
+      "tp2_r": 2.0,
+      "tp2_frac": 0.4,
+      "runner_frac": 0.3,
+      "time_stop_bars": 16,
+      "time_stop_min_progress_r": 0.3,
+      "time_stop_action": "close",
+      "be_after_tp1": true,
+      "be_buffer_r": 0.3,
+      "be_min_bars_above": 2,
+      "invalidation_exit": true,
+      "invalidation_depth_atr": 0.8,
+      "invalidation_min_bars": 3,
+      "quick_exit_enabled": false,
+      "quick_exit_bars": 4,
+      "quick_exit_max_mfe_r": 0.15,
+      "quick_exit_max_r": -0.3
+    },
+    "trail": {
+      "trail_r_adaptive": true,
+      "trail_buffer_wide": 1.5,
+      "trail_buffer_tight": 0.1575,
+      "trail_r_ceiling": 2.0,
+      "trail_activation_r": 0.5,
+      "trail_activation_bars": 6,
+      "structure_trail_enabled": true,
+      "structure_swing_lookback": 5,
+      "ema_trail_period": 20
+    },
+    "risk": {
+      "risk_pct_a_plus": 0.0075,
+      "risk_pct_a": 0.0075,
+      "risk_pct_b": 0.02645,
+      "max_risk_pct": 0.025,
+      "max_leverage_major": 10.0,
+      "max_leverage_alt": 8.0,
+      "min_leverage": 0.1,
+      "major_symbols": [
+        "BTC",
+        "ETH"
+      ]
+    },
+    "limits": {
+      "max_concurrent_positions": 3,
+      "max_daily_loss_pct": 0.015,
+      "max_consecutive_losses": 2,
+      "max_trades_per_day": 4,
+      "max_correlated_risk_pct": 0.0125,
+      "max_weekly_loss_pct": 0.05
+    },
+    "filters": {
+      "session_filter_enabled": false,
+      "session_avoid_hours": [],
+      "funding_filter_enabled": false,
+      "funding_extreme_threshold": 0.001,
+      "oi_filter_enabled": false
+    },
+    "reentry": {
+      "enabled": true,
+      "cooldown_bars": 3,
+      "max_loss_r": 1.5,
+      "max_reentries": 1,
+      "min_confluences_override": 0
+    },
+    "symbol_filter": {
+      "btc_direction": "both",
+      "eth_direction": "both",
+      "sol_direction": "both"
+    },
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "baseline_source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_1\\optimized_config.json",
+  "phase_objectives": {
+    "1": "Improve signal discrimination and remove persistently weak symbol/direction segments.",
+    "2": "Tighten entry quality, especially retest logic, without collapsing trade count.",
+    "3": "Increase realized capture and reduce giveback through faster management.",
+    "4": "Expand trade count only through structural, testable changes.",
+    "5": "Scale returns through sizing only after alpha quality is improved.",
+    "6": "Conservative finetune around accepted mutations."
+  },
+  "score_notes": [
+    "Coverage is co-primary with returns, but leverage cannot dominate because edge, capture, and Sharpe remain material.",
+    "Capture efficiency is explicitly scored to reduce the current winner giveback problem.",
+    "Risk stays a guardrail; phase gates tighten as the run progresses.",
+    "The run starts from the round-1 optimized config and uses the maximum common BTC/ETH/SOL window for comparability."
+  ],
+  "assumptions": [
+    "Retained BTC, ETH, and SOL only.",
+    "Used max_workers=2 for reproducibility and resource control.",
+    "Resumes from an existing round_2 phase_state.json if present."
+  ]
+}

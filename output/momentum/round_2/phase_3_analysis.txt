@@ -1,0 +1,26 @@
+======== PHASE 3 ANALYSIS ========
+Recommendation: advance
+Reason: Gate failed after accepted mutations, but the score is intentionally immutable for this round
+Scoring assessment: MISALIGNED
+
+Accepted: 3 experiments
+Final score: 0.7099
+Base score: 0.5790
+Rounds: 4
+
+Strengths: net_return_pct, total_trades, profit_factor, avg_mae_r, max_drawdown_pct
+Diagnostic Gaps: Value-destroying signals (D4) — hammer have negative avg R, Single-trade concentration risk (D3) — risk sizing review needed
+
+Goal Progress:
+  net_return_pct: 11.22 / 12.00 (94%)
+  total_trades: 24.00 / 28.00 (86%)
+  profit_factor: 3.28 / 2.60 (126%)
+  exit_efficiency: 0.44 / 0.55 (80%)
+  avg_mae_r: -0.29 / -0.28 (100%)
+  max_drawdown_pct: 3.40 / 8.00 (200%)
+
+Extra Analysis:
+  confirmation_types: 3
+  positive_confirmations: 2
+  negative_confirmations: 1
+  confluence_levels: 4

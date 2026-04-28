@@ -1,0 +1,11 @@
+{
+  "accepted": [
+    "coverage_bundle_soft",
+    "h1_adx_20"
+  ],
+  "rejected": [],
+  "final_score": 0.8279237786618538,
+  "base_score": 0.7949766638282776,
+  "rounds": 2,
+  "elapsed_seconds": 33.81025767326355
+}

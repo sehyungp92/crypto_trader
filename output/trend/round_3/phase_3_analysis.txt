@@ -1,0 +1,30 @@
+======== PHASE 3 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 1 experiments
+Final score: 0.7963
+Base score: 0.7867
+Rounds: 2
+
+Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+Diagnostic Gaps: Stop-outs dominate (30/38). [D1] Trail/TP may be mis-calibrated.
+
+Goal Progress:
+  net_return_pct: 37.27 / 36.00 (104%)
+  total_trades: 38.00 / 50.00 (76%)
+  profit_factor: 4.87 / 2.20 (200%)
+  max_drawdown_pct: 4.28 / 9.00 (200%)
+  sharpe_ratio: 6.40 / 4.80 (133%)
+  calmar_ratio: 8.71 / 4.80 (181%)
+  exit_efficiency: 0.57 / 0.58 (98%)
+
+Extra Analysis:
+  avg_mfe_r: 1.1647
+  capture_pct: 0.5708
+  giveback_pct: 0.4292
+  exit_reasons:
+    protective_stop: 30
+    scratch_exit: 8
+  avg_bars_held: 18.8158

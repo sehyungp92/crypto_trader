@@ -1,0 +1,39 @@
+{
+  "1": {
+    "name": "Signal Discrimination",
+    "accepted": 1,
+    "final_score": 0.7978581741432245,
+    "gate_passed": true
+  },
+  "last_updated": "2026-04-21T08:30:52.203336+00:00",
+  "2": {
+    "name": "Entry Architecture",
+    "accepted": 0,
+    "final_score": 0.7811145638937993,
+    "gate_passed": true
+  },
+  "3": {
+    "name": "Early Management",
+    "accepted": 1,
+    "final_score": 0.7921807391720943,
+    "gate_passed": true
+  },
+  "4": {
+    "name": "Exit Harvesting",
+    "accepted": 1,
+    "final_score": 0.8259217574638248,
+    "gate_passed": true
+  },
+  "5": {
+    "name": "Regime & Allocation",
+    "accepted": 0,
+    "final_score": 0.836169260756915,
+    "gate_passed": true
+  },
+  "6": {
+    "name": "Risk & Polish",
+    "accepted": 0,
+    "final_score": 0.8361981027292837,
+    "gate_passed": true
+  }
+}

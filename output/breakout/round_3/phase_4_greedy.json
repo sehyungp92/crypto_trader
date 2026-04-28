@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "retest_rejection_on",
+    "retest_volume_decline_on",
+    "retest_zone_035",
+    "retest_bars_4",
+    "entry_ttl_2",
+    "strict_retest_stack",
+    "model2_break_entry",
+    "strict_break_entry"
+  ],
+  "final_score": 0.7835728606186211,
+  "base_score": 0.7835728606186211,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

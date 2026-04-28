@@ -1,0 +1,636 @@
+{
+  "current_phase": 6,
+  "completed_phases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "cumulative_mutations": {
+    "exits.followthrough_exit_enabled": true,
+    "exits.followthrough_peak_r": 0.35,
+    "exits.followthrough_bars": 4,
+    "exits.followthrough_floor_r": 0.0,
+    "exits.followthrough_scope": "inflection",
+    "trail.runner_trail_enabled": true,
+    "trail.runner_trail_scope": "all",
+    "trail.runner_trigger_r": 1.5,
+    "trail.runner_trail_r_basis": "mfe",
+    "trail.runner_trail_buffer_wide": 1.25,
+    "trail.runner_trail_buffer_tight": 0.25,
+    "trail.runner_trail_r_ceiling": 1.25
+  },
+  "phase_metrics": {
+    "1": {
+      "net_profit": 1236.3160656431955,
+      "net_return_pct": 12.363160656431955,
+      "realized_pnl_net": 1236.3160656431915,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 24.0,
+      "win_rate": 58.333333333333336,
+      "avg_winner_r": 1.1616611060141007,
+      "avg_loser_r": -0.42723338374461894,
+      "expectancy_r": 0.4996217352813009,
+      "profit_factor": 4.318012466290225,
+      "max_drawdown_pct": 3.4240029727580787,
+      "max_drawdown_duration": 10472.0,
+      "sharpe_ratio": 4.21090393146582,
+      "sortino_ratio": 5.037117803210535,
+      "calmar_ratio": 3.610733038141398,
+      "avg_bars_held": 10.208333333333334,
+      "avg_mae_r": -0.2594273401228832,
+      "avg_mfe_r": 1.4792402803867588,
+      "exit_efficiency": 0.46702499020780586,
+      "a_setup_win_rate": 50.0,
+      "b_setup_win_rate": 59.09090909090909,
+      "long_win_rate": 57.14285714285714,
+      "short_win_rate": 66.66666666666666,
+      "funding_cost_total": 1.657585607625469,
+      "edge_ratio": 5.701944443041684,
+      "payoff_ratio": 3.084294618778732,
+      "recovery_factor": 3.610733038141398,
+      "max_consecutive_losses": 3.0
+    },
+    "2": {
+      "net_profit": 1242.4635483238471,
+      "net_return_pct": 12.424635483238472,
+      "realized_pnl_net": 1242.4635483238528,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 24.0,
+      "win_rate": 58.333333333333336,
+      "avg_winner_r": 1.1663639136091943,
+      "avg_loser_r": -0.42723338374461894,
+      "expectancy_r": 0.5023650397117722,
+      "profit_factor": 4.334238577071234,
+      "max_drawdown_pct": 3.4240029727580787,
+      "max_drawdown_duration": 10472.0,
+      "sharpe_ratio": 4.219818989602978,
+      "sortino_ratio": 5.060821058405235,
+      "calmar_ratio": 3.628687119167501,
+      "avg_bars_held": 10.208333333333334,
+      "avg_mae_r": -0.2594273401228832,
+      "avg_mfe_r": 1.4792402803867588,
+      "exit_efficiency": 0.46845936636872526,
+      "a_setup_win_rate": 50.0,
+      "b_setup_win_rate": 59.09090909090909,
+      "long_win_rate": 57.14285714285714,
+      "short_win_rate": 66.66666666666666,
+      "funding_cost_total": 1.6575436913101602,
+      "edge_ratio": 5.701944443041684,
+      "payoff_ratio": 3.0958846979080246,
+      "recovery_factor": 3.628687119167501,
+      "max_consecutive_losses": 3.0
+    },
+    "3": {
+      "net_profit": 1242.4635483238471,
+      "net_return_pct": 12.424635483238472,
+      "realized_pnl_net": 1242.4635483238528,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 24.0,
+      "win_rate": 58.333333333333336,
+      "avg_winner_r": 1.1663639136091943,
+      "avg_loser_r": -0.42723338374461894,
+      "expectancy_r": 0.5023650397117722,
+      "profit_factor": 4.334238577071234,
+      "max_drawdown_pct": 3.4240029727580787,
+      "max_drawdown_duration": 10472.0,
+      "sharpe_ratio": 4.219818989602978,
+      "sortino_ratio": 5.060821058405235,
+      "calmar_ratio": 3.628687119167501,
+      "avg_bars_held": 10.208333333333334,
+      "avg_mae_r": -0.2594273401228832,
+      "avg_mfe_r": 1.4792402803867588,
+      "exit_efficiency": 0.46845936636872526,
+      "a_setup_win_rate": 50.0,
+      "b_setup_win_rate": 59.09090909090909,
+      "long_win_rate": 57.14285714285714,
+      "short_win_rate": 66.66666666666666,
+      "funding_cost_total": 1.6575436913101602,
+      "edge_ratio": 5.701944443041684,
+      "payoff_ratio": 3.0958846979080246,
+      "recovery_factor": 3.628687119167501,
+      "max_consecutive_losses": 3.0
+    },
+    "4": {
+      "net_profit": 1242.4635483238471,
+      "net_return_pct": 12.424635483238472,
+      "realized_pnl_net": 1242.4635483238528,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 24.0,
+      "win_rate": 58.333333333333336,
+      "avg_winner_r": 1.1663639136091943,
+      "avg_loser_r": -0.42723338374461894,
+      "expectancy_r": 0.5023650397117722,
+      "profit_factor": 4.334238577071234,
+      "max_drawdown_pct": 3.4240029727580787,
+      "max_drawdown_duration": 10472.0,
+      "sharpe_ratio": 4.219818989602978,
+      "sortino_ratio": 5.060821058405235,
+      "calmar_ratio": 3.628687119167501,
+      "avg_bars_held": 10.208333333333334,
+      "avg_mae_r": -0.2594273401228832,
+      "avg_mfe_r": 1.4792402803867588,
+      "exit_efficiency": 0.46845936636872526,
+      "a_setup_win_rate": 50.0,
+      "b_setup_win_rate": 59.09090909090909,
+      "long_win_rate": 57.14285714285714,
+      "short_win_rate": 66.66666666666666,
+      "funding_cost_total": 1.6575436913101602,
+      "edge_ratio": 5.701944443041684,
+      "payoff_ratio": 3.0958846979080246,
+      "recovery_factor": 3.628687119167501,
+      "max_consecutive_losses": 3.0
+    },
+    "5": {
+      "net_profit": 1242.4635483238471,
+      "net_return_pct": 12.424635483238472,
+      "realized_pnl_net": 1242.4635483238528,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 24.0,
+      "win_rate": 58.333333333333336,
+      "avg_winner_r": 1.1663639136091943,
+      "avg_loser_r": -0.42723338374461894,
+      "expectancy_r": 0.5023650397117722,
+      "profit_factor": 4.334238577071234,
+      "max_drawdown_pct": 3.4240029727580787,
+      "max_drawdown_duration": 10472.0,
+      "sharpe_ratio": 4.219818989602978,
+      "sortino_ratio": 5.060821058405235,
+      "calmar_ratio": 3.628687119167501,
+      "avg_bars_held": 10.208333333333334,
+      "avg_mae_r": -0.2594273401228832,
+      "avg_mfe_r": 1.4792402803867588,
+      "exit_efficiency": 0.46845936636872526,
+      "a_setup_win_rate": 50.0,
+      "b_setup_win_rate": 59.09090909090909,
+      "long_win_rate": 57.14285714285714,
+      "short_win_rate": 66.66666666666666,
+      "funding_cost_total": 1.6575436913101602,
+      "edge_ratio": 5.701944443041684,
+      "payoff_ratio": 3.0958846979080246,
+      "recovery_factor": 3.628687119167501,
+      "max_consecutive_losses": 3.0
+    }
+  },
+  "round_name": "",
+  "scoring_retries": {},
+  "diagnostic_retries": {},
+  "retry_count": {},
+  "phase_results": {
+    "1": {
+      "focus": "Proof Lock & Failure Control",
+      "base_mutations": {},
+      "final_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection"
+      },
+      "base_score": 0.6354586013596712,
+      "final_score": 0.6496008288884513,
+      "kept_features": [
+        "followthrough_flat_inflection_only"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "followthrough_flat_inflection_only",
+          "best_score": 0.6496008288884513,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "proof_lock_flat",
+          "best_score": 0.6501968224090484,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 1236.3160656431955,
+        "net_return_pct": 12.363160656431955,
+        "realized_pnl_net": 1236.3160656431915,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 24.0,
+        "win_rate": 58.333333333333336,
+        "avg_winner_r": 1.1616611060141007,
+        "avg_loser_r": -0.42723338374461894,
+        "expectancy_r": 0.4996217352813009,
+        "profit_factor": 4.318012466290225,
+        "max_drawdown_pct": 3.4240029727580787,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 4.21090393146582,
+        "sortino_ratio": 5.037117803210535,
+        "calmar_ratio": 3.610733038141398,
+        "avg_bars_held": 10.208333333333334,
+        "avg_mae_r": -0.2594273401228832,
+        "avg_mfe_r": 1.4792402803867588,
+        "exit_efficiency": 0.46702499020780586,
+        "a_setup_win_rate": 50.0,
+        "b_setup_win_rate": 59.09090909090909,
+        "long_win_rate": 57.14285714285714,
+        "short_win_rate": 66.66666666666666,
+        "funding_cost_total": 1.657585607625469,
+        "edge_ratio": 5.701944443041684,
+        "payoff_ratio": 3.084294618778732,
+        "recovery_factor": 3.610733038141398,
+        "max_consecutive_losses": 3.0
+      },
+      "accepted_count": 1,
+      "new_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection"
+      },
+      "suggested_experiments": []
+    },
+    "2": {
+      "focus": "Trail Regime",
+      "base_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection"
+      },
+      "final_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "base_score": 0.6496008288884513,
+      "final_score": 0.6514725815406749,
+      "kept_features": [
+        "runner_trail_all_150_mild"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "runner_trail_all_150_mild",
+          "best_score": 0.6514725815406749,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "runner_trail_all_200_mild",
+          "best_score": 0.6507948466972736,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 1242.4635483238471,
+        "net_return_pct": 12.424635483238472,
+        "realized_pnl_net": 1242.4635483238528,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 24.0,
+        "win_rate": 58.333333333333336,
+        "avg_winner_r": 1.1663639136091943,
+        "avg_loser_r": -0.42723338374461894,
+        "expectancy_r": 0.5023650397117722,
+        "profit_factor": 4.334238577071234,
+        "max_drawdown_pct": 3.4240029727580787,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 4.219818989602978,
+        "sortino_ratio": 5.060821058405235,
+        "calmar_ratio": 3.628687119167501,
+        "avg_bars_held": 10.208333333333334,
+        "avg_mae_r": -0.2594273401228832,
+        "avg_mfe_r": 1.4792402803867588,
+        "exit_efficiency": 0.46845936636872526,
+        "a_setup_win_rate": 50.0,
+        "b_setup_win_rate": 59.09090909090909,
+        "long_win_rate": 57.14285714285714,
+        "short_win_rate": 66.66666666666666,
+        "funding_cost_total": 1.6575436913101602,
+        "edge_ratio": 5.701944443041684,
+        "payoff_ratio": 3.0958846979080246,
+        "recovery_factor": 3.628687119167501,
+        "max_consecutive_losses": 3.0
+      },
+      "accepted_count": 1,
+      "new_mutations": {
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "suggested_experiments": [
+        "SUGG_TRAIL_TIGHT_0_2",
+        "SUGG_TP1_R_0_9"
+      ]
+    },
+    "3": {
+      "focus": "Scale-Out Architecture",
+      "base_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "final_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "base_score": 0.6514725815406749,
+      "final_score": 0.6514725815406749,
+      "kept_features": [],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "tp_100_15__220_20__be1_010",
+          "best_score": 0.6403357237879411,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 1242.4635483238471,
+        "net_return_pct": 12.424635483238472,
+        "realized_pnl_net": 1242.4635483238528,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 24.0,
+        "win_rate": 58.333333333333336,
+        "avg_winner_r": 1.1663639136091943,
+        "avg_loser_r": -0.42723338374461894,
+        "expectancy_r": 0.5023650397117722,
+        "profit_factor": 4.334238577071234,
+        "max_drawdown_pct": 3.4240029727580787,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 4.219818989602978,
+        "sortino_ratio": 5.060821058405235,
+        "calmar_ratio": 3.628687119167501,
+        "avg_bars_held": 10.208333333333334,
+        "avg_mae_r": -0.2594273401228832,
+        "avg_mfe_r": 1.4792402803867588,
+        "exit_efficiency": 0.46845936636872526,
+        "a_setup_win_rate": 50.0,
+        "b_setup_win_rate": 59.09090909090909,
+        "long_win_rate": 57.14285714285714,
+        "short_win_rate": 66.66666666666666,
+        "funding_cost_total": 1.6575436913101602,
+        "edge_ratio": 5.701944443041684,
+        "payoff_ratio": 3.0958846979080246,
+        "recovery_factor": 3.628687119167501,
+        "max_consecutive_losses": 3.0
+      },
+      "accepted_count": 0,
+      "new_mutations": {},
+      "suggested_experiments": []
+    },
+    "4": {
+      "focus": "Exit Trigger Calibration",
+      "base_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "final_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "base_score": 0.6514725815406749,
+      "final_score": 0.6514725815406749,
+      "kept_features": [],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "reversal_0_8atr_1_3vol",
+          "best_score": 0.6514725815406749,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 1242.4635483238471,
+        "net_return_pct": 12.424635483238472,
+        "realized_pnl_net": 1242.4635483238528,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 24.0,
+        "win_rate": 58.333333333333336,
+        "avg_winner_r": 1.1663639136091943,
+        "avg_loser_r": -0.42723338374461894,
+        "expectancy_r": 0.5023650397117722,
+        "profit_factor": 4.334238577071234,
+        "max_drawdown_pct": 3.4240029727580787,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 4.219818989602978,
+        "sortino_ratio": 5.060821058405235,
+        "calmar_ratio": 3.628687119167501,
+        "avg_bars_held": 10.208333333333334,
+        "avg_mae_r": -0.2594273401228832,
+        "avg_mfe_r": 1.4792402803867588,
+        "exit_efficiency": 0.46845936636872526,
+        "a_setup_win_rate": 50.0,
+        "b_setup_win_rate": 59.09090909090909,
+        "long_win_rate": 57.14285714285714,
+        "short_win_rate": 66.66666666666666,
+        "funding_cost_total": 1.6575436913101602,
+        "edge_ratio": 5.701944443041684,
+        "payoff_ratio": 3.0958846979080246,
+        "recovery_factor": 3.628687119167501,
+        "max_consecutive_losses": 3.0
+      },
+      "accepted_count": 0,
+      "new_mutations": {},
+      "suggested_experiments": []
+    },
+    "5": {
+      "focus": "Finetune",
+      "base_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "final_mutations": {
+        "exits.followthrough_exit_enabled": true,
+        "exits.followthrough_peak_r": 0.35,
+        "exits.followthrough_bars": 4,
+        "exits.followthrough_floor_r": 0.0,
+        "exits.followthrough_scope": "inflection",
+        "trail.runner_trail_enabled": true,
+        "trail.runner_trail_scope": "all",
+        "trail.runner_trigger_r": 1.5,
+        "trail.runner_trail_r_basis": "mfe",
+        "trail.runner_trail_buffer_wide": 1.25,
+        "trail.runner_trail_buffer_tight": 0.25,
+        "trail.runner_trail_r_ceiling": 1.25
+      },
+      "base_score": 0.6514725815406749,
+      "final_score": 0.6514725815406749,
+      "kept_features": [],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "finetune_runner_trail_buffer_tight_0_225",
+          "best_score": 0.6524086066864007,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 1242.4635483238471,
+        "net_return_pct": 12.424635483238472,
+        "realized_pnl_net": 1242.4635483238528,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 24.0,
+        "win_rate": 58.333333333333336,
+        "avg_winner_r": 1.1663639136091943,
+        "avg_loser_r": -0.42723338374461894,
+        "expectancy_r": 0.5023650397117722,
+        "profit_factor": 4.334238577071234,
+        "max_drawdown_pct": 3.4240029727580787,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 4.219818989602978,
+        "sortino_ratio": 5.060821058405235,
+        "calmar_ratio": 3.628687119167501,
+        "avg_bars_held": 10.208333333333334,
+        "avg_mae_r": -0.2594273401228832,
+        "avg_mfe_r": 1.4792402803867588,
+        "exit_efficiency": 0.46845936636872526,
+        "a_setup_win_rate": 50.0,
+        "b_setup_win_rate": 59.09090909090909,
+        "long_win_rate": 57.14285714285714,
+        "short_win_rate": 66.66666666666666,
+        "funding_cost_total": 1.6575436913101602,
+        "edge_ratio": 5.701944443041684,
+        "payoff_ratio": 3.0958846979080246,
+        "recovery_factor": 3.628687119167501,
+        "max_consecutive_losses": 3.0
+      },
+      "accepted_count": 0,
+      "new_mutations": {},
+      "suggested_experiments": [
+        "SUGG_RISK_B_0_014",
+        "SUGG_CORR_RISK_0_02"
+      ]
+    }
+  },
+  "phase_gate_results": {
+    "1": {
+      "passed": false,
+      "failure_reasons": [
+        "exit_efficiency: 0.4670 >= 0.4900 FAILED"
+      ],
+      "failure_category": "scoring_ineffective"
+    },
+    "2": {
+      "passed": false,
+      "failure_reasons": [
+        "exit_efficiency: 0.4685 >= 0.5100 FAILED"
+      ],
+      "failure_category": "scoring_ineffective"
+    },
+    "3": {
+      "passed": false,
+      "failure_reasons": [
+        "exit_efficiency: 0.4685 >= 0.5200 FAILED"
+      ],
+      "failure_category": "candidates_exhausted"
+    },
+    "4": {
+      "passed": false,
+      "failure_reasons": [
+        "exit_efficiency: 0.4685 >= 0.5300 FAILED"
+      ],
+      "failure_category": "candidates_exhausted"
+    },
+    "5": {
+      "passed": false,
+      "failure_reasons": [
+        "exit_efficiency: 0.4685 >= 0.5400 FAILED",
+        "net_return_pct: 12.4246 >= 12.5000 FAILED"
+      ],
+      "failure_category": "candidates_exhausted"
+    }
+  },
+  "phase_timestamps": {
+    "1": {
+      "started": "2026-04-22T00:49:37.448063+00:00",
+      "completed": "2026-04-22T00:51:02.281480+00:00"
+    },
+    "2": {
+      "started": "2026-04-22T00:51:02.289529+00:00",
+      "completed": "2026-04-22T00:52:39.598876+00:00"
+    },
+    "3": {
+      "started": "2026-04-22T00:52:39.617969+00:00",
+      "completed": "2026-04-22T00:53:07.500648+00:00"
+    },
+    "4": {
+      "started": "2026-04-22T00:53:07.517644+00:00",
+      "completed": "2026-04-22T00:53:34.657438+00:00"
+    },
+    "5": {
+      "started": "2026-04-22T00:53:34.679428+00:00",
+      "completed": "2026-04-22T00:54:24.656493+00:00"
+    }
+  }
+}

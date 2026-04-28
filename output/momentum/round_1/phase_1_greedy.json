@@ -1,0 +1,24 @@
+{
+  "accepted": [
+    "room_b_13"
+  ],
+  "rejected": [
+    "vol_gate_105",
+    "vol_gate_110",
+    "vol_gate_120",
+    "weak_gate_3",
+    "micro_shift_4",
+    "micro_shift_5",
+    "min_b_conf_2",
+    "room_b_14",
+    "reject_extended_reaction_on",
+    "outside_session_require_a",
+    "reentry_conf_1",
+    "reentry_conf_2",
+    "rsi_pullback_35"
+  ],
+  "final_score": 0.47791523652999357,
+  "base_score": 0.4753785081242922,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

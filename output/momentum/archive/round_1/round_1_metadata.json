@@ -1,0 +1,308 @@
+{
+  "window": {
+    "common_start_utc": "2026-02-25T08:15:00+00:00",
+    "common_end_utc": "2026-04-20T16:00:00+00:00",
+    "start_date": "2026-02-25",
+    "end_date": "2026-04-20"
+  },
+  "scoring_weights": {
+    "returns": 0.4,
+    "edge": 0.25,
+    "coverage": 0.15,
+    "calmar": 0.1,
+    "capture": 0.1
+  },
+  "scoring_ceilings": {
+    "returns": 20.0,
+    "edge": 3.5,
+    "coverage": 36.0,
+    "calmar": 5.0
+  },
+  "hard_rejects": {
+    "max_drawdown_pct": [
+      "<=",
+      50.0
+    ],
+    "total_trades": [
+      ">=",
+      12.0
+    ],
+    "profit_factor": [
+      ">=",
+      0.8
+    ]
+  },
+  "source_scores": {
+    "round_3_momentum": {
+      "score": 0.7749795860868173,
+      "rejected": false,
+      "reject_reason": "",
+      "metrics": {
+        "net_profit": 1708.5347250160212,
+        "net_return_pct": 17.08534725016021,
+        "realized_pnl_net": 1708.5347250160103,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 21.0,
+        "win_rate": 57.14285714285714,
+        "avg_winner_r": 1.3579217793725753,
+        "avg_loser_r": -0.2921506280492984,
+        "expectancy_r": 0.6507478904774866,
+        "profit_factor": 4.079467900304931,
+        "max_drawdown_pct": 4.299298069741326,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 5.301406500425368,
+        "sortino_ratio": 3.6712945793050724,
+        "calmar_ratio": 3.973985281552758,
+        "avg_bars_held": 12.523809523809524,
+        "avg_mae_r": -0.32855695185336636,
+        "avg_mfe_r": 1.4454666862876937,
+        "exit_efficiency": 0.4633094257363415,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 57.14285714285714,
+        "long_win_rate": 56.25,
+        "short_win_rate": 60.0,
+        "funding_cost_total": 3.341110307380827,
+        "edge_ratio": 4.399440274004002,
+        "payoff_ratio": 3.059600925228699,
+        "recovery_factor": 3.973985281552758,
+        "max_consecutive_losses": 4.0
+      }
+    },
+    "round_3": {
+      "score": 0.732454894573669,
+      "rejected": false,
+      "reject_reason": "",
+      "metrics": {
+        "net_profit": 1475.2825065574343,
+        "net_return_pct": 14.752825065574344,
+        "realized_pnl_net": 1475.2825065574261,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 21.0,
+        "win_rate": 66.66666666666666,
+        "avg_winner_r": 1.180357800098406,
+        "avg_loser_r": -0.43711751493599327,
+        "expectancy_r": 0.6411993617536064,
+        "profit_factor": 3.7502896036828486,
+        "max_drawdown_pct": 1.8984960169454552,
+        "max_drawdown_duration": 10472.0,
+        "sharpe_ratio": 5.749785864879547,
+        "sortino_ratio": 36.10533226581728,
+        "calmar_ratio": 7.77079590048895,
+        "avg_bars_held": 11.571428571428571,
+        "avg_mae_r": -0.3373859784228703,
+        "avg_mfe_r": 1.415202540002602,
+        "exit_efficiency": 0.5344913585626432,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 66.66666666666666,
+        "long_win_rate": 61.111111111111114,
+        "short_win_rate": 100.0,
+        "funding_cost_total": 4.782490132325252,
+        "edge_ratio": 4.194609825275033,
+        "payoff_ratio": 1.875144801841424,
+        "recovery_factor": 7.77079590048895,
+        "max_consecutive_losses": 2.0
+      }
+    }
+  },
+  "candidate_union": [
+    {
+      "name": "shared_trail_trail_buffer_tight__0_2",
+      "mutation": {
+        "trail.trail_buffer_tight": 0.2
+      },
+      "sources": [
+        "round_3_momentum",
+        "round_3"
+      ],
+      "shared": true,
+      "order_rank": [
+        10,
+        0
+      ]
+    },
+    {
+      "name": "r3m_trail_trail_buffer_wide__2_2",
+      "mutation": {
+        "trail.trail_buffer_wide": 2.2
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        11,
+        0
+      ]
+    },
+    {
+      "name": "r3_trail_trail_buffer_wide__2",
+      "mutation": {
+        "trail.trail_buffer_wide": 2.0
+      },
+      "sources": [
+        "round_3"
+      ],
+      "shared": false,
+      "order_rank": [
+        11,
+        1
+      ]
+    },
+    {
+      "name": "r3_trail_trail_activation_bars__5",
+      "mutation": {
+        "trail.trail_activation_bars": 5
+      },
+      "sources": [
+        "round_3"
+      ],
+      "shared": false,
+      "order_rank": [
+        12,
+        1
+      ]
+    },
+    {
+      "name": "r3_trail_trail_r_ceiling__1_2",
+      "mutation": {
+        "trail.trail_r_ceiling": 1.2000000000000002
+      },
+      "sources": [
+        "round_3"
+      ],
+      "shared": false,
+      "order_rank": [
+        13,
+        1
+      ]
+    },
+    {
+      "name": "r3m_exits_soft_time_stop_min_r__0_3",
+      "mutation": {
+        "exits.soft_time_stop_min_r": 0.3
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        20,
+        0
+      ]
+    },
+    {
+      "name": "r3m_exits_tp2_frac__0_4",
+      "mutation": {
+        "exits.tp2_frac": 0.4
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        21,
+        0
+      ]
+    },
+    {
+      "name": "r3_exits_tp2_frac__0_5",
+      "mutation": {
+        "exits.tp2_frac": 0.5
+      },
+      "sources": [
+        "round_3"
+      ],
+      "shared": false,
+      "order_rank": [
+        21,
+        1
+      ]
+    },
+    {
+      "name": "r3m_setup_fib_high__0_5",
+      "mutation": {
+        "setup.fib_high": 0.5
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        30,
+        0
+      ]
+    },
+    {
+      "name": "r3_setup_min_confluences_b__1",
+      "mutation": {
+        "setup.min_confluences_b": 1
+      },
+      "sources": [
+        "round_3"
+      ],
+      "shared": false,
+      "order_rank": [
+        31,
+        1
+      ]
+    },
+    {
+      "name": "r3m_bias_min_1h_conditions__1",
+      "mutation": {
+        "bias.min_1h_conditions": 1
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        40,
+        0
+      ]
+    },
+    {
+      "name": "r3m_reentry_enabled__false",
+      "mutation": {
+        "reentry.enabled": false
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        41,
+        0
+      ]
+    },
+    {
+      "name": "r3m_risk_risk_pct_b__0_014",
+      "mutation": {
+        "risk.risk_pct_b": 0.014
+      },
+      "sources": [
+        "round_3_momentum"
+      ],
+      "shared": false,
+      "order_rank": [
+        50,
+        0
+      ]
+    },
+    {
+      "name": "r3_risk_risk_pct_b__0_012",
+      "mutation": {
+        "risk.risk_pct_b": 0.012
+      },
+      "sources": [
+        "round_3"
+      ],
+      "shared": false,
+      "order_rank": [
+        50,
+        1
+      ]
+    }
+  ]
+}

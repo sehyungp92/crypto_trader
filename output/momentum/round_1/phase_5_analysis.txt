@@ -1,0 +1,28 @@
+======== PHASE 5 ANALYSIS ========
+Recommendation: advance
+Reason: Gate failed after accepted mutations, but the score is intentionally immutable for this round
+Scoring assessment: MISALIGNED
+
+Accepted: 1 experiments
+Final score: 0.5315
+Base score: 0.4794
+Rounds: 2
+
+Strengths: total_trades, profit_factor, avg_mae_r, max_drawdown_pct
+Weaknesses: net_return_pct
+Diagnostic Gaps: Single-trade concentration risk (D3) — risk sizing review needed, Direction imbalance (D5) — one side has negative edge
+
+Goal Progress:
+  net_return_pct: 6.39 / 20.00 (32%)
+  total_trades: 24.00 / 24.00 (100%)
+  profit_factor: 2.43 / 2.50 (97%)
+  exit_efficiency: 0.44 / 0.55 (79%)
+  avg_mae_r: -0.29 / -0.30 (100%)
+  max_drawdown_pct: 2.94 / 10.00 (200%)
+
+Extra Analysis:
+  max_drawdown_pct: 2.9433
+  total_trades: 24.0000
+  concentration_top1: 45.2740
+  long_count: 21
+  short_count: 3

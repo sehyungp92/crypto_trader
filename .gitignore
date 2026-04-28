@@ -2,9 +2,6 @@
 data/
 *.parquet
 
-# Output (backtest results, optimization rounds, reports)
-output/
-
 # Documentation (generated/internal design docs)
 docs/
 

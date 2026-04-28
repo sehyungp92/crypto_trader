@@ -1,0 +1,30 @@
+{
+  "accepted": [
+    "runner_trail_all_150_mild"
+  ],
+  "rejected": [
+    "ema20_tight025",
+    "ema25_tight025",
+    "ema30_wide175",
+    "activate4_r025",
+    "activate6_r035",
+    "chandelier20_2_5",
+    "chandelier24_2_75",
+    "hybrid_ema25_ch20_2_75",
+    "hybrid_ema20_ch18_2_5",
+    "ema25_floor_100_060",
+    "ema25_mfe_basis",
+    "ema25_mfe_basis_ceiling125",
+    "ema25_mfe_basis_activate4_r025",
+    "ema25_mfe_basis_buffer_125_020",
+    "ema25_mfe_basis_buffer_110_015_activate4",
+    "runner_trail_all_200_mild",
+    "runner_trail_inflection_150_mild",
+    "runner_trail_continuation_150_mild",
+    "runner_trail_all_150_tight"
+  ],
+  "final_score": 0.6514725815406749,
+  "base_score": 0.6496008288884513,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

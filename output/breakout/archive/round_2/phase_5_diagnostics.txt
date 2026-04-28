@@ -1,0 +1,177 @@
+=== Breakout Diagnostics (Phase 5: Risk & Sizing) ===
+Trades: 14, WR: 64%
+
+--- Per-Confirmation Type ---
+  model2_retest: n=5, WR=60%, avg_r=+0.686
+  model1_close: n=9, WR=56%, avg_r=+0.480
+
+--- Per-Asset ---
+  SOL: n=6, WR=33%, avg_r=+0.297
+  ETH: n=5, WR=60%, avg_r=+0.928
+  BTC: n=3, WR=100%, avg_r=+0.442
+
+--- Exit Attribution ---
+  protective_stop: n=14, avg_r=+0.554
+
+--- MFE Capture ---
+  Avg MFE: 1.13R
+  Avg capture: 1%
+  Avg giveback: 0%
+
+--- Direction ---
+  long: n=9, WR=44%, avg_r=+0.532
+  short: n=5, WR=80%, avg_r=+0.593
+
+======================================================================
+  BREAKOUT PHASE 5 DIAGNOSTICS
+  14 realized trades | 0 terminal marks | modules: D3, D6
+======================================================================
+
+══════════════════════════════════════════════════════════════════════
+  1. Overview
+══════════════════════════════════════════════════════════════════════
+  Closed Trades:  14  (W:8 / L:6)
+  Win Rate:       57.1%
+  Profit Factor:  3.49
+  Mean R:         +0.554
+  Median R:       +0.173
+  Total R:        +7.75
+  Avg Hold:       4.0h  (7.9 bars)
+  Realized P&L:   $1,384.87  (+13.85%)
+  Net Liq P&L:    $1,384.87  (+13.85%)
+
+  ⚠ Flags:
+    - LOW SAMPLE (n=14) — statistical significance limited
+
+══════════════════════════════════════════════════════════════════════
+  2. Winner vs Loser Profiles
+══════════════════════════════════════════════════════════════════════
+  Metric                          Winners     Losers      Delta
+  --------------------------------------------------------------
+  Avg R                             1.211     -0.323     +1.534
+  Avg P&L ($)                     242.721    -92.816   +335.537
+  Avg Hold (h)                      4.250      3.583     +0.667
+  Avg Bars Held                     8.500      7.167     +1.333
+  Avg MFE R                         1.642      0.446     +1.197
+  Avg MAE R                        -0.357     -0.308     -0.049
+
+  Setup Grade Distribution:
+    A-grade:  W=0  L=1
+    B-grade:  W=8  L=5
+
+  Confirmation Distribution:
+                 model1_close:  W=5  L=4
+                model2_retest:  W=3  L=2
+
+══════════════════════════════════════════════════════════════════════
+  R-Multiple Distribution
+══════════════════════════════════════════════════════════════════════
+          < -1.0 |   1 ██████████
+    -1.0 to -0.5 |   0 
+       -0.5 to 0 |   4 ████████████████████████████████████████
+        0 to 0.5 |   3 ██████████████████████████████
+      0.5 to 1.0 |   3 ██████████████████████████████
+      1.0 to 2.0 |   1 ██████████
+           > 2.0 |   2 ████████████████████
+
+  Mean: +0.554  Median: +0.173  Std: 1.098  Skew: +1.14
+
+══════════════════════════════════════════════════════════════════════
+  7. R-Curve Drawdown
+══════════════════════════════════════════════════════════════════════
+  Max R-drawdown:  -1.36R  (trade #3)
+  Peak before DD:  -0.01R
+  Final cum R:     +7.75R
+  Recovery:        1 trades to recover from max DD
+
+  Drawdown Episodes (> 0.3R):
+    Trades #2-#4: -1.36R over 2 trades
+    Trades #12-#13: -0.30R over 1 trades
+
+══════════════════════════════════════════════════════════════════════
+  6. Streak Analysis
+══════════════════════════════════════════════════════════════════════
+  Max win streak:   3  (best run: +3.59R)
+  Max loss streak:  3  (worst run: -1.36R)
+  Trend: DEGRADING (1st half: +0.597R, 2nd half: +0.510R)
+
+  Sequence: LLLWLWWWLWWLWW
+
+══════════════════════════════════════════════════════════════════════
+  21. Risk & Sizing Analysis
+══════════════════════════════════════════════════════════════════════
+  Position value at entry:
+    Avg:    $ 12,295.46
+    Median: $ 10,923.47
+    Range:  $  5,328.58 — $ 26,059.84
+
+  R-Multiple vs Dollar P&L Alignment:
+    1 trade(s) where R and $ P&L disagree:
+      SOL LONG: R=+0.018, P&L=$-3.21
+    R vs $ rank correlation: 0.987 (strong)
+    Worst-3 overlap ($ vs R): 3/3 (sizing consistent)
+
+══════════════════════════════════════════════════════════════════════
+  15. Concentration & Dependency Risk
+══════════════════════════════════════════════════════════════════════
+  Largest single winner: $482.51 (35% of total profit)
+    Symbol: ETH, R=+3.24, Direction: LONG
+  Top 1 trade(s) (1/8 = 12%): $482.51 (35% of total profit)
+  Symbol concentration: ETH contributes $589.43 (43% of total)
+
+  Concentration Risk: MODERATE
+    - single trade = 35% of profit
+
+══════════════════════════════════════════════════════════════════════
+  8. Rolling Expectancy
+══════════════════════════════════════════════════════════════════════
+  Window: 10-trade rolling average
+  Current:  +0.699R
+  Best:     +0.844R  (at trade #13)
+  Worst:    +0.467R  (at trade #10)
+
+  Rolling R sparkline:
+     +0.84 |     █ 
+           |     █ 
+           |     ██
+           |    ███
+           |   ████
+     +0.47 |  █████
+
+══════════════════════════════════════════════════════════════════════
+  18. Friction Analysis (Commission + Funding)
+══════════════════════════════════════════════════════════════════════
+  Total commissions:   $    169.58  (avg $12.11/trade)
+  Total funding:       $      1.80  (avg $0.13/trade)
+  Total friction:      $    171.38
+  Net P&L:             $  1,384.87
+  Gross P&L (pre-fric):$  1,556.25
+  Friction as % of gross: 11.0%
+
+  Per-Symbol Friction:
+    Symbol    n       Comm    Funding      Total
+    --------------------------------------------
+    BTC       3 $    37.99 $     0.09 $    38.08
+    ETH       5 $    65.64 $     1.56 $    67.19
+    SOL       6 $    65.95 $     0.15 $    66.10
+
+  Funding direction: 9 adverse, 5 favorable, 0 neutral
+
+══════════════════════════════════════════════════════════════════════
+  VERDICT & RECOMMENDATIONS
+══════════════════════════════════════════════════════════════════════
+  Net liquidation P&L: $1,384.87 (+13.85%)
+  Realized closed-trade P&L: $1,384.87
+
+  STRENGTHS:
+    + Strong profit factor (3.49)
+    + Good expectancy (+0.554R)
+    + Confluence count is monotonically predictive
+
+  WEAKNESSES:
+    - Low sample size (n=14) — results not statistically robust
+    - Low capture efficiency (-5%) — leaving R on the table
+    - High giveback (+0.576R avg) — exits too late or trail too slow
+
+  RECOMMENDATIONS:
+    → Extend data period to increase sample size before drawing conclusions

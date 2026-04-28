@@ -1,0 +1,735 @@
+{
+  "current_phase": 7,
+  "completed_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "cumulative_mutations": {
+    "setup.use_weighted_confluence": true,
+    "setup.min_setup_score_b": 1.35,
+    "setup.min_setup_score_a": 2.05,
+    "exits.scratch_exit_enabled": true,
+    "exits.scratch_peak_r": 0.3,
+    "exits.scratch_floor_r": 0.05,
+    "exits.scratch_min_bars": 2,
+    "exits.tp2_r": 1.8,
+    "reentry.enabled": true,
+    "reentry.cooldown_bars": 1,
+    "reentry.max_loss_r": 0.5,
+    "reentry.max_reentries": 1,
+    "reentry.min_confluences_override": 2,
+    "reentry.max_wait_bars": 6,
+    "reentry.require_same_direction": true,
+    "reentry.only_after_scratch_exit": true,
+    "reentry.risk_scale": 0.75
+  },
+  "phase_metrics": {
+    "1": {
+      "net_profit": 2094.161003824058,
+      "net_return_pct": 20.94161003824058,
+      "realized_pnl_net": 2094.161003824058,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 19.0,
+      "win_rate": 57.89473684210527,
+      "avg_winner_r": 1.0534779544113686,
+      "avg_loser_r": -0.12768527682761163,
+      "expectancy_r": 0.5561460675739032,
+      "profit_factor": 10.288330979056418,
+      "max_drawdown_pct": 3.6238602085644716,
+      "max_drawdown_duration": 3202.0,
+      "sharpe_ratio": 4.888863683435616,
+      "sortino_ratio": 36.017997730041415,
+      "calmar_ratio": 5.778812877149097,
+      "avg_bars_held": 17.63157894736842,
+      "avg_mae_r": -0.2632197879851336,
+      "avg_mfe_r": 1.1276494648840194,
+      "exit_efficiency": 0.6271843447641486,
+      "a_setup_win_rate": 0.0,
+      "b_setup_win_rate": 57.89473684210527,
+      "long_win_rate": 54.54545454545454,
+      "short_win_rate": 62.5,
+      "funding_cost_total": 2.2239325411615574,
+      "edge_ratio": 4.284060379790701,
+      "payoff_ratio": 7.482422530222848,
+      "recovery_factor": 5.778812877149097,
+      "max_consecutive_losses": 5.0
+    },
+    "2": {
+      "net_profit": 2094.161003824058,
+      "net_return_pct": 20.94161003824058,
+      "realized_pnl_net": 2094.161003824058,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 19.0,
+      "win_rate": 57.89473684210527,
+      "avg_winner_r": 1.0534779544113686,
+      "avg_loser_r": -0.12768527682761163,
+      "expectancy_r": 0.5561460675739032,
+      "profit_factor": 10.288330979056418,
+      "max_drawdown_pct": 3.6238602085644716,
+      "max_drawdown_duration": 3202.0,
+      "sharpe_ratio": 4.888863683435616,
+      "sortino_ratio": 36.017997730041415,
+      "calmar_ratio": 5.778812877149097,
+      "avg_bars_held": 17.63157894736842,
+      "avg_mae_r": -0.2632197879851336,
+      "avg_mfe_r": 1.1276494648840194,
+      "exit_efficiency": 0.6271843447641486,
+      "a_setup_win_rate": 0.0,
+      "b_setup_win_rate": 57.89473684210527,
+      "long_win_rate": 54.54545454545454,
+      "short_win_rate": 62.5,
+      "funding_cost_total": 2.2239325411615574,
+      "edge_ratio": 4.284060379790701,
+      "payoff_ratio": 7.482422530222848,
+      "recovery_factor": 5.778812877149097,
+      "max_consecutive_losses": 5.0
+    },
+    "3": {
+      "net_profit": 2135.3701316107963,
+      "net_return_pct": 21.353701316107962,
+      "realized_pnl_net": 2135.3701316107904,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 19.0,
+      "win_rate": 57.89473684210527,
+      "avg_winner_r": 1.0534779544113686,
+      "avg_loser_r": -0.10452613840985175,
+      "expectancy_r": 0.5658972837498021,
+      "profit_factor": 12.546523050637768,
+      "max_drawdown_pct": 3.4625500100725577,
+      "max_drawdown_duration": 3202.0,
+      "sharpe_ratio": 4.986930183958268,
+      "sortino_ratio": 44.77498040690044,
+      "calmar_ratio": 6.167044881370679,
+      "avg_bars_held": 17.894736842105264,
+      "avg_mae_r": -0.2607783504353252,
+      "avg_mfe_r": 1.163483319611354,
+      "exit_efficiency": 0.6271843447641486,
+      "a_setup_win_rate": 0.0,
+      "b_setup_win_rate": 57.89473684210527,
+      "long_win_rate": 54.54545454545454,
+      "short_win_rate": 62.5,
+      "funding_cost_total": 2.6279894155448007,
+      "edge_ratio": 4.461579412819799,
+      "payoff_ratio": 9.124744036827469,
+      "recovery_factor": 6.167044881370679,
+      "max_consecutive_losses": 5.0
+    },
+    "4": {
+      "net_profit": 2203.4540264838924,
+      "net_return_pct": 22.034540264838924,
+      "realized_pnl_net": 2203.4540264838975,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 19.0,
+      "win_rate": 57.89473684210527,
+      "avg_winner_r": 1.0808902427099307,
+      "avg_loser_r": -0.10452613840985173,
+      "expectancy_r": 0.5817675559226538,
+      "profit_factor": 12.888566587163439,
+      "max_drawdown_pct": 3.4625500100725612,
+      "max_drawdown_duration": 3202.0,
+      "sharpe_ratio": 5.112747971208531,
+      "sortino_ratio": 46.04630010711868,
+      "calmar_ratio": 6.363674228744834,
+      "avg_bars_held": 17.894736842105264,
+      "avg_mae_r": -0.2607783504353252,
+      "avg_mfe_r": 1.163483319611354,
+      "exit_efficiency": 0.6378026382617359,
+      "a_setup_win_rate": 0.0,
+      "b_setup_win_rate": 57.89473684210527,
+      "long_win_rate": 54.54545454545454,
+      "short_win_rate": 62.5,
+      "funding_cost_total": 4.301158433702658,
+      "edge_ratio": 4.461579412819799,
+      "payoff_ratio": 9.373502972482502,
+      "recovery_factor": 6.363674228744834,
+      "max_consecutive_losses": 5.0
+    },
+    "5": {
+      "net_profit": 2203.4540264838924,
+      "net_return_pct": 22.034540264838924,
+      "realized_pnl_net": 2203.4540264838975,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 19.0,
+      "win_rate": 57.89473684210527,
+      "avg_winner_r": 1.0808902427099307,
+      "avg_loser_r": -0.10452613840985173,
+      "expectancy_r": 0.5817675559226538,
+      "profit_factor": 12.888566587163439,
+      "max_drawdown_pct": 3.4625500100725612,
+      "max_drawdown_duration": 3202.0,
+      "sharpe_ratio": 5.112747971208531,
+      "sortino_ratio": 46.04630010711868,
+      "calmar_ratio": 6.363674228744834,
+      "avg_bars_held": 17.894736842105264,
+      "avg_mae_r": -0.2607783504353252,
+      "avg_mfe_r": 1.163483319611354,
+      "exit_efficiency": 0.6378026382617359,
+      "a_setup_win_rate": 0.0,
+      "b_setup_win_rate": 57.89473684210527,
+      "long_win_rate": 54.54545454545454,
+      "short_win_rate": 62.5,
+      "funding_cost_total": 4.301158433702658,
+      "edge_ratio": 4.461579412819799,
+      "payoff_ratio": 9.373502972482502,
+      "recovery_factor": 6.363674228744834,
+      "max_consecutive_losses": 5.0
+    },
+    "6": {
+      "net_profit": 3319.248500002326,
+      "net_return_pct": 33.19248500002326,
+      "realized_pnl_net": 3319.2485000023134,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0.0,
+      "total_trades": 43.0,
+      "win_rate": 55.81395348837209,
+      "avg_winner_r": 0.9572697689385418,
+      "avg_loser_r": -0.3277399762787677,
+      "expectancy_r": 0.3894747652378701,
+      "profit_factor": 3.2814176915555637,
+      "max_drawdown_pct": 5.7460528950946665,
+      "max_drawdown_duration": 4508.0,
+      "sharpe_ratio": 5.747288891103925,
+      "sortino_ratio": 13.982473604391648,
+      "calmar_ratio": 5.776571431905764,
+      "avg_bars_held": 17.627906976744185,
+      "avg_mae_r": -0.2951015901709907,
+      "avg_mfe_r": 1.0658687146841175,
+      "exit_efficiency": 0.5656874103740764,
+      "a_setup_win_rate": 100.0,
+      "b_setup_win_rate": 54.761904761904766,
+      "long_win_rate": 53.333333333333336,
+      "short_win_rate": 61.53846153846154,
+      "funding_cost_total": 11.264019762985251,
+      "edge_ratio": 3.611870454735677,
+      "payoff_ratio": 2.5977890058148216,
+      "recovery_factor": 5.776571431905764,
+      "max_consecutive_losses": 4.0
+    }
+  },
+  "round_name": "",
+  "scoring_retries": {
+    "5": 1
+  },
+  "diagnostic_retries": {
+    "5": 1
+  },
+  "retry_count": {},
+  "phase_results": {
+    "1": {
+      "focus": "Signal Quality",
+      "base_mutations": {},
+      "final_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05
+      },
+      "base_score": 0.6388658723338355,
+      "final_score": 0.7686226520905459,
+      "kept_features": [
+        "weighted_score_loose"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "weighted_score_loose",
+          "best_score": 0.7686226520905459,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "weighted_score_balanced",
+          "best_score": 0.7686226520905459,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 2094.161003824058,
+        "net_return_pct": 20.94161003824058,
+        "realized_pnl_net": 2094.161003824058,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 19.0,
+        "win_rate": 57.89473684210527,
+        "avg_winner_r": 1.0534779544113686,
+        "avg_loser_r": -0.12768527682761163,
+        "expectancy_r": 0.5561460675739032,
+        "profit_factor": 10.288330979056418,
+        "max_drawdown_pct": 3.6238602085644716,
+        "max_drawdown_duration": 3202.0,
+        "sharpe_ratio": 4.888863683435616,
+        "sortino_ratio": 36.017997730041415,
+        "calmar_ratio": 5.778812877149097,
+        "avg_bars_held": 17.63157894736842,
+        "avg_mae_r": -0.2632197879851336,
+        "avg_mfe_r": 1.1276494648840194,
+        "exit_efficiency": 0.6271843447641486,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 57.89473684210527,
+        "long_win_rate": 54.54545454545454,
+        "short_win_rate": 62.5,
+        "funding_cost_total": 2.2239325411615574,
+        "edge_ratio": 4.284060379790701,
+        "payoff_ratio": 7.482422530222848,
+        "recovery_factor": 5.778812877149097,
+        "max_consecutive_losses": 5.0
+      },
+      "accepted_count": 1,
+      "new_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05
+      },
+      "suggested_experiments": []
+    },
+    "2": {
+      "focus": "Entry Architecture",
+      "base_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05
+      },
+      "final_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05
+      },
+      "base_score": 0.7423294648114378,
+      "final_score": 0.7423294648114378,
+      "kept_features": [],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "volume_trigger_gate",
+          "best_score": 0.7423294648114378,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 2094.161003824058,
+        "net_return_pct": 20.94161003824058,
+        "realized_pnl_net": 2094.161003824058,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 19.0,
+        "win_rate": 57.89473684210527,
+        "avg_winner_r": 1.0534779544113686,
+        "avg_loser_r": -0.12768527682761163,
+        "expectancy_r": 0.5561460675739032,
+        "profit_factor": 10.288330979056418,
+        "max_drawdown_pct": 3.6238602085644716,
+        "max_drawdown_duration": 3202.0,
+        "sharpe_ratio": 4.888863683435616,
+        "sortino_ratio": 36.017997730041415,
+        "calmar_ratio": 5.778812877149097,
+        "avg_bars_held": 17.63157894736842,
+        "avg_mae_r": -0.2632197879851336,
+        "avg_mfe_r": 1.1276494648840194,
+        "exit_efficiency": 0.6271843447641486,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 57.89473684210527,
+        "long_win_rate": 54.54545454545454,
+        "short_win_rate": 62.5,
+        "funding_cost_total": 2.2239325411615574,
+        "edge_ratio": 4.284060379790701,
+        "payoff_ratio": 7.482422530222848,
+        "recovery_factor": 5.778812877149097,
+        "max_consecutive_losses": 5.0
+      },
+      "accepted_count": 0,
+      "new_mutations": {},
+      "suggested_experiments": []
+    },
+    "3": {
+      "focus": "Failed Follow-Through",
+      "base_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05
+      },
+      "final_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2
+      },
+      "base_score": 0.7396491692219462,
+      "final_score": 0.7434412619674111,
+      "kept_features": [
+        "scratch_030_lock_2"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "scratch_030_lock_2",
+          "best_score": 0.7434412619674111,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "quick_exit_lighter",
+          "best_score": 0.7338909700679019,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 2135.3701316107963,
+        "net_return_pct": 21.353701316107962,
+        "realized_pnl_net": 2135.3701316107904,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 19.0,
+        "win_rate": 57.89473684210527,
+        "avg_winner_r": 1.0534779544113686,
+        "avg_loser_r": -0.10452613840985175,
+        "expectancy_r": 0.5658972837498021,
+        "profit_factor": 12.546523050637768,
+        "max_drawdown_pct": 3.4625500100725577,
+        "max_drawdown_duration": 3202.0,
+        "sharpe_ratio": 4.986930183958268,
+        "sortino_ratio": 44.77498040690044,
+        "calmar_ratio": 6.167044881370679,
+        "avg_bars_held": 17.894736842105264,
+        "avg_mae_r": -0.2607783504353252,
+        "avg_mfe_r": 1.163483319611354,
+        "exit_efficiency": 0.6271843447641486,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 57.89473684210527,
+        "long_win_rate": 54.54545454545454,
+        "short_win_rate": 62.5,
+        "funding_cost_total": 2.6279894155448007,
+        "edge_ratio": 4.461579412819799,
+        "payoff_ratio": 9.124744036827469,
+        "recovery_factor": 6.167044881370679,
+        "max_consecutive_losses": 5.0
+      },
+      "accepted_count": 1,
+      "new_mutations": {
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2
+      },
+      "suggested_experiments": [
+        "diag_wider_stop",
+        "diag_quick_exit"
+      ]
+    },
+    "4": {
+      "focus": "Winner Capture",
+      "base_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2
+      },
+      "final_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2,
+        "exits.tp2_r": 1.8
+      },
+      "base_score": 0.7511518837575124,
+      "final_score": 0.7582392005218064,
+      "kept_features": [
+        "tp2_1_8"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "tp2_1_8",
+          "best_score": 0.7582392005218064,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "trail_activation_0_6_bars6",
+          "best_score": 0.7582392005218064,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 2203.4540264838924,
+        "net_return_pct": 22.034540264838924,
+        "realized_pnl_net": 2203.4540264838975,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 19.0,
+        "win_rate": 57.89473684210527,
+        "avg_winner_r": 1.0808902427099307,
+        "avg_loser_r": -0.10452613840985173,
+        "expectancy_r": 0.5817675559226538,
+        "profit_factor": 12.888566587163439,
+        "max_drawdown_pct": 3.4625500100725612,
+        "max_drawdown_duration": 3202.0,
+        "sharpe_ratio": 5.112747971208531,
+        "sortino_ratio": 46.04630010711868,
+        "calmar_ratio": 6.363674228744834,
+        "avg_bars_held": 17.894736842105264,
+        "avg_mae_r": -0.2607783504353252,
+        "avg_mfe_r": 1.163483319611354,
+        "exit_efficiency": 0.6378026382617359,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 57.89473684210527,
+        "long_win_rate": 54.54545454545454,
+        "short_win_rate": 62.5,
+        "funding_cost_total": 4.301158433702658,
+        "edge_ratio": 4.461579412819799,
+        "payoff_ratio": 9.373502972482502,
+        "recovery_factor": 6.363674228744834,
+        "max_consecutive_losses": 5.0
+      },
+      "accepted_count": 1,
+      "new_mutations": {
+        "exits.tp2_r": 1.8
+      },
+      "suggested_experiments": [
+        "diag_wider_stop",
+        "diag_quick_exit"
+      ]
+    },
+    "5": {
+      "focus": "Regime & Allocation",
+      "base_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2,
+        "exits.tp2_r": 1.8
+      },
+      "final_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2,
+        "exits.tp2_r": 1.8
+      },
+      "base_score": 0.7591216607568363,
+      "final_score": 0.7591216607568363,
+      "kept_features": [],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "require_structure",
+          "best_score": 0.7591216607568363,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 2203.4540264838924,
+        "net_return_pct": 22.034540264838924,
+        "realized_pnl_net": 2203.4540264838975,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 19.0,
+        "win_rate": 57.89473684210527,
+        "avg_winner_r": 1.0808902427099307,
+        "avg_loser_r": -0.10452613840985173,
+        "expectancy_r": 0.5817675559226538,
+        "profit_factor": 12.888566587163439,
+        "max_drawdown_pct": 3.4625500100725612,
+        "max_drawdown_duration": 3202.0,
+        "sharpe_ratio": 5.112747971208531,
+        "sortino_ratio": 46.04630010711868,
+        "calmar_ratio": 6.363674228744834,
+        "avg_bars_held": 17.894736842105264,
+        "avg_mae_r": -0.2607783504353252,
+        "avg_mfe_r": 1.163483319611354,
+        "exit_efficiency": 0.6378026382617359,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 57.89473684210527,
+        "long_win_rate": 54.54545454545454,
+        "short_win_rate": 62.5,
+        "funding_cost_total": 4.301158433702658,
+        "edge_ratio": 4.461579412819799,
+        "payoff_ratio": 9.373502972482502,
+        "recovery_factor": 6.363674228744834,
+        "max_consecutive_losses": 5.0
+      },
+      "accepted_count": 0,
+      "new_mutations": {},
+      "suggested_experiments": []
+    },
+    "6": {
+      "focus": "Risk & Reentry",
+      "base_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2,
+        "exits.tp2_r": 1.8
+      },
+      "final_mutations": {
+        "setup.use_weighted_confluence": true,
+        "setup.min_setup_score_b": 1.35,
+        "setup.min_setup_score_a": 2.05,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.3,
+        "exits.scratch_floor_r": 0.05,
+        "exits.scratch_min_bars": 2,
+        "exits.tp2_r": 1.8,
+        "reentry.enabled": true,
+        "reentry.cooldown_bars": 1,
+        "reentry.max_loss_r": 0.5,
+        "reentry.max_reentries": 1,
+        "reentry.min_confluences_override": 2,
+        "reentry.max_wait_bars": 6,
+        "reentry.require_same_direction": true,
+        "reentry.only_after_scratch_exit": true,
+        "reentry.risk_scale": 0.75
+      },
+      "base_score": 0.7366486302055253,
+      "final_score": 0.8831831227414803,
+      "kept_features": [
+        "reentry_scratch_075"
+      ],
+      "rounds": [
+        {
+          "round_num": 1,
+          "best_name": "reentry_scratch_075",
+          "best_score": 0.8831831227414803,
+          "kept": true
+        },
+        {
+          "round_num": 2,
+          "best_name": "reentry_scratch_half",
+          "best_score": 0.88318312274148,
+          "kept": false
+        }
+      ],
+      "final_metrics": {
+        "net_profit": 3319.248500002326,
+        "net_return_pct": 33.19248500002326,
+        "realized_pnl_net": 3319.2485000023134,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 43.0,
+        "win_rate": 55.81395348837209,
+        "avg_winner_r": 0.9572697689385418,
+        "avg_loser_r": -0.3277399762787677,
+        "expectancy_r": 0.3894747652378701,
+        "profit_factor": 3.2814176915555637,
+        "max_drawdown_pct": 5.7460528950946665,
+        "max_drawdown_duration": 4508.0,
+        "sharpe_ratio": 5.747288891103925,
+        "sortino_ratio": 13.982473604391648,
+        "calmar_ratio": 5.776571431905764,
+        "avg_bars_held": 17.627906976744185,
+        "avg_mae_r": -0.2951015901709907,
+        "avg_mfe_r": 1.0658687146841175,
+        "exit_efficiency": 0.5656874103740764,
+        "a_setup_win_rate": 100.0,
+        "b_setup_win_rate": 54.761904761904766,
+        "long_win_rate": 53.333333333333336,
+        "short_win_rate": 61.53846153846154,
+        "funding_cost_total": 11.264019762985251,
+        "edge_ratio": 3.611870454735677,
+        "payoff_ratio": 2.5977890058148216,
+        "recovery_factor": 5.776571431905764,
+        "max_consecutive_losses": 4.0
+      },
+      "accepted_count": 1,
+      "new_mutations": {
+        "reentry.enabled": true,
+        "reentry.cooldown_bars": 1,
+        "reentry.max_loss_r": 0.5,
+        "reentry.max_reentries": 1,
+        "reentry.min_confluences_override": 2,
+        "reentry.max_wait_bars": 6,
+        "reentry.require_same_direction": true,
+        "reentry.only_after_scratch_exit": true,
+        "reentry.risk_scale": 0.75
+      },
+      "suggested_experiments": [
+        "diag_quick_exit_ft"
+      ]
+    }
+  },
+  "phase_gate_results": {
+    "1": {
+      "passed": true,
+      "failure_reasons": [],
+      "failure_category": null
+    },
+    "2": {
+      "passed": true,
+      "failure_reasons": [],
+      "failure_category": null
+    },
+    "3": {
+      "passed": true,
+      "failure_reasons": [],
+      "failure_category": null
+    },
+    "4": {
+      "passed": true,
+      "failure_reasons": [],
+      "failure_category": null
+    },
+    "5": {
+      "passed": false,
+      "failure_reasons": [
+        "total_trades: 19.0000 >= 20.0000 FAILED"
+      ],
+      "failure_category": "candidates_exhausted"
+    },
+    "6": {
+      "passed": true,
+      "failure_reasons": [],
+      "failure_category": null
+    }
+  },
+  "phase_timestamps": {
+    "1": {
+      "started": "2026-04-21T21:49:20.043438+00:00",
+      "completed": "2026-04-21T21:50:08.546390+00:00"
+    },
+    "2": {
+      "started": "2026-04-21T21:50:08.551391+00:00",
+      "completed": "2026-04-21T21:50:39.227956+00:00"
+    },
+    "3": {
+      "started": "2026-04-21T21:50:39.245970+00:00",
+      "completed": "2026-04-21T21:51:28.337795+00:00"
+    },
+    "4": {
+      "started": "2026-04-21T21:51:28.364816+00:00",
+      "completed": "2026-04-21T21:52:36.210514+00:00"
+    },
+    "5": {
+      "started": "2026-04-21T21:52:36.234533+00:00",
+      "completed": "2026-04-21T21:53:48.272355+00:00"
+    },
+    "6": {
+      "started": "2026-04-21T21:53:48.303357+00:00",
+      "completed": "2026-04-21T21:54:18.909857+00:00"
+    }
+  }
+}

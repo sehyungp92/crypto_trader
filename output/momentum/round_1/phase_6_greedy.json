@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_min_room_b_1_17",
+    "finetune_min_room_b_1_235",
+    "finetune_min_room_b_1_365",
+    "finetune_min_room_b_1_43",
+    "finetune_max_correlated_risk_0_018",
+    "finetune_max_correlated_risk_0_019",
+    "finetune_max_correlated_risk_0_021",
+    "finetune_max_correlated_risk_0_022"
+  ],
+  "final_score": 0.5315452184825036,
+  "base_score": 0.5315452184825036,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,15 @@
+{
+  "accepted": [],
+  "rejected": [
+    "scratch_reentry_wait4_conf1_risk075",
+    "scratch_reentry_wait4_conf1_fullrisk",
+    "scratch_reentry_wait6_conf1_risk075",
+    "scratch_reentry_wait6_conf0_risk075",
+    "scratch_reentry_wait6_double_risk075",
+    "scratch_reentry_wait8_conf1_risk050"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 2.8047919273376465
+}

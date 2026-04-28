@@ -1,0 +1,20 @@
+{
+  "accepted": [],
+  "rejected": [
+    "mfe_floor_075",
+    "mfe_floor_100",
+    "mfe_floor_150",
+    "quick_exit_5",
+    "quick_exit_4",
+    "tp_balance_100_25_200_40",
+    "tp_balance_080_20_200_35",
+    "be_accept_1_buffer_010",
+    "be_accept_1_buffer_020",
+    "trail_lock_025",
+    "trail_activate_4_r04"
+  ],
+  "final_score": 0.47791523652999357,
+  "base_score": 0.47791523652999357,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

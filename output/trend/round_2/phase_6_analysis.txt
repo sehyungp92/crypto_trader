@@ -1,0 +1,28 @@
+======== PHASE 6 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 1 experiments
+Final score: 0.8832
+Base score: 0.7366
+Rounds: 2
+
+Strengths: net_return_pct, total_trades, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+
+Goal Progress:
+  net_return_pct: 33.19 / 18.00 (184%)
+  total_trades: 43.00 / 36.00 (119%)
+  profit_factor: 3.28 / 1.80 (182%)
+  max_drawdown_pct: 5.75 / 10.00 (174%)
+  sharpe_ratio: 5.75 / 3.50 (164%)
+  calmar_ratio: 5.78 / 2.80 (200%)
+  exit_efficiency: 0.57 / 0.55 (103%)
+
+Extra Analysis:
+  top_trade_pct: 11.0032
+  direction_breakdown:
+    long: {'n': 30, 'avg_r': 0.3184197419203359}
+    short: {'n': 13, 'avg_r': 0.5534478959706415}
+  r_skew: 0.0636
+  r_mean: 0.3895

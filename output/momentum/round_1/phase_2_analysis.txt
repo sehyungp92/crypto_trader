@@ -1,0 +1,27 @@
+======== PHASE 2 ANALYSIS ========
+Recommendation: advance
+Reason: No experiments help, diagnostic budget exhausted
+Scoring assessment: INEFFECTIVE
+
+Accepted: 0 experiments
+Final score: 0.4779
+Base score: 0.4779
+Rounds: 1
+
+Strengths: total_trades, avg_mae_r, max_drawdown_pct
+Weaknesses: net_return_pct
+Diagnostic Gaps: High alpha giveback (D1) — trail/stop calibration needs review, High stop-out losses (D2) — stop calibration or entry quality issue
+
+Goal Progress:
+  net_return_pct: 3.69 / 20.00 (18%)
+  total_trades: 24.00 / 24.00 (100%)
+  profit_factor: 1.84 / 2.50 (73%)
+  exit_efficiency: 0.42 / 0.55 (77%)
+  avg_mae_r: -0.27 / -0.30 (100%)
+  max_drawdown_pct: 2.94 / 10.00 (200%)
+
+Extra Analysis:
+  trail_exits: 20
+  avg_capture_pct: 0.4229
+  avg_giveback_pct: 0.5771
+  avg_bars_held: 7.4583

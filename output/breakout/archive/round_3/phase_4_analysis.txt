@@ -1,0 +1,25 @@
+======== PHASE 4 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 0 experiments
+Final score: 0.7928
+Base score: 0.7928
+Rounds: 1
+
+Strengths: net_return_pct, total_trades, profit_factor, sharpe_ratio, exit_efficiency, max_drawdown_pct
+
+Goal Progress:
+  net_return_pct: 19.20 / 18.00 (107%)
+  total_trades: 17.00 / 18.00 (94%)
+  profit_factor: 3.52 / 2.50 (141%)
+  sharpe_ratio: 2.95 / 2.50 (118%)
+  exit_efficiency: 0.56 / 0.55 (101%)
+  max_drawdown_pct: 4.12 / 8.00 (194%)
+
+Extra Analysis:
+  trade_count: 17
+  winner_count: 11
+  avg_winner_r: 1.188
+  avg_loser_r: -0.434

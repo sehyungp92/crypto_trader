@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "orderly_volume_1_00",
+    "orderly_volume_1_05",
+    "orderly_body_0_90",
+    "orderly_body_0_95",
+    "orderly_countertrend_1",
+    "pullback_bars_18",
+    "pullback_retrace_0_80",
+    "impulse_atr_0_75"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 2.613431453704834
+}

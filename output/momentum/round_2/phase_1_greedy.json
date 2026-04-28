@@ -1,0 +1,24 @@
+{
+  "accepted": [],
+  "rejected": [
+    "hammer_off",
+    "weak_volume_105",
+    "weak_volume_110",
+    "weak_gate_3",
+    "weak_gate_4",
+    "micro_shift_4",
+    "micro_shift_5",
+    "min_b_conf_1",
+    "min_b_conf_2",
+    "room_b_14",
+    "zone_prox_050",
+    "zone_prox_025",
+    "reject_extended_reaction_on",
+    "outside_session_require_a",
+    "rsi_pullback_35"
+  ],
+  "final_score": 0.5789922208174012,
+  "base_score": 0.5789922208174012,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

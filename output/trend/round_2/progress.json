@@ -1,0 +1,39 @@
+{
+  "1": {
+    "name": "Signal Quality",
+    "accepted": 1,
+    "final_score": 0.7686226520905459,
+    "gate_passed": true
+  },
+  "last_updated": "2026-04-21T21:54:18.931849+00:00",
+  "2": {
+    "name": "Entry Architecture",
+    "accepted": 0,
+    "final_score": 0.7423294648114378,
+    "gate_passed": true
+  },
+  "3": {
+    "name": "Failed Follow-Through",
+    "accepted": 1,
+    "final_score": 0.7434412619674111,
+    "gate_passed": true
+  },
+  "4": {
+    "name": "Winner Capture",
+    "accepted": 1,
+    "final_score": 0.7582392005218064,
+    "gate_passed": true
+  },
+  "5": {
+    "name": "Regime & Allocation",
+    "accepted": 0,
+    "final_score": 0.7591216607568363,
+    "gate_passed": false
+  },
+  "6": {
+    "name": "Risk & Reentry",
+    "accepted": 1,
+    "final_score": 0.8831831227414803,
+    "gate_passed": true
+  }
+}

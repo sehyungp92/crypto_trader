@@ -1,0 +1,14 @@
+{
+  "accepted": [
+    "btc_long_only"
+  ],
+  "rejected": [
+    "weighted_score_b_1_60_a_2_35",
+    "confirm_b_structure_only",
+    "confirm_b_ema_or_structure"
+  ],
+  "final_score": 0.8198670352874788,
+  "base_score": 0.7571294445310266,
+  "rounds": 2,
+  "elapsed_seconds": 25.613232851028442
+}

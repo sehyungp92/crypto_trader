@@ -1,0 +1,29 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_followthrough_peak_r_0_3325",
+    "finetune_followthrough_peak_r_0_3675",
+    "finetune_followthrough_peak_r_0_315",
+    "finetune_followthrough_peak_r_0_385",
+    "finetune_runner_trigger_r_1_425",
+    "finetune_runner_trigger_r_1_575",
+    "finetune_runner_trigger_r_1_35",
+    "finetune_runner_trigger_r_1_65",
+    "finetune_runner_trail_buffer_wide_1_1875",
+    "finetune_runner_trail_buffer_wide_1_3125",
+    "finetune_runner_trail_buffer_wide_1_125",
+    "finetune_runner_trail_buffer_wide_1_375",
+    "finetune_runner_trail_buffer_tight_0_2375",
+    "finetune_runner_trail_buffer_tight_0_2625",
+    "finetune_runner_trail_buffer_tight_0_225",
+    "finetune_runner_trail_buffer_tight_0_275",
+    "finetune_runner_trail_r_ceiling_1_1875",
+    "finetune_runner_trail_r_ceiling_1_3125",
+    "finetune_runner_trail_r_ceiling_1_125",
+    "finetune_runner_trail_r_ceiling_1_375"
+  ],
+  "final_score": 0.6514725815406749,
+  "base_score": 0.6514725815406749,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

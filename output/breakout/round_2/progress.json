@@ -1,0 +1,39 @@
+{
+  "1": {
+    "name": "Re-Earn Revalidated Alpha",
+    "accepted": 1,
+    "final_score": 0.7790527075305504,
+    "gate_passed": true
+  },
+  "last_updated": "2026-04-21T21:21:08.673643+00:00",
+  "2": {
+    "name": "Signal Discrimination",
+    "accepted": 1,
+    "final_score": 0.8272094930945119,
+    "gate_passed": true
+  },
+  "3": {
+    "name": "Entry Architecture",
+    "accepted": 0,
+    "final_score": 0.8272094930945119,
+    "gate_passed": true
+  },
+  "4": {
+    "name": "Capture & Management",
+    "accepted": 1,
+    "final_score": 0.8308811486158278,
+    "gate_passed": true
+  },
+  "5": {
+    "name": "Structural Frequency",
+    "accepted": 2,
+    "final_score": 0.88309067922354,
+    "gate_passed": true
+  },
+  "6": {
+    "name": "Finetune",
+    "accepted": 0,
+    "final_score": 0.88309067922354,
+    "gate_passed": true
+  }
+}

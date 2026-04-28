@@ -1,0 +1,33 @@
+{
+  "1": {
+    "name": "Capture & Monetization",
+    "accepted": 0,
+    "final_score": 0.0,
+    "gate_passed": false
+  },
+  "last_updated": "2026-04-21T19:43:42.787531+00:00",
+  "2": {
+    "name": "Selective Supplemental Entries",
+    "accepted": 0,
+    "final_score": 0.0,
+    "gate_passed": false
+  },
+  "3": {
+    "name": "Structural Frequency Expansion",
+    "accepted": 0,
+    "final_score": 0.0,
+    "gate_passed": false
+  },
+  "4": {
+    "name": "Entry Architecture Controls",
+    "accepted": 0,
+    "final_score": 0.0,
+    "gate_passed": false
+  },
+  "5": {
+    "name": "Finetune",
+    "accepted": 0,
+    "final_score": 0.0,
+    "gate_passed": false
+  }
+}

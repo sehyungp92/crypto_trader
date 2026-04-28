@@ -1,0 +1,28 @@
+======== PHASE 5 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 2 experiments
+Final score: 0.8279
+Base score: 0.7950
+Rounds: 2
+
+Strengths: net_return_pct, total_trades, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+
+Goal Progress:
+  net_return_pct: 41.29 / 36.00 (115%)
+  total_trades: 43.00 / 50.00 (86%)
+  profit_factor: 4.45 / 2.20 (200%)
+  max_drawdown_pct: 4.27 / 9.00 (200%)
+  sharpe_ratio: 6.55 / 4.80 (137%)
+  calmar_ratio: 9.66 / 4.80 (200%)
+  exit_efficiency: 0.57 / 0.58 (98%)
+
+Extra Analysis:
+  top_trade_pct: 10.2797
+  direction_breakdown:
+    long: {'n': 30, 'avg_r': 0.37183996924958435}
+    short: {'n': 13, 'avg_r': 0.6538873799170316}
+  r_skew: 0.2019
+  r_mean: 0.4571

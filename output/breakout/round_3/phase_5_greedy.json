@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "quick_exit_4_040_000",
+    "quick_exit_4_050_neg005",
+    "quick_exit_5_040_000",
+    "quick_exit_5_050_neg005",
+    "early_lock_055_000",
+    "early_lock_060_005",
+    "time_stop_reduce_12",
+    "quick_exit_4_040_000_early_lock_055_000"
+  ],
+  "final_score": 0.7835728606186211,
+  "base_score": 0.7835728606186211,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

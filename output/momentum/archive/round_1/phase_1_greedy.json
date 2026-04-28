@@ -1,0 +1,16 @@
+{
+  "accepted": [
+    "r3m_trail_trail_buffer_wide__2_2",
+    "r3_setup_min_confluences_b__1",
+    "r3m_risk_risk_pct_b__0_014",
+    "r3m_setup_fib_high__0_5",
+    "r3_trail_trail_r_ceiling__1_2",
+    "r3_exits_tp2_frac__0_5",
+    "r3_trail_trail_activation_bars__5"
+  ],
+  "rejected": [],
+  "final_score": 0.8460025029164158,
+  "base_score": 0.18135272735997693,
+  "rounds": 8,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,33 @@
+{
+  "1": {
+    "name": "Proof Lock & Failure Control",
+    "accepted": 1,
+    "final_score": 0.6496008288884513,
+    "gate_passed": false
+  },
+  "last_updated": "2026-04-22T00:54:24.675541+00:00",
+  "2": {
+    "name": "Trail Regime",
+    "accepted": 1,
+    "final_score": 0.6514725815406749,
+    "gate_passed": false
+  },
+  "3": {
+    "name": "Scale-Out Architecture",
+    "accepted": 0,
+    "final_score": 0.6514725815406749,
+    "gate_passed": false
+  },
+  "4": {
+    "name": "Exit Trigger Calibration",
+    "accepted": 0,
+    "final_score": 0.6514725815406749,
+    "gate_passed": false
+  },
+  "5": {
+    "name": "Finetune",
+    "accepted": 0,
+    "final_score": 0.6514725815406749,
+    "gate_passed": false
+  }
+}

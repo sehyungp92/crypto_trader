@@ -1,0 +1,20 @@
+{
+  "accepted": [
+    "body_ratio_065"
+  ],
+  "rejected": [
+    "body_ratio_060",
+    "eth_long_only",
+    "sol_disabled",
+    "sol_short_only",
+    "no_countertrend",
+    "model1_vol_110",
+    "model1_vol_115",
+    "quality_stack_060_sol_disabled",
+    "quality_stack_065_sol_short"
+  ],
+  "final_score": 0.8272094930945119,
+  "base_score": 0.7790527075305504,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

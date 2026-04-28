@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "entry_break",
+    "entry_hybrid_grade",
+    "confirm_b_only",
+    "confirm_all",
+    "break_ttl_1",
+    "hybrid_confirm_bundle",
+    "structure_only_confirmations",
+    "conservative_quality_bundle"
+  ],
+  "final_score": 0.7423294648114378,
+  "base_score": 0.7423294648114378,
+  "rounds": 1,
+  "elapsed_seconds": 26.116169929504395
+}

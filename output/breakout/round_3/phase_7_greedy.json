@@ -1,0 +1,13 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_relaxed_body_min_0_38",
+    "finetune_relaxed_body_min_0_42",
+    "finetune_model1_min_volume_mult_1_14",
+    "finetune_model1_min_volume_mult_1_26"
+  ],
+  "final_score": 0.7835728606186211,
+  "base_score": 0.7835728606186211,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,21 @@
+{
+  "accepted": [
+    "daily_max_5",
+    "room_b_125"
+  ],
+  "rejected": [
+    "bias_h1_1",
+    "bias_h4_1",
+    "h1_adx_12",
+    "adx_chop_8",
+    "adx_chop_7",
+    "reentry_cooldown_2",
+    "reentry_max_3",
+    "max_positions_4",
+    "rsi_pullback_45"
+  ],
+  "final_score": 0.783712110691766,
+  "base_score": 0.7099260691020952,
+  "rounds": 3,
+  "elapsed_seconds": 0.0
+}

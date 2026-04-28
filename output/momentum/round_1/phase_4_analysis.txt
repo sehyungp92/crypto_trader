@@ -1,0 +1,27 @@
+======== PHASE 4 ANALYSIS ========
+Recommendation: advance
+Reason: Gate failed after accepted mutations, but the score is intentionally immutable for this round
+Scoring assessment: MARGINAL
+
+Accepted: 1 experiments
+Final score: 0.4794
+Base score: 0.4779
+Rounds: 2
+
+Strengths: total_trades, avg_mae_r, max_drawdown_pct
+Weaknesses: net_return_pct
+Diagnostic Gaps: Value-destroying signals (D4) — hammer have negative avg R, Single-trade concentration risk (D3) — risk sizing review needed, Direction imbalance (D5) — one side has negative edge
+
+Goal Progress:
+  net_return_pct: 3.77 / 20.00 (19%)
+  total_trades: 24.00 / 24.00 (100%)
+  profit_factor: 1.87 / 2.50 (75%)
+  exit_efficiency: 0.42 / 0.55 (77%)
+  avg_mae_r: -0.28 / -0.30 (100%)
+  max_drawdown_pct: 2.94 / 10.00 (200%)
+
+Extra Analysis:
+  confirmation_types: 3
+  positive_confirmations: 2
+  negative_confirmations: 1
+  confluence_levels: 4

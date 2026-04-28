@@ -1,0 +1,45 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "timestamp": "2026-04-21T02:47:20.196393+00:00",
+      "mutations_count": 7,
+      "mutations": {
+        "trail.trail_buffer_wide": 2.2,
+        "setup.min_confluences_b": 1,
+        "risk.risk_pct_b": 0.014,
+        "setup.fib_high": 0.5,
+        "trail.trail_r_ceiling": 1.2000000000000002,
+        "exits.tp2_frac": 0.5,
+        "trail.trail_activation_bars": 5
+      },
+      "total_trades": 21.0,
+      "win_rate": 66.66666666666666,
+      "profit_factor": 4.411518390574766,
+      "max_drawdown_pct": 2.3553721715313882,
+      "sharpe_ratio": 6.041468579642916,
+      "calmar_ratio": 7.757582548983874,
+      "net_return_pct": 18.27199405423415
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-04-21T03:57:27.593417+00:00",
+      "mutations_count": 6,
+      "mutations": {
+        "setup.reject_extended_reaction": true,
+        "setup.min_room_b": 1.3,
+        "trail.trail_activation_bars": 4,
+        "trail.trail_activation_r": 0.4,
+        "trail.trail_buffer_tight": 0.25,
+        "bias.h1_adx_threshold": 10.0
+      },
+      "total_trades": 21.0,
+      "win_rate": 71.42857142857143,
+      "profit_factor": 6.063809289650134,
+      "max_drawdown_pct": 2.2939761427291114,
+      "sharpe_ratio": 6.176464450077123,
+      "calmar_ratio": 9.687423630354667,
+      "net_return_pct": 22.222718692543843
+    }
+  ]
+}

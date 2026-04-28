@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "reversal_0_8atr_1_3vol",
+    "reversal_1_0atr_1_3vol",
+    "structure_1_25atr",
+    "structure_1_75atr",
+    "reversal_0_8atr_1_3vol__structure_1_25atr",
+    "reversal_1_0atr_1_2vol__structure_1_5atr",
+    "reversal_off",
+    "structure_off"
+  ],
+  "final_score": 0.6514725815406749,
+  "base_score": 0.6514725815406749,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

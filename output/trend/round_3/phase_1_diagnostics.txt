@@ -1,0 +1,143 @@
+=== Trend Diagnostics (Phase 1: Signal & Setup) ===
+Trades: 39, WR: 59%
+
+--- Per-Confirmation ---
+  none: n=35, WR=60%, avg_r=+0.507
+  hammer: n=4, WR=50%, avg_r=-0.173
+
+--- Per-Asset ---
+  ETH: n=13, WR=69%, avg_r=+0.545
+  BTC: n=13, WR=54%, avg_r=+0.363
+  SOL: n=13, WR=54%, avg_r=+0.405
+
+--- Exit Attribution ---
+  protective_stop: n=31, avg_r=+0.576
+  scratch_exit: n=8, avg_r=-0.098
+
+--- MFE Capture ---
+  Avg MFE: 1.136R
+  Capture: 57.1%
+  Giveback: 42.9%
+
+--- Direction ---
+  long: n=30, avg_r=+0.318
+  short: n=9, avg_r=+0.835
+
+======================================================================
+  PHASE 1 (SIGNAL & SETUP)
+  39 realized trades | 0 terminal marks | modules: D4, D6
+======================================================================
+
+══════════════════════════════════════════════════════════════════════
+  1. Overview
+══════════════════════════════════════════════════════════════════════
+  Closed Trades:  39  (W:23 / L:16)
+  Win Rate:       59.0%
+  Profit Factor:  3.84
+  Mean R:         +0.438
+  Median R:       +0.419
+  Total R:        +17.07
+  Avg Hold:       4.6h  (18.4 bars)
+  Max DD:         4.28%
+  Sharpe Ratio:   6.04
+  Calmar Ratio:   8.07
+  Realized P&L:   $3,451.56  (+34.52%)
+  Net Liq P&L:    $3,451.56  (+34.52%)
+
+  ✓ No critical flags
+
+══════════════════════════════════════════════════════════════════════
+  2. Winner vs Loser Profiles
+══════════════════════════════════════════════════════════════════════
+  Metric                          Winners     Losers      Delta
+  --------------------------------------------------------------
+  Avg R                             0.965     -0.320     +1.285
+  Avg P&L ($)                     202.891    -75.933   +278.824
+  Avg Hold (h)                      4.250      5.094     -0.844
+  Avg Bars Held                    17.000     20.375     -3.375
+  Avg MFE R                         1.544      0.478     +1.066
+  Avg MAE R                        -0.208     -0.416     +0.208
+
+  Setup Grade Distribution:
+    A-grade:  W=1  L=0
+    B-grade:  W=22  L=16
+
+  Confirmation Distribution:
+                       hammer:  W=2  L=2
+                         none:  W=21  L=14
+
+══════════════════════════════════════════════════════════════════════
+  R-Multiple Distribution
+══════════════════════════════════════════════════════════════════════
+          < -1.0 |   2 ██████
+    -1.0 to -0.5 |   1 ███
+       -0.5 to 0 |  13 ████████████████████████████████████████
+        0 to 0.5 |   5 ███████████████
+      0.5 to 1.0 |   5 ███████████████
+      1.0 to 2.0 |  13 ████████████████████████████████████████
+           > 2.0 |   0 
+
+  Mean: +0.438  Median: +0.419  Std: 0.774  Skew: -0.01
+
+══════════════════════════════════════════════════════════════════════
+  11. Confirmation Type Analysis
+══════════════════════════════════════════════════════════════════════
+  Type                         n     WR    Avg R    Med R  Total R      $ P&L
+  --------------------------------------------------------------------
+  none                        35   60%   +0.507   +0.530   +17.76 $ 3,647.98
+  hammer                       4   50%   -0.173   -0.013    -0.69 $  -196.42
+
+══════════════════════════════════════════════════════════════════════
+  12. Confluence Count → Outcome
+══════════════════════════════════════════════════════════════════════
+   Confluences    n     WR    Avg R  Total R
+  --------------------------------------------
+             2   16   69%   +0.696   +11.13
+             3   22   50%   +0.230    +5.07
+             5    1  100%   +0.872    +0.87
+
+  ✗ Non-monotonic: confluence count is NOT reliably predictive
+
+══════════════════════════════════════════════════════════════════════
+  22. Entry Method Analysis
+══════════════════════════════════════════════════════════════════════
+  Method                  n     WR    Avg R    Med R     PF      $ P&L
+  ------------------------------------------------------------------
+  aggressive             39   59%   +0.438   +0.419   3.84 $ 3,451.56
+
+══════════════════════════════════════════════════════════════════════
+  9. Per-Asset Breakdown
+══════════════════════════════════════════════════════════════════════
+
+  BTC:
+      n=13, WR=53.8%, Mean R=+0.363, Median R=+0.004, PF=2.50, Total R=+4.72
+    Long:  n=13, WR=54%, avg R=+0.363
+    Avg MFE: 1.092R, Avg MAE: -0.361R
+
+  ETH:
+      n=13, WR=69.2%, Mean R=+0.545, Median R=+0.428, PF=16.40, Total R=+7.08
+    Long:  n=9, WR=67%, avg R=+0.415
+    Short: n=4, WR=75%, avg R=+0.837
+    Avg MFE: 1.201R, Avg MAE: -0.241R
+
+  SOL:
+      n=13, WR=53.8%, Mean R=+0.405, Median R=+0.676, PF=3.16, Total R=+5.27
+    Long:  n=8, WR=38%, avg R=+0.137
+    Short: n=5, WR=80%, avg R=+0.834
+    Avg MFE: 1.027R, Avg MAE: -0.277R
+
+══════════════════════════════════════════════════════════════════════
+  VERDICT & RECOMMENDATIONS
+══════════════════════════════════════════════════════════════════════
+  Net liquidation P&L: $3,451.56 (+34.52%)
+  Realized closed-trade P&L: $3,451.56
+
+  STRENGTHS:
+    + Strong profit factor (3.84)
+    + Good expectancy (+0.438R)
+
+  WEAKNESSES:
+    - High giveback (+0.579R avg) — exits too late or trail too slow
+
+  RECOMMENDATIONS:
+    → No critical changes recommended — continue monitoring

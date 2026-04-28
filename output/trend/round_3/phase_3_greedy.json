@@ -1,0 +1,15 @@
+{
+  "accepted": [
+    "confirm_preferred_volume"
+  ],
+  "rejected": [
+    "hybrid_grade",
+    "confirm_preferred_b_confirm",
+    "confirm_preferred_structure_only",
+    "reentry_break_structure_bundle"
+  ],
+  "final_score": 0.7962965978823413,
+  "base_score": 0.7866999249538142,
+  "rounds": 2,
+  "elapsed_seconds": 24.454641580581665
+}

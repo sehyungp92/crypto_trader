@@ -1,0 +1,15 @@
+{
+  "accepted": [],
+  "rejected": [
+    "b_adx_7",
+    "h1_adx_20",
+    "adx_looser_bundle",
+    "max_trades_12",
+    "b_adx_7_disable_hammer",
+    "h1_adx_20_disable_hammer"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 3.611328601837158
+}

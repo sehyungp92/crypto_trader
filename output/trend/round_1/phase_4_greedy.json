@@ -1,0 +1,15 @@
+{
+  "accepted": [],
+  "rejected": [
+    "orderly_vol1_body090",
+    "orderly_vol1_pullback18",
+    "orderly_body095_retrace080",
+    "orderly_vol105_body090_pullback18",
+    "orderly_counter1_vol1",
+    "orderly_soft_bundle"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 2.9894566535949707
+}

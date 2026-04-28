@@ -1,0 +1,237 @@
+Phase 4 Diagnostics (Environment & Filtering)
+  Accepted: 1
+  Rejected: 12
+  Score: 0.4779 -> 0.4794
+
+  Focus metrics:
+    total_trades: 24.00
+    profit_factor: 1.87
+    net_return_pct: 3.77
+
+  Confirmation breakdown:
+    inside_bar_break: n=13, WR=46%, avg_r=+0.320
+    micro_structure_shift: n=9, WR=33%, avg_r=+0.130
+    hammer: n=2, WR=50%, avg_r=-0.410 *** NEGATIVE
+
+  Per-asset edge:
+    BTC: n=9, WR=56%, avg_r=+0.348
+    ETH: n=9, WR=22%, avg_r=+0.026
+    SOL: n=6, WR=50%, avg_r=+0.189
+
+  Exit attribution (top 3 by P&L share):
+    trailing_stop: n=20, avg_r=+0.227, P&L share=100%
+    protective_stop: n=2, avg_r=-1.090, P&L share=-48%
+    structure_break: n=1, avg_r=+1.919, P&L share=43%
+
+  MFE capture:
+    avg_capture=42.3%
+    avg_giveback=57.7%
+
+======================================================================
+  PHASE 4 TARGETED SECTIONS
+  24 realized trades | 0 terminal marks | modules: D4, D5, D6
+======================================================================
+
+══════════════════════════════════════════════════════════════════════
+  1. Overview
+══════════════════════════════════════════════════════════════════════
+  Closed Trades:  24  (W:10 / L:14)
+  Win Rate:       41.7%
+  Profit Factor:  1.87
+  Mean R:         +0.188
+  Median R:       -0.055
+  Total R:        +4.50
+  Avg Hold:       1.8h  (7.4 bars)
+  Realized P&L:   $377.35  (+3.77%)
+  Net Liq P&L:    $377.35  (+3.77%)
+
+  ⚠ Flags:
+    - LOW SAMPLE (n=24) — statistical significance limited
+
+══════════════════════════════════════════════════════════════════════
+  2. Winner vs Loser Profiles
+══════════════════════════════════════════════════════════════════════
+  Metric                          Winners     Losers      Delta
+  --------------------------------------------------------------
+  Avg R                             0.964     -0.367     +1.331
+  Avg P&L ($)                      81.072    -30.955   +112.027
+  Avg Hold (h)                      3.275      0.821     +2.454
+  Avg Bars Held                    13.100      3.286     +9.814
+  Avg MFE R                         2.069      0.344     +1.726
+  Avg MAE R                        -0.222     -0.316     +0.094
+
+  Setup Grade Distribution:
+    A-grade:  W=0  L=0
+    B-grade:  W=10  L=14
+
+  Confirmation Distribution:
+                       hammer:  W=1  L=1
+             inside_bar_break:  W=6  L=7
+        micro_structure_shift:  W=3  L=6
+
+══════════════════════════════════════════════════════════════════════
+  R-Multiple Distribution
+══════════════════════════════════════════════════════════════════════
+          < -1.0 |   2 ████████
+    -1.0 to -0.5 |   2 ████████
+       -0.5 to 0 |  10 ████████████████████████████████████████
+        0 to 0.5 |   5 ████████████████████
+      0.5 to 1.0 |   2 ████████
+      1.0 to 2.0 |   1 ████
+           > 2.0 |   2 ████████
+
+  Mean: +0.188  Median: -0.055  Std: 0.892  Skew: +1.31
+
+══════════════════════════════════════════════════════════════════════
+  11. Confirmation Type Analysis
+══════════════════════════════════════════════════════════════════════
+  Type                         n     WR    Avg R    Med R  Total R      $ P&L
+  --------------------------------------------------------------------
+  inside_bar_break            13   46%   +0.320   -0.001    +4.15 $   348.66
+  micro_structure_shift        9   33%   +0.130   -0.073    +1.17 $    96.83
+  hammer                       2   50%   -0.410   -0.410    -0.82 $   -68.14
+
+══════════════════════════════════════════════════════════════════════
+  12. Confluence Count → Outcome
+══════════════════════════════════════════════════════════════════════
+   Confluences    n     WR    Avg R  Total R
+  --------------------------------------------
+             0    5   20%   -0.233    -1.16
+             1   10   40%   +0.214    +2.14
+             2    6   67%   +0.624    +3.75
+             3    3   33%   -0.073    -0.22
+
+  ✗ Non-monotonic: confluence count is NOT reliably predictive
+
+══════════════════════════════════════════════════════════════════════
+  22. Entry Method Analysis
+══════════════════════════════════════════════════════════════════════
+  Method                  n     WR    Avg R    Med R     PF      $ P&L
+  ------------------------------------------------------------------
+  close                  24   42%   +0.188   -0.055   1.87 $   377.35
+
+══════════════════════════════════════════════════════════════════════
+  9. Per-Asset Breakdown
+══════════════════════════════════════════════════════════════════════
+
+  BTC:
+      n=9, WR=55.6%, Mean R=+0.348, Median R=+0.273, PF=2.88, Total R=+3.13
+    Long:  n=9, WR=56%, avg R=+0.348
+    Avg MFE: 1.267R, Avg MAE: -0.354R
+
+  ETH:
+      n=9, WR=22.2%, Mean R=+0.026, Median R=-0.102, PF=1.12, Total R=+0.24
+    Long:  n=9, WR=22%, avg R=+0.026
+    Avg MFE: 0.838R, Avg MAE: -0.226R
+
+  SOL:
+      n=6, WR=50.0%, Mean R=+0.189, Median R=+0.088, PF=1.85, Total R=+1.13
+    Long:  n=3, WR=67%, avg R=+0.402
+    Short: n=3, WR=33%, avg R=-0.025
+    Avg MFE: 1.093R, Avg MAE: -0.239R
+
+══════════════════════════════════════════════════════════════════════
+  10. Direction Analysis
+══════════════════════════════════════════════════════════════════════
+
+  LONG:
+      n=21, WR=42.9%, Mean R=+0.218, Median R=-0.073, PF=1.94, Total R=+4.58
+    Exits: trailing_stop=17, protective_stop=2, structure_break=1, soft_time_stop=1
+
+  SHORT:
+      n=3, WR=33.3%, Mean R=-0.025, Median R=-0.036, PF=0.70, Total R=-0.07
+    Exits: trailing_stop=3
+
+══════════════════════════════════════════════════════════════════════
+  13. Session & Timing Patterns
+══════════════════════════════════════════════════════════════════════
+  Entry Hour (UTC):
+      Hour    n     WR    Avg R      $ P&L
+    --------------------------------------
+       0h    1    0%   -0.585 $   -48.28
+       1h    1  100%   +0.273 $    22.40
+       2h    1    0%   -0.249 $   -21.24
+       5h    3   33%   +0.483 $   121.51
+       7h    1    0%   -0.522 $   -44.44
+       8h    2   50%   +0.278 $    46.80
+       9h    1    0%   -0.249 $   -21.74
+      10h    1  100%   +2.080 $   176.55
+      11h    1  100%   +0.625 $    53.60
+      13h    1    0%   -0.036 $    -3.04
+      14h    3   33%   +0.146 $    37.50
+      15h    1  100%   +0.465 $    38.29
+      16h    1  100%   +0.211 $    17.29
+      17h    1    0%   -0.382 $   -33.81
+      19h    2    0%   -0.145 $   -24.90
+      20h    1    0%   -0.001 $    -0.07
+      23h    2  100%   +0.359 $    60.92
+
+  Day of Week:
+       Day    n     WR    Avg R      $ P&L
+    --------------------------------------
+       Mon    1  100%   +0.500 $    41.80
+       Tue    4   25%   +0.028 $     8.07
+       Wed    3    0%   -0.739 $  -183.15
+       Thu    6   67%   +0.495 $   247.88
+       Fri    6   67%   +0.696 $   354.06
+       Sat    4    0%   -0.260 $   -91.30
+
+  Session Performance:
+    Asia:
+        n=7, WR=28.6%, Mean R=+0.052, Median R=-0.249, PF=1.19, Total R=+0.37
+    London:
+        n=5, WR=60.0%, Mean R=+0.602, Median R=+0.625, PF=8.00, Total R=+3.01
+    Overlap:
+        n=5, WR=40.0%, Mean R=+0.174, Median R=-0.036, PF=1.40, Total R=+0.87
+    New York:
+        n=5, WR=20.0%, Mean R=-0.092, Median R=-0.102, PF=0.29, Total R=-0.46
+    Off-hours:
+        n=2, WR=100.0%, Mean R=+0.359, Median R=+0.359, PF=inf, Total R=+0.72
+
+══════════════════════════════════════════════════════════════════════
+  17. Interaction Analysis
+══════════════════════════════════════════════════════════════════════
+  Grade × Direction:
+                             Long              Short
+    ------------------------------------------------
+       A-grade                 --                 --
+       B-grade  n=21 WR=43% R=+0.22  n= 3 WR=33% R=-0.02
+
+  Confirmation × Symbol:
+                                       BTC          ETH          SOL
+    ----------------------------------------------------------------
+                       hammer   1/100%/+0.27           --   1/ 0%/-1.09
+             inside_bar_break   5/80%/+0.82   7/14%/-0.02   1/100%/+0.22
+        micro_structure_shift   3/ 0%/-0.41   2/50%/+0.20   4/50%/+0.50
+
+══════════════════════════════════════════════════════════════════════
+  19. Weekly P&L Calendar
+══════════════════════════════════════════════════════════════════════
+  Week         n    WR        R        P&L    Cum P&L                  Bar
+  ----------------------------------------------------------------------
+  2026-W14     1 100%   +0.21 $    17.29 $    17.29  
+  2026-W15    11  36%   +0.11 $     7.76 $    25.04  
+  2026-W16    12  42%   +4.18 $   352.31 $   377.35  +++++++++++++++
+
+  Positive weeks: 3/3  Negative weeks: 0/3
+  Best week: $352.31  Worst week: $7.76
+
+══════════════════════════════════════════════════════════════════════
+  VERDICT & RECOMMENDATIONS
+══════════════════════════════════════════════════════════════════════
+  Net liquidation P&L: $377.35 (+3.77%)
+  Realized closed-trade P&L: $377.35
+
+  STRENGTHS:
+    (none identified)
+
+  WEAKNESSES:
+    - Low sample size (n=24) — results not statistically robust
+    - High giveback (+1.105R avg) — exits too late or trail too slow
+    - micro_structure_shift confirmation underperforms (33% WR, +0.130R)
+    - inside_bar_break confirmation underperforms (46% WR, +0.320R)
+    - Profit concentrated — top trade = 58% of total
+    - High friction drag (56% of |P&L|) — $210.45 in commissions + funding
+
+  RECOMMENDATIONS:
+    → Extend data period to increase sample size before drawing conclusions

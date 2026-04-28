@@ -1,0 +1,21 @@
+{
+  "accepted": [
+    "anchor_round_4_trend"
+  ],
+  "rejected": [
+    "previous_delta_from_round_4",
+    "previous_setup_profile",
+    "previous_exit_profile",
+    "previous_regime_profile",
+    "previous_risk_profile",
+    "previous_stop_profile",
+    "previous_h1_fast_profile",
+    "previous_trail_profile",
+    "current_h1_fast_profile",
+    "current_trail_profile"
+  ],
+  "final_score": 0.6720732608605632,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 28.71715760231018
+}

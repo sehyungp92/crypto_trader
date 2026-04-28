@@ -1,0 +1,10 @@
+{
+  "accepted": [
+    "weighted_score_loose"
+  ],
+  "rejected": [],
+  "final_score": 0.7686226520905459,
+  "base_score": 0.6388658723338355,
+  "rounds": 2,
+  "elapsed_seconds": 45.0091028213501
+}

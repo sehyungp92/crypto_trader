@@ -1,0 +1,61 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "timestamp": "2026-04-21T19:59:52.887585+00:00",
+      "mutations_count": 0,
+      "mutations": {},
+      "total_trades": 11.0,
+      "win_rate": 54.54545454545454,
+      "profit_factor": 2.940409623520608,
+      "max_drawdown_pct": 4.068640156262561,
+      "sharpe_ratio": 2.001723941081542,
+      "calmar_ratio": 2.2608644542961462,
+      "net_return_pct": 9.198643906615944
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-04-22T13:14:34.127140+00:00",
+      "mutations_count": 14,
+      "mutations": {
+        "trail.trail_buffer_tight": 0.04,
+        "exits.tp1_frac": 0.2,
+        "balance.max_zone_age_bars": 36,
+        "setup.relaxed_body_enabled": true,
+        "setup.relaxed_body_min": 0.35,
+        "setup.relaxed_body_min_confluences": 5,
+        "setup.relaxed_body_min_room_r": 1.4,
+        "setup.relaxed_body_require_volume_surge": true,
+        "setup.relaxed_body_risk_scale": 0.5,
+        "symbol_filter.btc_relaxed_body_direction": "both",
+        "symbol_filter.eth_relaxed_body_direction": "both",
+        "symbol_filter.sol_relaxed_body_direction": "both",
+        "setup.body_ratio_min": 0.65,
+        "profile.lookback_bars": 38
+      },
+      "total_trades": 22.0,
+      "win_rate": 59.09090909090909,
+      "profit_factor": 2.542795363760534,
+      "max_drawdown_pct": 4.38103307031427,
+      "sharpe_ratio": 2.4784986992759057,
+      "calmar_ratio": 4.10334780965751,
+      "net_return_pct": 17.97690245311118
+    },
+    {
+      "round": 3,
+      "timestamp": "2026-04-22T13:50:01.574766+00:00",
+      "mutations_count": 2,
+      "mutations": {
+        "setup.relaxed_body_min": 0.4,
+        "confirmation.model1_min_volume_mult": 1.2
+      },
+      "total_trades": 16.0,
+      "win_rate": 68.75,
+      "profit_factor": 6.98482556988748,
+      "max_drawdown_pct": 2.5801930470719125,
+      "sharpe_ratio": 3.854734079150568,
+      "calmar_ratio": 9.009928027966142,
+      "net_return_pct": 23.24735365237659
+    }
+  ]
+}

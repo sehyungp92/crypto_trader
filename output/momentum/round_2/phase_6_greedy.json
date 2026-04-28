@@ -1,0 +1,25 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_trail_activation_bars_4",
+    "finetune_trail_activation_bars_6",
+    "finetune_trail_activation_r_0_27",
+    "finetune_trail_activation_r_0_285",
+    "finetune_trail_activation_r_0_315",
+    "finetune_trail_activation_r_0_33",
+    "finetune_trail_r_ceiling_1_35",
+    "finetune_trail_r_ceiling_1_425",
+    "finetune_trail_r_ceiling_1_575",
+    "finetune_trail_r_ceiling_1_65",
+    "finetune_max_trades_per_day_4",
+    "finetune_max_trades_per_day_6",
+    "finetune_min_room_b_1_125",
+    "finetune_min_room_b_1_1875",
+    "finetune_min_room_b_1_3125",
+    "finetune_min_room_b_1_375"
+  ],
+  "final_score": 0.783712110691766,
+  "base_score": 0.783712110691766,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

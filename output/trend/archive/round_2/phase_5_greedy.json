@@ -1,0 +1,14 @@
+{
+  "accepted": [],
+  "rejected": [
+    "relative_strength_0",
+    "relative_strength_1pct",
+    "sol_disabled",
+    "eth_short_only",
+    "quality_regime_bundle"
+  ],
+  "final_score": 0.836169260756915,
+  "base_score": 0.836169260756915,
+  "rounds": 1,
+  "elapsed_seconds": 19.236315727233887
+}

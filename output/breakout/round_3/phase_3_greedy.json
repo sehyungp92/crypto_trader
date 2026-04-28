@@ -1,0 +1,14 @@
+{
+  "accepted": [],
+  "rejected": [
+    "no_countertrend",
+    "h4_adx_15",
+    "h4_adx_18",
+    "no_countertrend_h4_adx_15",
+    "no_countertrend_h4_adx_18"
+  ],
+  "final_score": 0.7835728606186211,
+  "base_score": 0.7835728606186211,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

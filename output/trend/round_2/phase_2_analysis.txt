@@ -1,0 +1,33 @@
+======== PHASE 2 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 0 experiments
+Final score: 0.7423
+Base score: 0.7423
+Rounds: 1
+
+Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+Weaknesses: total_trades
+
+Goal Progress:
+  net_return_pct: 20.94 / 18.00 (116%)
+  total_trades: 19.00 / 36.00 (53%)
+  profit_factor: 10.29 / 1.80 (200%)
+  max_drawdown_pct: 3.62 / 10.00 (200%)
+  sharpe_ratio: 4.89 / 3.50 (140%)
+  calmar_ratio: 5.78 / 2.80 (200%)
+  exit_efficiency: 0.63 / 0.55 (114%)
+
+Extra Analysis:
+  confirmation_breakdown:
+    none: {'n': 17, 'avg_r': 0.6231360131801007}
+    hammer: {'n': 2, 'avg_r': -0.013268470078775775}
+  confluence_ladder:
+    2: {'n': 10, 'avg_r': 0.7344161251357061}
+    3: {'n': 9, 'avg_r': 0.35806822583856657}
+  per_asset_edge:
+    ETH: {'n': 11, 'avg_r': 0.4981243540478451}
+    BTC: {'n': 4, 'avg_r': 0.7024485418887925}
+    SOL: {'n': 4, 'avg_r': 0.5694033054556737}

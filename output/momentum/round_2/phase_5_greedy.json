@@ -1,0 +1,20 @@
+{
+  "accepted": [],
+  "rejected": [
+    "sol_long_only",
+    "risk_a_0225",
+    "risk_a_025",
+    "risk_b_014",
+    "risk_b_015",
+    "corr_risk_018",
+    "corr_risk_022",
+    "gross_risk_045",
+    "gross_risk_050",
+    "daily_loss_020",
+    "max_consecutive_losses_3"
+  ],
+  "final_score": 0.783712110691766,
+  "base_score": 0.783712110691766,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

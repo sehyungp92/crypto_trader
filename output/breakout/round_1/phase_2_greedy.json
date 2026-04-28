@@ -1,0 +1,14 @@
+{
+  "accepted": [],
+  "rejected": [
+    "relaxed_strong_pockets",
+    "relaxed_btc_sol_short",
+    "relaxed_btc",
+    "relaxed_sol_short",
+    "relaxed_strong_pockets_body_040"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,43 @@
+{
+  "strategy": "breakout",
+  "baseline_seed": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\revalidated\\20260421T192408Z\\breakout\\cleaned_seed\\cleaned_seed_config.json",
+  "completed_phases": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "cumulative_mutations": {},
+  "final_metrics": {
+    "net_profit": 919.8643906615944,
+    "net_return_pct": 9.198643906615944,
+    "realized_pnl_net": 919.8643906615977,
+    "terminal_mark_pnl_net": 0.0,
+    "terminal_mark_count": 0.0,
+    "total_trades": 11.0,
+    "win_rate": 54.54545454545454,
+    "avg_winner_r": 0.8977225915879373,
+    "avg_loser_r": -0.3753100848861777,
+    "expectancy_r": 0.3190713750087941,
+    "profit_factor": 2.940409623520608,
+    "max_drawdown_pct": 4.068640156262561,
+    "max_drawdown_duration": 4369.0,
+    "sharpe_ratio": 2.001723941081542,
+    "sortino_ratio": 1.5996997734615483,
+    "calmar_ratio": 2.2608644542961462,
+    "avg_bars_held": 7.909090909090909,
+    "avg_mae_r": -0.2968156010964225,
+    "avg_mfe_r": 1.1218509918545825,
+    "exit_efficiency": 0.49712642544207425,
+    "a_setup_win_rate": 0.0,
+    "b_setup_win_rate": 60.0,
+    "long_win_rate": 50.0,
+    "short_win_rate": 66.66666666666666,
+    "funding_cost_total": 1.7624599203506515,
+    "edge_ratio": 3.779622727749212,
+    "payoff_ratio": 2.4503413529338403,
+    "recovery_factor": 2.2608644542961462,
+    "max_consecutive_losses": 3.0
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "1": {
+    "name": "Signal Discrimination",
+    "accepted": 1,
+    "final_score": 0.8198670352874788,
+    "gate_passed": true
+  },
+  "last_updated": "2026-04-22T03:03:08.465007+00:00",
+  "2": {
+    "name": "Reentry Calibration",
+    "accepted": 0,
+    "final_score": 0.8031430651705782,
+    "gate_passed": true
+  },
+  "3": {
+    "name": "Entry Architecture",
+    "accepted": 1,
+    "final_score": 0.7962965978823413,
+    "gate_passed": true
+  },
+  "4": {
+    "name": "Exit Harvest",
+    "accepted": 0,
+    "final_score": 0.7932293052240618,
+    "gate_passed": true
+  },
+  "5": {
+    "name": "Coverage Expansion",
+    "accepted": 2,
+    "final_score": 0.8279237786618538,
+    "gate_passed": true
+  },
+  "6": {
+    "name": "Allocation & Polish",
+    "accepted": 0,
+    "final_score": 0.8250532253282759,
+    "gate_passed": true
+  }
+}

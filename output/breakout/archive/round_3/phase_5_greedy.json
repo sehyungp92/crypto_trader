@@ -1,0 +1,19 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_tp1_frac_0_2375",
+    "finetune_tp1_frac_0_2625",
+    "finetune_trail_buffer_tight_0_0855",
+    "finetune_trail_buffer_tight_0_0945",
+    "finetune_relaxed_body_min_0_3325",
+    "finetune_relaxed_body_min_0_3675",
+    "finetune_relaxed_body_min_room_r_1_33",
+    "finetune_relaxed_body_min_room_r_1_47",
+    "finetune_max_zone_age_bars_28",
+    "finetune_max_zone_age_bars_32"
+  ],
+  "final_score": 0.792771673288725,
+  "base_score": 0.792771673288725,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

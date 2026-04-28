@@ -1,0 +1,16 @@
+{
+  "accepted": [
+    "lookback_38",
+    "zone_age_36"
+  ],
+  "rejected": [
+    "zone_age_32",
+    "lookback_38_zone_32",
+    "reentry_cooldown_2",
+    "reentry_max_2"
+  ],
+  "final_score": 0.88309067922354,
+  "base_score": 0.8308811486158278,
+  "rounds": 3,
+  "elapsed_seconds": 0.0
+}

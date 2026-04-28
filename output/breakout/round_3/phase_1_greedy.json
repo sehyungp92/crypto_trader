@@ -1,0 +1,16 @@
+{
+  "accepted": [
+    "relaxed_body_min_040"
+  ],
+  "rejected": [
+    "relaxed_body_off",
+    "relaxed_body_conf_6",
+    "relaxed_body_room_16",
+    "relaxed_body_strict_core",
+    "relaxed_body_full_strict"
+  ],
+  "final_score": 0.7228572709305444,
+  "base_score": 0.6567454882140071,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,48 @@
+{
+  "strategy": "momentum",
+  "baseline_seed": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\revalidated\\20260421T192408Z\\momentum\\cleaned_seed\\cleaned_seed_config.json",
+  "completed_phases": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "cumulative_mutations": {
+    "setup.min_room_b": 1.3,
+    "reentry.max_reentries": 2,
+    "risk.max_correlated_risk": 0.02
+  },
+  "final_metrics": {
+    "net_profit": 638.9988275346186,
+    "net_return_pct": 6.3899882753461865,
+    "realized_pnl_net": 638.9988275346223,
+    "terminal_mark_pnl_net": 0.0,
+    "terminal_mark_count": 0.0,
+    "total_trades": 24.0,
+    "win_rate": 41.66666666666667,
+    "avg_winner_r": 1.0813008218661726,
+    "avg_loser_r": -0.3626278928384336,
+    "expectancy_r": 0.23900907162181897,
+    "profit_factor": 2.4298701029552596,
+    "max_drawdown_pct": 2.943344486960374,
+    "max_drawdown_duration": 10472.0,
+    "sharpe_ratio": 2.487491850101374,
+    "sortino_ratio": 3.253111077154068,
+    "calmar_ratio": 2.1709957171697565,
+    "avg_bars_held": 7.708333333333333,
+    "avg_mae_r": -0.2892744529049804,
+    "avg_mfe_r": 1.1536932907558075,
+    "exit_efficiency": 0.43538794535098013,
+    "a_setup_win_rate": 50.0,
+    "b_setup_win_rate": 40.909090909090914,
+    "long_win_rate": 42.857142857142854,
+    "short_win_rate": 33.33333333333333,
+    "funding_cost_total": -0.3421498209142946,
+    "edge_ratio": 3.9882308277487875,
+    "payoff_ratio": 3.401818144137363,
+    "recovery_factor": 2.1709957171697565,
+    "max_consecutive_losses": 4.0
+  }
+}

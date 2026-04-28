@@ -1,0 +1,18 @@
+{
+  "accepted": [
+    "trail_tight_004"
+  ],
+  "rejected": [
+    "trail_activation_035_bars4",
+    "trail_activation_030_bars4",
+    "trail_tight_007",
+    "early_lock_035_0",
+    "early_lock_045_01",
+    "trail_activation_030_tight_007",
+    "early_lock_035_tight_007"
+  ],
+  "final_score": 0.8308811486158278,
+  "base_score": 0.8272094930945119,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "finetune_body_ratio_min_0_495",
+    "finetune_body_ratio_min_0_5225",
+    "finetune_body_ratio_min_0_5775",
+    "finetune_body_ratio_min_0_605",
+    "finetune_trail_buffer_tight_0_09",
+    "finetune_trail_buffer_tight_0_095",
+    "finetune_trail_buffer_tight_0_105",
+    "finetune_trail_buffer_tight_0_11"
+  ],
+  "final_score": 0.7937209655070969,
+  "base_score": 0.7937209655070969,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

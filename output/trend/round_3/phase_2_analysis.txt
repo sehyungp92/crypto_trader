@@ -1,0 +1,34 @@
+======== PHASE 2 ANALYSIS ========
+Recommendation: advance
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
+
+Accepted: 0 experiments
+Final score: 0.8031
+Base score: 0.8031
+Rounds: 1
+
+Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+Diagnostic Gaps: Direction imbalance: long avg_r much lower. [D5] Consider direction filtering.
+
+Goal Progress:
+  net_return_pct: 34.52 / 36.00 (96%)
+  total_trades: 39.00 / 50.00 (78%)
+  profit_factor: 3.84 / 2.20 (175%)
+  max_drawdown_pct: 4.28 / 9.00 (200%)
+  sharpe_ratio: 6.04 / 4.80 (126%)
+  calmar_ratio: 8.07 / 4.80 (168%)
+  exit_efficiency: 0.57 / 0.58 (98%)
+
+Extra Analysis:
+  confirmation_breakdown:
+    none: {'n': 35, 'avg_r': 0.5074792749207909}
+    hammer: {'n': 4, 'avg_r': -0.17267028248076186}
+  confluence_ladder:
+    2: {'n': 16, 'avg_r': 0.6958084558949933}
+    3: {'n': 22, 'avg_r': 0.230258196389139}
+    5: {'n': 1, 'avg_r': 0.8724778774236897}
+  per_asset_edge:
+    ETH: {'n': 13, 'avg_r': 0.5449860085915812}
+    BTC: {'n': 13, 'avg_r': 0.36308882874684467}
+    SOL: {'n': 13, 'avg_r': 0.4050862005311616}

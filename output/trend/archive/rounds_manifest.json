@@ -1,0 +1,74 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "timestamp": "2026-04-20T22:33:54.747428+00:00",
+      "mutations_count": 17,
+      "mutations": {
+        "exits.time_stop_action": "exit",
+        "exits.time_stop_bars": 16,
+        "exits.tp2_frac": 0.6,
+        "exits.tp2_r": 1.5,
+        "h1_indicators.ema_fast": 30,
+        "regime.b_adx_rising_required": true,
+        "regime.b_min_adx": 8.0,
+        "regime.h1_min_adx": 22.0,
+        "regime.h1_regime_enabled": true,
+        "risk.risk_pct_a": 0.01,
+        "risk.risk_pct_b": 0.018,
+        "setup.impulse_min_atr_move": 0.8,
+        "setup.min_room_r": 1.5,
+        "setup.require_orderly_pullback": true,
+        "stops.atr_mult": 1.0,
+        "stops.min_stop_atr": 1.5,
+        "trail.trail_buffer_tight": 0.3
+      },
+      "total_trades": 87.0,
+      "win_rate": 54.02298850574713,
+      "profit_factor": 1.4011137597763723,
+      "max_drawdown_pct": 11.058319232831975,
+      "sharpe_ratio": 2.830142671581567,
+      "calmar_ratio": 1.90127519309135,
+      "net_return_pct": 21.024908034668403
+    },
+    {
+      "round": 2,
+      "timestamp": "2026-04-21T08:30:52.219344+00:00",
+      "mutations_count": 9,
+      "mutations": {
+        "setup.strict_orderly_pullback": true,
+        "exits.scratch_exit_enabled": true,
+        "exits.scratch_peak_r": 0.25,
+        "exits.scratch_floor_r": 0.0,
+        "exits.scratch_min_bars": 4,
+        "exits.time_stop_bars": 12,
+        "exits.time_stop_action": "reduce",
+        "exits.time_stop_min_progress_r": 0.2,
+        "trail.trail_buffer_tight": 0.2
+      },
+      "total_trades": 53.0,
+      "win_rate": 50.943396226415096,
+      "profit_factor": 2.676235240547323,
+      "max_drawdown_pct": 6.458861354769637,
+      "sharpe_ratio": 5.1604573351984975,
+      "calmar_ratio": 5.0125399617285025,
+      "net_return_pct": 32.375300648046704
+    },
+    {
+      "round": 3,
+      "timestamp": "2026-04-21T11:29:53.168978+00:00",
+      "mutations_count": 2,
+      "mutations": {
+        "setup.orderly_max_body_frac": 0.9,
+        "setup.orderly_max_countertrend_volume_ratio": 1.05
+      },
+      "total_trades": 57.0,
+      "win_rate": 50.877192982456144,
+      "profit_factor": 2.7186381746122334,
+      "max_drawdown_pct": 6.639998021562375,
+      "sharpe_ratio": 5.521464492089498,
+      "calmar_ratio": 5.55770706591941,
+      "net_return_pct": 36.903163922128115
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "accepted": [
+    "corr_risk_020"
+  ],
+  "rejected": [
+    "risk_b_015",
+    "risk_b_016",
+    "risk_b_018",
+    "gross_risk_045",
+    "gross_risk_050",
+    "corr_risk_018",
+    "daily_loss_020",
+    "max_consecutive_losses_3"
+  ],
+  "final_score": 0.5315452184825036,
+  "base_score": 0.4794350589261525,
+  "rounds": 2,
+  "elapsed_seconds": 0.0
+}

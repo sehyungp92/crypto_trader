@@ -1,0 +1,15 @@
+{
+  "accepted": [],
+  "rejected": [
+    "risk_b_0_019",
+    "risk_b_0_020",
+    "risk_b_0_019_maxtrades12",
+    "risk_b_0_019_disable_hammer",
+    "risk_b_0_020_disable_hammer",
+    "max_trades_12_disable_hammer"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 3.3810789585113525
+}

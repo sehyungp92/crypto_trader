@@ -1,0 +1,16 @@
+{
+  "accepted": [],
+  "rejected": [
+    "entry_break_ttl1",
+    "entry_break_ttl2",
+    "entry_confirm_specific_ttl1",
+    "entry_confirm_specific_ttl2",
+    "fib_high_050",
+    "fib_050_confirm_specific_ttl2",
+    "fib_050_break_ttl2"
+  ],
+  "final_score": 0.5789922208174012,
+  "base_score": 0.5789922208174012,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

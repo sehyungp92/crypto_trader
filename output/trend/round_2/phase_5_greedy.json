@@ -1,0 +1,17 @@
+{
+  "accepted": [],
+  "rejected": [
+    "h1_regime_off",
+    "relative_strength_24_0",
+    "relative_strength_48_0",
+    "relative_strength_24_0_005",
+    "reentry_off",
+    "sol_disabled",
+    "quality_regime_bundle",
+    "regime_filter_bundle"
+  ],
+  "final_score": 0.7591216607568363,
+  "base_score": 0.7591216607568363,
+  "rounds": 1,
+  "elapsed_seconds": 33.54581165313721
+}

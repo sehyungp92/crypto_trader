@@ -1,0 +1,13 @@
+{
+  "accepted": [],
+  "rejected": [
+    "zone_age_28",
+    "zone_age_30",
+    "zone_age_32",
+    "zone_age_36"
+  ],
+  "final_score": 0.0,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 0.0
+}

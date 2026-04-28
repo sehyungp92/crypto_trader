@@ -1,0 +1,26 @@
+======== PHASE 1 ANALYSIS ========
+Recommendation: advance
+Reason: Gate failed after accepted mutations, but the score is intentionally immutable for this round
+Scoring assessment: MARGINAL
+
+Accepted: 1 experiments
+Final score: 0.6496
+Base score: 0.6355
+Rounds: 2
+
+Strengths: net_return_pct, total_trades, profit_factor, exit_efficiency, avg_mae_r, max_drawdown_pct
+Diagnostic Gaps: High alpha giveback (D1) — trail/stop calibration needs review
+
+Goal Progress:
+  net_return_pct: 12.36 / 13.50 (92%)
+  total_trades: 24.00 / 24.00 (100%)
+  profit_factor: 4.32 / 3.00 (144%)
+  exit_efficiency: 0.47 / 0.55 (85%)
+  avg_mae_r: -0.26 / -0.28 (100%)
+  max_drawdown_pct: 3.42 / 8.00 (200%)
+
+Extra Analysis:
+  trail_exits: 16
+  avg_capture_pct: 0.4670
+  avg_giveback_pct: 0.5330
+  avg_bars_held: 10.2083

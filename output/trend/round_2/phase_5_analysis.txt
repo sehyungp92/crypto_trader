@@ -1,0 +1,29 @@
+======== PHASE 5 ANALYSIS ========
+Recommendation: advance
+Reason: Retry budget exhausted (scoring: 1/1, diagnostics: 1/1). Force advancing.
+Scoring assessment: INEFFECTIVE
+
+Accepted: 0 experiments
+Final score: 0.7591
+Base score: 0.7591
+Rounds: 1
+
+Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+Weaknesses: total_trades
+
+Goal Progress:
+  net_return_pct: 22.03 / 18.00 (122%)
+  total_trades: 19.00 / 36.00 (53%)
+  profit_factor: 12.89 / 1.80 (200%)
+  max_drawdown_pct: 3.46 / 10.00 (200%)
+  sharpe_ratio: 5.11 / 3.50 (146%)
+  calmar_ratio: 6.36 / 2.80 (200%)
+  exit_efficiency: 0.64 / 0.55 (116%)
+
+Extra Analysis:
+  top_trade_pct: 16.2908
+  direction_breakdown:
+    long: {'n': 11, 'avg_r': 0.5308219686317345}
+    short: {'n': 8, 'avg_r': 0.6518177384476679}
+  r_skew: 0.3712
+  r_mean: 0.5818
