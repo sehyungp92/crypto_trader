@@ -48,7 +48,7 @@
       0.0
     ]
   ],
-  "symbol_collision": "block",
+  "symbol_collision": "cap",
   "symbol_exposure_cap_R": 3.5,
   "priority_headroom_R": 0.0,
   "priority_reserve_threshold": 0

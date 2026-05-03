@@ -141,6 +141,31 @@ class TestHyperliquidBroker:
         assert len(orders) == 1
         assert orders[0].symbol == "BTC"
 
+    def test_get_open_orders_preserves_tracked_order_metadata(self):
+        broker, info = _make_broker()
+        tracked = Order(
+            order_id="local_1",
+            symbol="BTC",
+            side=Side.LONG,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49000.0,
+            tag="protective_stop",
+            metadata={"strategy_id": "momentum"},
+        )
+        broker._orders["local_1"] = tracked
+        broker._oid_map["100"] = "local_1"
+        info.open_orders.return_value = [
+            {"coin": "BTC", "oid": "100", "side": "B", "sz": "0.1", "limitPx": "49000"},
+        ]
+
+        orders = broker.get_open_orders("BTC")
+
+        assert len(orders) == 1
+        assert orders[0].order_id == "local_1"
+        assert orders[0].tag == "protective_stop"
+        assert orders[0].metadata["strategy_id"] == "momentum"
+
     def test_submit_order_read_only(self):
         broker, info = _make_broker(private_key=None)
         order = Order(

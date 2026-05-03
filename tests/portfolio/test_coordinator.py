@@ -40,7 +40,7 @@ class TestBrokerProxy:
             tag="entry", metadata={"risk_R": 1.0},
         )
         result = proxy.submit_order(order)
-        assert result == "order_1"
+        assert result == "o1"
         broker.submit_order.assert_called_once()
         # Strategy ID should be stamped in metadata
         assert order.metadata["strategy_id"] == "momentum"
@@ -76,8 +76,9 @@ class TestBrokerProxy:
             stop_price=50000.0, tag="stop",
         )
         result = proxy.submit_order(order)
-        assert result == "order_3"
+        assert result == "o3"
         broker.submit_order.assert_called_once()
+        assert order.metadata["strategy_id"] == "momentum"
 
     def test_size_multiplier_applied(self):
         broker, manager, state = _make_components()
@@ -123,6 +124,107 @@ class TestBrokerProxy:
         proxy = BrokerProxy(broker, manager, "momentum")
         assert proxy.some_custom_method() == 42
 
+    def test_get_open_orders_filters_to_strategy_owner(self):
+        broker, manager, _ = _make_components()
+        proxy = BrokerProxy(broker, manager, "momentum")
+        own = Order(
+            order_id="own", symbol="BTC", side=Side.LONG,
+            order_type=OrderType.STOP, qty=0.1,
+            metadata={"strategy_id": "momentum"},
+        )
+        other = Order(
+            order_id="other", symbol="BTC", side=Side.LONG,
+            order_type=OrderType.STOP, qty=0.1,
+            metadata={"strategy_id": "trend"},
+        )
+        unknown = Order(
+            order_id="unknown", symbol="BTC", side=Side.LONG,
+            order_type=OrderType.STOP, qty=0.1,
+        )
+        broker.get_open_orders.return_value = [own, other, unknown]
+
+        assert proxy.get_open_orders("BTC") == [own]
+
+    def test_client_order_ids_cancel_broker_assigned_ids(self):
+        broker, manager, _ = _make_components()
+        proxy = BrokerProxy(broker, manager, "trend")
+
+        def assign_order_id(order):
+            order.order_id = "broker_1"
+            return "broker_1"
+
+        broker.submit_order.side_effect = assign_order_id
+        broker.cancel_order.return_value = True
+
+        order = Order(
+            order_id="trend_stop_BTC_abc",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49000.0,
+            tag="protective_stop",
+        )
+
+        assert proxy.submit_order(order) == "trend_stop_BTC_abc"
+        assert proxy.cancel_order("trend_stop_BTC_abc") is True
+        broker.cancel_order.assert_called_once_with("broker_1")
+
+    def test_open_orders_expose_client_order_ids_when_broker_assigns_ids(self):
+        broker, manager, _ = _make_components()
+        proxy = BrokerProxy(broker, manager, "trend")
+
+        def assign_order_id(order):
+            order.order_id = "broker_1"
+            return "broker_1"
+
+        broker.submit_order.side_effect = assign_order_id
+        order = Order(
+            order_id="trend_stop_BTC_abc",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49000.0,
+            tag="protective_stop",
+        )
+        proxy.submit_order(order)
+        broker.get_open_orders.return_value = [order]
+
+        visible = proxy.get_open_orders("BTC")
+
+        assert len(visible) == 1
+        assert visible[0].order_id == "trend_stop_BTC_abc"
+        assert visible[0].metadata["broker_order_id"] == "broker_1"
+        assert order.order_id == "broker_1"
+
+    def test_cancel_all_cancels_only_strategy_owned_orders(self):
+        broker, manager, _ = _make_components()
+        proxy = BrokerProxy(broker, manager, "momentum")
+        own = Order(
+            order_id="own", symbol="BTC", side=Side.LONG,
+            order_type=OrderType.STOP, qty=0.1,
+            metadata={"strategy_id": "momentum"},
+        )
+        other = Order(
+            order_id="other", symbol="BTC", side=Side.LONG,
+            order_type=OrderType.STOP, qty=0.1,
+            metadata={"strategy_id": "trend"},
+        )
+        broker.get_open_orders.return_value = [own, other]
+        broker.cancel_order.return_value = True
+
+        assert proxy.cancel_all("BTC") == 1
+        broker.cancel_order.assert_called_once_with("own")
+
+    def test_manager_equity_source_for_portfolio_backtests(self):
+        broker, manager, state = _make_components()
+        state.equity = 12345.0
+        broker.get_equity.return_value = 999.0
+        proxy = BrokerProxy(broker, manager, "momentum", use_manager_equity=True)
+
+        assert proxy.get_equity() == pytest.approx(12345.0)
+
 
 class TestStrategyCoordinator:
     def test_get_proxy_creates_once(self):
@@ -164,6 +266,30 @@ class TestStrategyCoordinator:
 
         strategy_id = coord.on_fill(fill)
         assert strategy_id == "momentum"
+
+    def test_on_fill_entry_uses_registered_order_risk_metadata(self):
+        broker, manager, state = _make_components()
+        coord = StrategyCoordinator(broker, manager)
+        order = Order(
+            order_id="",
+            symbol="BTC",
+            side=Side.LONG,
+            order_type=OrderType.MARKET,
+            qty=0.1,
+            tag="entry",
+            metadata={"strategy_id": "momentum", "risk_R": 0.35},
+        )
+        coord.register_order("o_risk", "momentum", order)
+        fill = Fill(
+            order_id="o_risk", symbol="BTC", side=Side.LONG,
+            qty=0.1, fill_price=50000.0, commission=1.75,
+            timestamp=datetime(2026, 4, 20, tzinfo=timezone.utc), tag="entry",
+        )
+
+        strategy_id = coord.on_fill(fill)
+
+        assert strategy_id == "momentum"
+        assert state.total_heat_R() == pytest.approx(0.35)
 
     def test_on_trade_closed(self):
         broker, manager, state = _make_components()

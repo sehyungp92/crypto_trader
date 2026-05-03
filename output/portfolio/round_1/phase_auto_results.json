@@ -1,0 +1,1848 @@
+{
+  "created_at": "2026-05-03T18:43:22.926319+00:00",
+  "round": "round_1",
+  "initial_equity": 25000.0,
+  "max_workers": 2,
+  "score_component_limit": 7,
+  "score_component_weights": {
+    "dev_return": 0.31,
+    "dev_frequency": 0.19,
+    "dev_profit_factor": 0.17,
+    "dev_drawdown_resilience": 0.11,
+    "holdout_return": 0.1,
+    "holdout_profit_factor": 0.05,
+    "strategy_balance": 0.07
+  },
+  "actual_validation_component_weights": {
+    "full_return": 0.32,
+    "full_frequency": 0.18,
+    "full_profit_factor": 0.16,
+    "full_drawdown_resilience": 0.12,
+    "holdout_return": 0.1,
+    "holdout_profit_factor": 0.05,
+    "holdout_drawdown_resilience": 0.07
+  },
+  "windows": {
+    "development": {
+      "start": "2025-12-01",
+      "end": "2026-04-18"
+    },
+    "forward_holdout": {
+      "start": "2026-04-19",
+      "end": "2026-04-30"
+    },
+    "full_refreshed": {
+      "start": "2025-12-01",
+      "end": "2026-04-30"
+    }
+  },
+  "replay_selected_policy": {
+    "name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+    "accepted_deltas": [
+      "momentum_require_one_confluence",
+      "caps_unlock_one_directional_unit",
+      "postcap_risk_trend_breakout_lean"
+    ],
+    "strategy_mutations": {
+      "momentum": {
+        "setup.min_confluences_b": 1
+      }
+    },
+    "risk_scales": {
+      "momentum": 0.9,
+      "trend": 1.18,
+      "breakout": 1.12
+    },
+    "portfolio_overrides": {
+      "directional_cap_R": 5.0,
+      "heat_cap_R": 7.5,
+      "symbol_exposure_cap_R": 3.5,
+      "max_total_positions": 10
+    },
+    "filter_rules": [
+      {
+        "kind": "confluence_lte",
+        "strategy_id": "momentum",
+        "threshold": 0,
+        "reason": "momentum_zero_confluence_filter"
+      }
+    ]
+  },
+  "selected_policy": {
+    "name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_core_120",
+    "accepted_deltas": [
+      "momentum_require_one_confluence",
+      "caps_unlock_one_directional_unit",
+      "postcap_risk_trend_core_120"
+    ],
+    "strategy_mutations": {
+      "momentum": {
+        "setup.min_confluences_b": 1
+      }
+    },
+    "risk_scales": {
+      "momentum": 0.95,
+      "trend": 1.2,
+      "breakout": 1.05
+    },
+    "portfolio_overrides": {
+      "directional_cap_R": 5.0,
+      "heat_cap_R": 7.5,
+      "symbol_exposure_cap_R": 3.5,
+      "max_total_positions": 10
+    },
+    "filter_rules": [
+      {
+        "kind": "confluence_lte",
+        "strategy_id": "momentum",
+        "threshold": 0,
+        "reason": "momentum_zero_confluence_filter"
+      }
+    ]
+  },
+  "phase_log": [
+    {
+      "phase": 1,
+      "accepted": true,
+      "accepted_policy": "momentum_require_one_confluence",
+      "accepted_deltas": [
+        "momentum_require_one_confluence"
+      ],
+      "current_evaluation": {
+        "policy_name": "momentum_require_one_confluence",
+        "score": 0.7081220239940446,
+        "rejected": false,
+        "reject_reason": "",
+        "development": {
+          "trades": 76,
+          "filtered": 5,
+          "blocked": 1,
+          "net_pnl": 18323.13788930838,
+          "net_return_pct": 73.29255155723351,
+          "win_rate": 59.210526315789465,
+          "profit_factor": 5.099806740722202,
+          "max_drawdown_pct": 1.8744227152998842,
+          "total_r": 49.44374768568781,
+          "per_strategy_trades": {
+            "breakout": 16,
+            "trend": 42,
+            "momentum": 18
+          },
+          "block_reasons": {
+            "directional_cap_R": 1
+          },
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 5
+          }
+        },
+        "holdout": {
+          "trades": 13,
+          "filtered": 3,
+          "blocked": 0,
+          "net_pnl": -35.881174996744434,
+          "net_return_pct": -0.14352469998697773,
+          "win_rate": 30.76923076923077,
+          "profit_factor": 0.9686781784463582,
+          "max_drawdown_pct": 2.7839344833585735,
+          "total_r": 0.3997953644647546,
+          "per_strategy_trades": {
+            "trend": 6,
+            "momentum": 7
+          },
+          "block_reasons": {},
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 3
+          }
+        },
+        "score_components": {
+          "dev_return": 0.7329255155723351,
+          "dev_frequency": 0.8,
+          "dev_profit_factor": 0.8199613481444403,
+          "dev_drawdown_resilience": 0.7794796805529548,
+          "holdout_return": 0.3094125500021704,
+          "holdout_profit_factor": 0.14747127137854327,
+          "strategy_balance": 0.9352014507442357
+        }
+      },
+      "candidates": [
+        {
+          "delta": "breakout_block_sol_longs",
+          "thesis": "Breakout diagnostics show SOL longs 0/2 while SOL short is positive; block only that weak side.",
+          "policy": "breakout_block_sol_longs",
+          "evaluation": {
+            "policy_name": "breakout_block_sol_longs",
+            "score": 0.6978549042839686,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 78,
+              "filtered": 2,
+              "blocked": 2,
+              "net_pnl": 18678.211517374148,
+              "net_return_pct": 74.71284606949659,
+              "win_rate": 61.53846153846154,
+              "profit_factor": 5.397072018634967,
+              "max_drawdown_pct": 2.309097354199029,
+              "total_r": 50.04539476509147,
+              "per_strategy_trades": {
+                "breakout": 14,
+                "trend": 42,
+                "momentum": 22
+              },
+              "block_reasons": {
+                "directional_cap_R": 2
+              },
+              "filter_reasons": {
+                "breakout_SOL_LONG_filter": 2
+              }
+            },
+            "holdout": {
+              "trades": 16,
+              "filtered": 0,
+              "blocked": 0,
+              "net_pnl": -330.5352262102449,
+              "net_return_pct": -1.3221409048409796,
+              "win_rate": 31.25,
+              "profit_factor": 0.7894889422632351,
+              "max_drawdown_pct": 3.9616729746927386,
+              "total_r": -0.6454811349730093,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 10
+              },
+              "block_reasons": {},
+              "filter_reasons": {}
+            },
+            "score_components": {
+              "dev_return": 0.747128460694966,
+              "dev_frequency": 0.8210526315789474,
+              "dev_profit_factor": 0.8794144037269934,
+              "dev_drawdown_resilience": 0.7283414877412907,
+              "holdout_return": 0.11297651585983674,
+              "holdout_profit_factor": 0.07579557690529404,
+              "strategy_balance": 0.936280553602141
+            }
+          }
+        },
+        {
+          "delta": "breakout_block_eth_shorts",
+          "thesis": "Breakout ETH edge is concentrated in longs; ETH shorts are the recurring weak side.",
+          "policy": "breakout_block_eth_shorts",
+          "evaluation": {
+            "policy_name": "breakout_block_eth_shorts",
+            "score": 0.6899282634483656,
+            "rejected": true,
+            "reject_reason": "development trades too low (75 < 76)",
+            "development": {
+              "trades": 75,
+              "filtered": 5,
+              "blocked": 2,
+              "net_pnl": 18366.292097176978,
+              "net_return_pct": 73.46516838870791,
+              "win_rate": 61.33333333333333,
+              "profit_factor": 5.506813513489532,
+              "max_drawdown_pct": 2.335022259482916,
+              "total_r": 49.81310181590125,
+              "per_strategy_trades": {
+                "breakout": 11,
+                "trend": 42,
+                "momentum": 22
+              },
+              "block_reasons": {
+                "directional_cap_R": 2
+              },
+              "filter_reasons": {
+                "breakout_ETH_SHORT_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 16,
+              "filtered": 0,
+              "blocked": 0,
+              "net_pnl": -330.5352262102449,
+              "net_return_pct": -1.3221409048409796,
+              "win_rate": 31.25,
+              "profit_factor": 0.7894889422632351,
+              "max_drawdown_pct": 3.9616729746927386,
+              "total_r": -0.6454811349730093,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 10
+              },
+              "block_reasons": {},
+              "filter_reasons": {}
+            },
+            "score_components": {
+              "dev_return": 0.7346516838870791,
+              "dev_frequency": 0.7894736842105263,
+              "dev_profit_factor": 0.9013627026979064,
+              "dev_drawdown_resilience": 0.7252914988843628,
+              "holdout_return": 0.11297651585983674,
+              "holdout_profit_factor": 0.07579557690529404,
+              "strategy_balance": 0.9155012382314085
+            }
+          }
+        },
+        {
+          "delta": "breakout_block_sol_longs_eth_shorts",
+          "thesis": "Combine only the two breakout side filters with diagnostic support.",
+          "policy": "breakout_block_sol_longs_eth_shorts",
+          "evaluation": {
+            "policy_name": "breakout_block_sol_longs_eth_shorts",
+            "score": 0.7068576852753917,
+            "rejected": true,
+            "reject_reason": "development trades too low (73 < 76)",
+            "development": {
+              "trades": 73,
+              "filtered": 7,
+              "blocked": 2,
+              "net_pnl": 18777.82116827153,
+              "net_return_pct": 75.11128467308612,
+              "win_rate": 63.013698630136986,
+              "profit_factor": 6.125372506944311,
+              "max_drawdown_pct": 2.30987373362364,
+              "total_r": 50.34196262569246,
+              "per_strategy_trades": {
+                "breakout": 9,
+                "trend": 42,
+                "momentum": 22
+              },
+              "block_reasons": {
+                "directional_cap_R": 2
+              },
+              "filter_reasons": {
+                "breakout_ETH_SHORT_filter": 5,
+                "breakout_SOL_LONG_filter": 2
+              }
+            },
+            "holdout": {
+              "trades": 16,
+              "filtered": 0,
+              "blocked": 0,
+              "net_pnl": -330.5352262102449,
+              "net_return_pct": -1.3221409048409796,
+              "win_rate": 31.25,
+              "profit_factor": 0.7894889422632351,
+              "max_drawdown_pct": 3.9616729746927386,
+              "total_r": -0.6454811349730093,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 10
+              },
+              "block_reasons": {},
+              "filter_reasons": {}
+            },
+            "score_components": {
+              "dev_return": 0.7511128467308612,
+              "dev_frequency": 0.7684210526315789,
+              "dev_profit_factor": 1.0,
+              "dev_drawdown_resilience": 0.728250148985454,
+              "holdout_return": 0.11297651585983674,
+              "holdout_profit_factor": 0.07579557690529404,
+              "strategy_balance": 0.8973965138453779
+            }
+          }
+        },
+        {
+          "delta": "momentum_require_one_confluence",
+          "thesis": "Momentum zero-confluence trades are slightly negative; require one confluence for B setups.",
+          "policy": "momentum_require_one_confluence",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence",
+            "score": 0.7081220239940446,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 18323.13788930838,
+              "net_return_pct": 73.29255155723351,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.099806740722202,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 49.44374768568781,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7329255155723351,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8199613481444403,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        },
+        {
+          "delta": "trend_raise_weighted_b_score",
+          "thesis": "Nudge trend B setup quality higher without disabling a whole symbol or direction.",
+          "policy": "trend_raise_weighted_b_score",
+          "evaluation": {
+            "policy_name": "trend_raise_weighted_b_score",
+            "score": 0.6809593745423493,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 80,
+              "filtered": 0,
+              "blocked": 2,
+              "net_pnl": 18266.682446279596,
+              "net_return_pct": 73.06672978511838,
+              "win_rate": 60.0,
+              "profit_factor": 4.920390433277912,
+              "max_drawdown_pct": 2.3342288854219113,
+              "total_r": 49.51653395530026,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 22
+              },
+              "block_reasons": {
+                "directional_cap_R": 2
+              },
+              "filter_reasons": {}
+            },
+            "holdout": {
+              "trades": 16,
+              "filtered": 0,
+              "blocked": 0,
+              "net_pnl": -330.5352262102449,
+              "net_return_pct": -1.3221409048409796,
+              "win_rate": 31.25,
+              "profit_factor": 0.7894889422632351,
+              "max_drawdown_pct": 3.9616729746927386,
+              "total_r": -0.6454811349730093,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 10
+              },
+              "block_reasons": {},
+              "filter_reasons": {}
+            },
+            "score_components": {
+              "dev_return": 0.7306672978511838,
+              "dev_frequency": 0.8421052631578947,
+              "dev_profit_factor": 0.7840780866555823,
+              "dev_drawdown_resilience": 0.7253848370091869,
+              "holdout_return": 0.11297651585983674,
+              "holdout_profit_factor": 0.07579557690529404,
+              "strategy_balance": 0.946849642496778
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "accepted": false,
+      "accepted_policy": "momentum_require_one_confluence",
+      "accepted_deltas": [
+        "momentum_require_one_confluence"
+      ],
+      "current_evaluation": {
+        "policy_name": "momentum_require_one_confluence",
+        "score": 0.7081220239940446,
+        "rejected": false,
+        "reject_reason": "",
+        "development": {
+          "trades": 76,
+          "filtered": 5,
+          "blocked": 1,
+          "net_pnl": 18323.13788930838,
+          "net_return_pct": 73.29255155723351,
+          "win_rate": 59.210526315789465,
+          "profit_factor": 5.099806740722202,
+          "max_drawdown_pct": 1.8744227152998842,
+          "total_r": 49.44374768568781,
+          "per_strategy_trades": {
+            "breakout": 16,
+            "trend": 42,
+            "momentum": 18
+          },
+          "block_reasons": {
+            "directional_cap_R": 1
+          },
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 5
+          }
+        },
+        "holdout": {
+          "trades": 13,
+          "filtered": 3,
+          "blocked": 0,
+          "net_pnl": -35.881174996744434,
+          "net_return_pct": -0.14352469998697773,
+          "win_rate": 30.76923076923077,
+          "profit_factor": 0.9686781784463582,
+          "max_drawdown_pct": 2.7839344833585735,
+          "total_r": 0.3997953644647546,
+          "per_strategy_trades": {
+            "trend": 6,
+            "momentum": 7
+          },
+          "block_reasons": {},
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 3
+          }
+        },
+        "score_components": {
+          "dev_return": 0.7329255155723351,
+          "dev_frequency": 0.8,
+          "dev_profit_factor": 0.8199613481444403,
+          "dev_drawdown_resilience": 0.7794796805529548,
+          "holdout_return": 0.3094125500021704,
+          "holdout_profit_factor": 0.14747127137854327,
+          "strategy_balance": 0.9352014507442357
+        }
+      },
+      "candidates": [
+        {
+          "delta": "trend_reentry_more_patient",
+          "thesis": "Trend has the broadest sample; allow one more controlled reentry window to lift frequency.",
+          "policy": "momentum_require_one_confluence+trend_reentry_more_patient",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+trend_reentry_more_patient",
+            "score": 0.7081220239940446,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 18323.13788930838,
+              "net_return_pct": 73.29255155723351,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.099806740722202,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 49.44374768568781,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7329255155723351,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8199613481444403,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        },
+        {
+          "delta": "momentum_reentry_faster",
+          "thesis": "Momentum holds short but recovers quickly; reduce cooldown without increasing max reentries.",
+          "policy": "momentum_require_one_confluence+momentum_reentry_faster",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+momentum_reentry_faster",
+            "score": 0.7081220239940446,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 18323.13788930838,
+              "net_return_pct": 73.29255155723351,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.099806740722202,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 49.44374768568781,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7329255155723351,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8199613481444403,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        },
+        {
+          "delta": "breakout_relaxed_body_cautious_expand",
+          "thesis": "Probe more breakout frequency with lower relaxed-body confluence but smaller relaxed risk.",
+          "policy": "momentum_require_one_confluence+breakout_relaxed_body_cautious_expand",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+breakout_relaxed_body_cautious_expand",
+            "score": 0.7081220239940446,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 18323.13788930838,
+              "net_return_pct": 73.29255155723351,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.099806740722202,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 49.44374768568781,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7329255155723351,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8199613481444403,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "accepted": false,
+      "accepted_policy": "momentum_require_one_confluence",
+      "accepted_deltas": [
+        "momentum_require_one_confluence"
+      ],
+      "current_evaluation": {
+        "policy_name": "momentum_require_one_confluence",
+        "score": 0.7081220239940446,
+        "rejected": false,
+        "reject_reason": "",
+        "development": {
+          "trades": 76,
+          "filtered": 5,
+          "blocked": 1,
+          "net_pnl": 18323.13788930838,
+          "net_return_pct": 73.29255155723351,
+          "win_rate": 59.210526315789465,
+          "profit_factor": 5.099806740722202,
+          "max_drawdown_pct": 1.8744227152998842,
+          "total_r": 49.44374768568781,
+          "per_strategy_trades": {
+            "breakout": 16,
+            "trend": 42,
+            "momentum": 18
+          },
+          "block_reasons": {
+            "directional_cap_R": 1
+          },
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 5
+          }
+        },
+        "holdout": {
+          "trades": 13,
+          "filtered": 3,
+          "blocked": 0,
+          "net_pnl": -35.881174996744434,
+          "net_return_pct": -0.14352469998697773,
+          "win_rate": 30.76923076923077,
+          "profit_factor": 0.9686781784463582,
+          "max_drawdown_pct": 2.7839344833585735,
+          "total_r": 0.3997953644647546,
+          "per_strategy_trades": {
+            "trend": 6,
+            "momentum": 7
+          },
+          "block_reasons": {},
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 3
+          }
+        },
+        "score_components": {
+          "dev_return": 0.7329255155723351,
+          "dev_frequency": 0.8,
+          "dev_profit_factor": 0.8199613481444403,
+          "dev_drawdown_resilience": 0.7794796805529548,
+          "holdout_return": 0.3094125500021704,
+          "holdout_profit_factor": 0.14747127137854327,
+          "strategy_balance": 0.9352014507442357
+        }
+      },
+      "candidates": [
+        {
+          "delta": "risk_all_115",
+          "thesis": "Uniform modest risk lift; tests whether the low DD headroom is real.",
+          "policy": "momentum_require_one_confluence+risk_all_115",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+risk_all_115",
+            "score": 0.7331960205487515,
+            "rejected": true,
+            "reject_reason": "development trades too low (73 < 76)",
+            "development": {
+              "trades": 73,
+              "filtered": 5,
+              "blocked": 4,
+              "net_pnl": 20895.97178320368,
+              "net_return_pct": 83.58388713281472,
+              "win_rate": 60.273972602739725,
+              "profit_factor": 5.164060642236108,
+              "max_drawdown_pct": 2.0535882403350274,
+              "total_r": 55.923984127861765,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 41,
+                "momentum": 16
+              },
+              "block_reasons": {
+                "directional_cap_R": 4
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -41.26335124625611,
+              "net_return_pct": -0.16505340498502444,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463581,
+              "max_drawdown_pct": 3.2011670702965116,
+              "total_r": 0.4597646691344678,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8358388713281473,
+              "dev_frequency": 0.7684210526315789,
+              "dev_profit_factor": 0.8328121284472216,
+              "dev_drawdown_resilience": 0.7584013834899967,
+              "holdout_return": 0.3058244325024959,
+              "holdout_profit_factor": 0.14747127137854324,
+              "strategy_balance": 0.9303964228274537
+            }
+          }
+        },
+        {
+          "delta": "risk_trend_core_130",
+          "thesis": "Overweight the most statistically supported strategy while keeping smaller-sample strategies near baseline.",
+          "policy": "momentum_require_one_confluence+risk_trend_core_130",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+risk_trend_core_130",
+            "score": 0.7399346195336585,
+            "rejected": true,
+            "reject_reason": "development trades too low (73 < 76)",
+            "development": {
+              "trades": 73,
+              "filtered": 5,
+              "blocked": 4,
+              "net_pnl": 21375.99857921684,
+              "net_return_pct": 85.50399431686736,
+              "win_rate": 60.273972602739725,
+              "profit_factor": 5.102017505919408,
+              "max_drawdown_pct": 2.325302513817961,
+              "total_r": 55.07065400622216,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 41,
+                "momentum": 16
+              },
+              "block_reasons": {
+                "directional_cap_R": 4
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": 36.481292521361475,
+              "net_return_pct": 0.1459251700854459,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 1.030131151479232,
+              "max_drawdown_pct": 2.826921339135318,
+              "total_r": 0.6212494386918709,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8550399431686736,
+              "dev_frequency": 0.7684210526315789,
+              "dev_profit_factor": 0.8204035011838815,
+              "dev_drawdown_resilience": 0.7264349983743575,
+              "holdout_return": 0.35765419501424095,
+              "holdout_profit_factor": 0.1720524605916928,
+              "strategy_balance": 0.9303964228274537
+            }
+          }
+        },
+        {
+          "delta": "risk_trend_breakout_lean",
+          "thesis": "Lean into trend sample depth and breakout expectancy, with momentum slightly reduced.",
+          "policy": "momentum_require_one_confluence+risk_trend_breakout_lean",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+risk_trend_breakout_lean",
+            "score": 0.7422749646086715,
+            "rejected": true,
+            "reject_reason": "development trades too low (73 < 76)",
+            "development": {
+              "trades": 73,
+              "filtered": 5,
+              "blocked": 4,
+              "net_pnl": 21332.079162842343,
+              "net_return_pct": 85.32831665136938,
+              "win_rate": 60.273972602739725,
+              "profit_factor": 5.148379242274313,
+              "max_drawdown_pct": 2.2381380142063243,
+              "total_r": 54.52370885564175,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 41,
+                "momentum": 16
+              },
+              "block_reasons": {
+                "directional_cap_R": 4
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": 38.27535127119862,
+              "net_return_pct": 0.1531014050847945,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 1.033182737173702,
+              "max_drawdown_pct": 2.6878557656225492,
+              "total_r": 0.6012596704686333,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8532831665136937,
+              "dev_frequency": 0.7684210526315789,
+              "dev_profit_factor": 0.8296758484548625,
+              "dev_drawdown_resilience": 0.7366896453874913,
+              "holdout_return": 0.3588502341807991,
+              "holdout_profit_factor": 0.17327309486948078,
+              "strategy_balance": 0.9303964228274537
+            }
+          }
+        },
+        {
+          "delta": "risk_frequency_lean",
+          "thesis": "Small momentum and trend lift for trade count, while leaving breakout concentration unchanged.",
+          "policy": "momentum_require_one_confluence+risk_frequency_lean",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+risk_frequency_lean",
+            "score": 0.7255610517557691,
+            "rejected": true,
+            "reject_reason": "development trades too low (73 < 76)",
+            "development": {
+              "trades": 73,
+              "filtered": 5,
+              "blocked": 4,
+              "net_pnl": 20421.82428730472,
+              "net_return_pct": 81.68729714921888,
+              "win_rate": 60.273972602739725,
+              "profit_factor": 5.103699871894771,
+              "max_drawdown_pct": 2.1691359863275967,
+              "total_r": 54.41221595733609,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 41,
+                "momentum": 16
+              },
+              "block_reasons": {
+                "directional_cap_R": 4
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -19.306889991199384,
+              "net_return_pct": -0.07722755996479753,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9850924802347726,
+              "max_drawdown_pct": 3.114097016560376,
+              "total_r": 0.5087588558970452,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8168729714921887,
+              "dev_frequency": 0.7684210526315789,
+              "dev_profit_factor": 0.8207399743789543,
+              "dev_drawdown_resilience": 0.7448075310202827,
+              "holdout_return": 0.3204620733392004,
+              "holdout_profit_factor": 0.15403699209390903,
+              "strategy_balance": 0.9303964228274537
+            }
+          }
+        },
+        {
+          "delta": "risk_breakout_alpha_probe",
+          "thesis": "Probe breakout overweight, but only the holdout/scoring can approve it due low sample concentration.",
+          "policy": "momentum_require_one_confluence+risk_breakout_alpha_probe",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+risk_breakout_alpha_probe",
+            "score": 0.7537576883315243,
+            "rejected": true,
+            "reject_reason": "development trades too low (74 < 76)",
+            "development": {
+              "trades": 74,
+              "filtered": 5,
+              "blocked": 3,
+              "net_pnl": 21427.950255366093,
+              "net_return_pct": 85.71180102146437,
+              "win_rate": 60.810810810810814,
+              "profit_factor": 5.341656748469465,
+              "max_drawdown_pct": 2.0775330892756907,
+              "total_r": 53.955663099527,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 41,
+                "momentum": 17
+              },
+              "block_reasons": {
+                "directional_cap_R": 3
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": 29.98820876842609,
+              "net_return_pct": 0.11995283507370436,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 1.027800355122479,
+              "max_drawdown_pct": 2.522761198754118,
+              "total_r": 0.5467779247524878,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8571180102146436,
+              "dev_frequency": 0.7789473684210526,
+              "dev_profit_factor": 0.8683313496938929,
+              "dev_drawdown_resilience": 0.7555843424381541,
+              "holdout_return": 0.3533254725122841,
+              "holdout_profit_factor": 0.17112014204899162,
+              "strategy_balance": 0.9347420527878307
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "accepted": true,
+      "accepted_policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit",
+      "accepted_deltas": [
+        "momentum_require_one_confluence",
+        "caps_unlock_one_directional_unit"
+      ],
+      "current_evaluation": {
+        "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit",
+        "score": 0.7255532253393641,
+        "rejected": false,
+        "reject_reason": "",
+        "development": {
+          "trades": 77,
+          "filtered": 5,
+          "blocked": 0,
+          "net_pnl": 19082.170103918106,
+          "net_return_pct": 76.32868041567242,
+          "win_rate": 59.74025974025974,
+          "profit_factor": 5.2696403908688865,
+          "max_drawdown_pct": 1.8744227152998842,
+          "total_r": 50.69896129508763,
+          "per_strategy_trades": {
+            "breakout": 16,
+            "trend": 42,
+            "momentum": 19
+          },
+          "block_reasons": {},
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 5
+          }
+        },
+        "holdout": {
+          "trades": 13,
+          "filtered": 3,
+          "blocked": 0,
+          "net_pnl": -35.881174996744434,
+          "net_return_pct": -0.14352469998697773,
+          "win_rate": 30.76923076923077,
+          "profit_factor": 0.9686781784463582,
+          "max_drawdown_pct": 2.7839344833585735,
+          "total_r": 0.3997953644647546,
+          "per_strategy_trades": {
+            "trend": 6,
+            "momentum": 7
+          },
+          "block_reasons": {},
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 3
+          }
+        },
+        "score_components": {
+          "dev_return": 0.7632868041567242,
+          "dev_frequency": 0.8105263157894737,
+          "dev_profit_factor": 0.8539280781737772,
+          "dev_drawdown_resilience": 0.7794796805529548,
+          "holdout_return": 0.3094125500021704,
+          "holdout_profit_factor": 0.14747127137854327,
+          "strategy_balance": 0.9386994190181162
+        }
+      },
+      "candidates": [
+        {
+          "delta": "caps_unlock_one_directional_unit",
+          "thesis": "The only saved portfolio block was directional_cap_R; loosen one unit to recover frequency.",
+          "policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit",
+            "score": 0.7255532253393641,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 77,
+              "filtered": 5,
+              "blocked": 0,
+              "net_pnl": 19082.170103918106,
+              "net_return_pct": 76.32868041567242,
+              "win_rate": 59.74025974025974,
+              "profit_factor": 5.2696403908688865,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 50.69896129508763,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 19
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7632868041567242,
+              "dev_frequency": 0.8105263157894737,
+              "dev_profit_factor": 0.8539280781737772,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9386994190181162
+            }
+          }
+        },
+        {
+          "delta": "caps_aggressive_with_dd_guard",
+          "thesis": "Allow more concurrent alpha, but cut size dynamically if drawdown starts compounding.",
+          "policy": "momentum_require_one_confluence+caps_aggressive_with_dd_guard",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+caps_aggressive_with_dd_guard",
+            "score": 0.7255532253393641,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 77,
+              "filtered": 5,
+              "blocked": 0,
+              "net_pnl": 19082.170103918106,
+              "net_return_pct": 76.32868041567242,
+              "win_rate": 59.74025974025974,
+              "profit_factor": 5.2696403908688865,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 50.69896129508763,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 19
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7632868041567242,
+              "dev_frequency": 0.8105263157894737,
+              "dev_profit_factor": 0.8539280781737772,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9386994190181162
+            }
+          }
+        },
+        {
+          "delta": "trend_priority_headroom",
+          "thesis": "Reserve directional capacity for trend when lower-priority strategies crowd one side.",
+          "policy": "momentum_require_one_confluence+trend_priority_headroom",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+trend_priority_headroom",
+            "score": 0.7255532253393641,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 77,
+              "filtered": 5,
+              "blocked": 0,
+              "net_pnl": 19082.170103918106,
+              "net_return_pct": 76.32868041567242,
+              "win_rate": 59.74025974025974,
+              "profit_factor": 5.2696403908688865,
+              "max_drawdown_pct": 1.8744227152998842,
+              "total_r": 50.69896129508763,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 19
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -35.881174996744434,
+              "net_return_pct": -0.14352469998697773,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463582,
+              "max_drawdown_pct": 2.7839344833585735,
+              "total_r": 0.3997953644647546,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.7632868041567242,
+              "dev_frequency": 0.8105263157894737,
+              "dev_profit_factor": 0.8539280781737772,
+              "dev_drawdown_resilience": 0.7794796805529548,
+              "holdout_return": 0.3094125500021704,
+              "holdout_profit_factor": 0.14747127137854327,
+              "strategy_balance": 0.9386994190181162
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "accepted": true,
+      "accepted_policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+      "accepted_deltas": [
+        "momentum_require_one_confluence",
+        "caps_unlock_one_directional_unit",
+        "postcap_risk_trend_breakout_lean"
+      ],
+      "current_evaluation": {
+        "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+        "score": 0.7394045390913073,
+        "rejected": false,
+        "reject_reason": "",
+        "development": {
+          "trades": 76,
+          "filtered": 5,
+          "blocked": 1,
+          "net_pnl": 20661.415423741346,
+          "net_return_pct": 82.64566169496538,
+          "win_rate": 59.210526315789465,
+          "profit_factor": 5.1205324360819535,
+          "max_drawdown_pct": 2.1428774099520496,
+          "total_r": 53.58909871049358,
+          "per_strategy_trades": {
+            "breakout": 16,
+            "trend": 42,
+            "momentum": 18
+          },
+          "block_reasons": {
+            "directional_cap_R": 1
+          },
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 5
+          }
+        },
+        "holdout": {
+          "trades": 13,
+          "filtered": 3,
+          "blocked": 0,
+          "net_pnl": 24.161669517544915,
+          "net_return_pct": 0.09664667807017967,
+          "win_rate": 30.76923076923077,
+          "profit_factor": 1.0214013436944238,
+          "max_drawdown_pct": 2.65143773401711,
+          "total_r": 0.5529709019785625,
+          "per_strategy_trades": {
+            "trend": 6,
+            "momentum": 7
+          },
+          "block_reasons": {},
+          "filter_reasons": {
+            "momentum_zero_confluence_filter": 3
+          }
+        },
+        "score_components": {
+          "dev_return": 0.8264566169496539,
+          "dev_frequency": 0.8,
+          "dev_profit_factor": 0.8241064872163907,
+          "dev_drawdown_resilience": 0.747896775299759,
+          "holdout_return": 0.3494411130116966,
+          "holdout_profit_factor": 0.16856053747776953,
+          "strategy_balance": 0.9352014507442357
+        }
+      },
+      "candidates": [
+        {
+          "delta": "postcap_risk_all_110",
+          "thesis": "After cap unlock, test a smaller uniform risk lift than the pre-cap 1.15 probe.",
+          "policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_all_110",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_all_110",
+            "score": 0.7290329942164233,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 20155.451678239217,
+              "net_return_pct": 80.62180671295687,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.099806740722202,
+              "max_drawdown_pct": 1.995780532390264,
+              "total_r": 54.38812245425659,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -39.46929249641898,
+              "net_return_pct": -0.1578771699856759,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9686781784463581,
+              "max_drawdown_pct": 3.062099897626284,
+              "total_r": 0.4397749009112299,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8062180671295687,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8199613481444403,
+              "dev_drawdown_resilience": 0.7652022903070278,
+              "holdout_return": 0.30702047166905405,
+              "holdout_profit_factor": 0.14747127137854324,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        },
+        {
+          "delta": "postcap_risk_trend_core_120",
+          "thesis": "After cap unlock, overweight trend modestly while keeping lower-sample sleeves restrained.",
+          "policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_core_120",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_core_120",
+            "score": 0.7359968358645973,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 20574.908257600044,
+              "net_return_pct": 82.29963303040017,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.086027354438749,
+              "max_drawdown_pct": 2.180629111856459,
+              "total_r": 53.87590177536172,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": 16.318890016141793,
+              "net_return_pct": 0.06527556006456717,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 1.013879434318491,
+              "max_drawdown_pct": 2.7749067091013253,
+              "total_r": 0.5522654837060554,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8229963303040018,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8172054708877499,
+              "dev_drawdown_resilience": 0.7434553986051224,
+              "holdout_return": 0.34421259334409454,
+              "holdout_profit_factor": 0.16555177372739638,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        },
+        {
+          "delta": "postcap_risk_trend_breakout_lean",
+          "thesis": "After cap unlock, lean into trend sample depth and breakout expectancy with moderate sizing.",
+          "policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+            "score": 0.7394045390913073,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 20661.415423741346,
+              "net_return_pct": 82.64566169496538,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.1205324360819535,
+              "max_drawdown_pct": 2.1428774099520496,
+              "total_r": 53.58909871049358,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": 24.161669517544915,
+              "net_return_pct": 0.09664667807017967,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 1.0214013436944238,
+              "max_drawdown_pct": 2.65143773401711,
+              "total_r": 0.5529709019785625,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8264566169496539,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8241064872163907,
+              "dev_drawdown_resilience": 0.747896775299759,
+              "holdout_return": 0.3494411130116966,
+              "holdout_profit_factor": 0.16856053747776953,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        },
+        {
+          "delta": "postcap_risk_frequency_lean",
+          "thesis": "After cap unlock, lift the higher-frequency sleeves without increasing breakout concentration.",
+          "policy": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_frequency_lean",
+          "evaluation": {
+            "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_frequency_lean",
+            "score": 0.7262990308154327,
+            "rejected": false,
+            "reject_reason": "",
+            "development": {
+              "trades": 76,
+              "filtered": 5,
+              "blocked": 1,
+              "net_pnl": 20053.495764949163,
+              "net_return_pct": 80.21398305979665,
+              "win_rate": 59.210526315789465,
+              "profit_factor": 5.05910872914443,
+              "max_drawdown_pct": 2.0970554351048554,
+              "total_r": 53.9755997707099,
+              "per_strategy_trades": {
+                "breakout": 16,
+                "trend": 42,
+                "momentum": 18
+              },
+              "block_reasons": {
+                "directional_cap_R": 1
+              },
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 5
+              }
+            },
+            "holdout": {
+              "trades": 13,
+              "filtered": 3,
+              "blocked": 0,
+              "net_pnl": -24.637987242830334,
+              "net_return_pct": -0.09855194897132133,
+              "win_rate": 30.76923076923077,
+              "profit_factor": 0.9804724295438008,
+              "max_drawdown_pct": 3.0428723669366087,
+              "total_r": 0.48006776211200575,
+              "per_strategy_trades": {
+                "trend": 6,
+                "momentum": 7
+              },
+              "block_reasons": {},
+              "filter_reasons": {
+                "momentum_zero_confluence_filter": 3
+              }
+            },
+            "score_components": {
+              "dev_return": 0.8021398305979665,
+              "dev_frequency": 0.8,
+              "dev_profit_factor": 0.8118217458288861,
+              "dev_drawdown_resilience": 0.753287595870017,
+              "holdout_return": 0.3169080085047798,
+              "holdout_profit_factor": 0.1521889718175203,
+              "strategy_balance": 0.9352014507442357
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "actual_validation": {
+    "baseline_full": {
+      "total_trades": 96.0,
+      "win_rate": 55.208333333333336,
+      "profit_factor": 3.897224664651429,
+      "net_return_pct": 73.13446003155745,
+      "max_drawdown_pct": 3.8091976827325125,
+      "sharpe_ratio": 5.675128946308646,
+      "calmar_ratio": 19.19943938931905
+    },
+    "selected_full": {
+      "total_trades": 94.0,
+      "win_rate": 56.38297872340425,
+      "profit_factor": 4.25132243212667,
+      "net_return_pct": 88.06081128508697,
+      "max_drawdown_pct": 3.9662318715203586,
+      "sharpe_ratio": 5.69150423226325,
+      "calmar_ratio": 22.20263820615485
+    },
+    "baseline_holdout": {
+      "total_trades": 16.0,
+      "win_rate": 31.25,
+      "profit_factor": 0.7894889422632351,
+      "net_return_pct": -1.3221409048409258,
+      "max_drawdown_pct": 4.957349232181299,
+      "sharpe_ratio": -1.7693768726414147,
+      "calmar_ratio": -0.26670320022201993
+    },
+    "selected_holdout": {
+      "total_trades": 15.0,
+      "win_rate": 33.33333333333333,
+      "profit_factor": 0.9351299889556891,
+      "net_return_pct": -0.3655891558099829,
+      "max_drawdown_pct": 4.132348962235669,
+      "sharpe_ratio": -0.42394128568477535,
+      "calmar_ratio": -0.08847005883360662
+    },
+    "selected_policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_core_120",
+    "replay_selected_policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+    "candidates": [
+      {
+        "policy_name": "baseline",
+        "score": 0.6117833905052806,
+        "rejected": false,
+        "reject_reason": "",
+        "full": {
+          "total_trades": 96.0,
+          "win_rate": 55.208333333333336,
+          "profit_factor": 3.897224664651429,
+          "net_return_pct": 73.13446003155745,
+          "max_drawdown_pct": 3.8091976827325125,
+          "sharpe_ratio": 5.675128946308646,
+          "calmar_ratio": 19.19943938931905
+        },
+        "holdout": {
+          "total_trades": 16.0,
+          "win_rate": 31.25,
+          "profit_factor": 0.7894889422632351,
+          "net_return_pct": -1.3221409048409258,
+          "max_drawdown_pct": 4.957349232181299,
+          "sharpe_ratio": -1.7693768726414147,
+          "calmar_ratio": -0.26670320022201993
+        },
+        "score_components": {
+          "full_return": 0.7313446003155746,
+          "full_frequency": 1.0,
+          "full_profit_factor": 0.5794449329302858,
+          "full_drawdown_resilience": 0.5518590961491161,
+          "holdout_return": 0.1129765158598457,
+          "holdout_profit_factor": 0.07579557690529404,
+          "holdout_drawdown_resilience": 0.3390201023758268
+        }
+      },
+      {
+        "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_breakout_lean",
+        "score": 0.6675140996540425,
+        "rejected": false,
+        "reject_reason": "",
+        "full": {
+          "total_trades": 96.0,
+          "win_rate": 54.166666666666664,
+          "profit_factor": 3.91148046730876,
+          "net_return_pct": 81.47752790189878,
+          "max_drawdown_pct": 3.8729846124612854,
+          "sharpe_ratio": 5.811310257848769,
+          "calmar_ratio": 21.03740036553353
+        },
+        "holdout": {
+          "total_trades": 15.0,
+          "win_rate": 33.33333333333333,
+          "profit_factor": 0.94253716856756,
+          "net_return_pct": -0.31033244694035966,
+          "max_drawdown_pct": 3.9338361448510257,
+          "sharpe_ratio": -0.36492310617987755,
+          "calmar_ratio": -0.07888799520705811
+        },
+        "score_components": {
+          "full_return": 0.8147752790189878,
+          "full_frequency": 1.0,
+          "full_profit_factor": 0.582296093461752,
+          "full_drawdown_resilience": 0.5443547514751429,
+          "holdout_return": 0.28161125884327337,
+          "holdout_profit_factor": 0.137014867427024,
+          "holdout_drawdown_resilience": 0.47548851401986325
+        }
+      },
+      {
+        "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_all_110",
+        "score": 0.6764409786118092,
+        "rejected": false,
+        "reject_reason": "",
+        "full": {
+          "total_trades": 94.0,
+          "win_rate": 56.38297872340425,
+          "profit_factor": 4.229013324064813,
+          "net_return_pct": 85.93852267261875,
+          "max_drawdown_pct": 3.741065886042891,
+          "sharpe_ratio": 5.695786921596498,
+          "calmar_ratio": 22.97166777875707
+        },
+        "holdout": {
+          "total_trades": 15.0,
+          "win_rate": 33.33333333333333,
+          "profit_factor": 0.8923374652278179,
+          "net_return_pct": -0.6585748989266577,
+          "max_drawdown_pct": 4.663875731799838,
+          "sharpe_ratio": -0.7959932300103111,
+          "calmar_ratio": -0.1412076429130128
+        },
+        "score_components": {
+          "full_return": 0.8593852267261874,
+          "full_frequency": 0.9791666666666666,
+          "full_profit_factor": 0.6458026648129627,
+          "full_drawdown_resilience": 0.5598746016420129,
+          "holdout_return": 0.22357085017889036,
+          "holdout_profit_factor": 0.11693498609112715,
+          "holdout_drawdown_resilience": 0.37814990242668833
+        }
+      },
+      {
+        "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_trend_core_120",
+        "score": 0.6914672424261648,
+        "rejected": false,
+        "reject_reason": "",
+        "full": {
+          "total_trades": 94.0,
+          "win_rate": 56.38297872340425,
+          "profit_factor": 4.25132243212667,
+          "net_return_pct": 88.06081128508697,
+          "max_drawdown_pct": 3.9662318715203586,
+          "sharpe_ratio": 5.69150423226325,
+          "calmar_ratio": 22.20263820615485
+        },
+        "holdout": {
+          "total_trades": 15.0,
+          "win_rate": 33.33333333333333,
+          "profit_factor": 0.9351299889556891,
+          "net_return_pct": -0.3655891558099829,
+          "max_drawdown_pct": 4.132348962235669,
+          "sharpe_ratio": -0.42394128568477535,
+          "calmar_ratio": -0.08847005883360662
+        },
+        "score_components": {
+          "full_return": 0.8806081128508697,
+          "full_frequency": 0.9791666666666666,
+          "full_profit_factor": 0.650264486425334,
+          "full_drawdown_resilience": 0.5333844857034873,
+          "holdout_return": 0.27240180736500286,
+          "holdout_profit_factor": 0.13405199558227565,
+          "holdout_drawdown_resilience": 0.44902013836857746
+        }
+      },
+      {
+        "policy_name": "momentum_require_one_confluence+caps_unlock_one_directional_unit+postcap_risk_frequency_lean",
+        "score": 0.6752683337993657,
+        "rejected": false,
+        "reject_reason": "",
+        "full": {
+          "total_trades": 94.0,
+          "win_rate": 56.38297872340425,
+          "profit_factor": 4.187590648456567,
+          "net_return_pct": 85.75672777637466,
+          "max_drawdown_pct": 3.822314989026893,
+          "sharpe_ratio": 5.6783790066583,
+          "calmar_ratio": 22.43580867159436
+        },
+        "holdout": {
+          "total_trades": 15.0,
+          "win_rate": 33.33333333333333,
+          "profit_factor": 0.9032767991054285,
+          "net_return_pct": -0.5904104163989105,
+          "max_drawdown_pct": 4.607431883754012,
+          "sharpe_ratio": -0.6965318775181135,
+          "calmar_ratio": -0.1281430591477046
+        },
+        "score_components": {
+          "full_return": 0.8575672777637466,
+          "full_frequency": 0.9791666666666666,
+          "full_profit_factor": 0.6375181296913134,
+          "full_drawdown_resilience": 0.5503158836438949,
+          "holdout_return": 0.23493159726684829,
+          "holdout_profit_factor": 0.1213107196421714,
+          "holdout_drawdown_resilience": 0.3856757488327983
+        }
+      }
+    ]
+  }
+}

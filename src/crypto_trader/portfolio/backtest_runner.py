@@ -69,6 +69,7 @@ class PortfolioBacktestResult:
     per_strategy_metrics: dict[str, PerformanceMetrics | None] = field(default_factory=dict)
     config: BacktestConfig | None = None
     portfolio_config: PortfolioConfig | None = None
+    execution_mode: str = "shared_capital"
 
 
 @dataclass
@@ -92,6 +93,7 @@ def run_portfolio_backtest(
     backtest_config: BacktestConfig,
     data_dir: Path = Path("data"),
     meta_path: Path | None = None,
+    execution_mode: str = "shared_capital",
 ) -> PortfolioBacktestResult:
     """Run a multi-strategy portfolio backtest.
 
@@ -110,6 +112,12 @@ def run_portfolio_backtest(
     Returns:
         PortfolioBacktestResult with per-strategy and combined results
     """
+    if execution_mode != "shared_capital":
+        raise ValueError(
+            f"Unsupported portfolio execution_mode={execution_mode!r}; "
+            "only 'shared_capital' is official"
+        )
+
     symbols = backtest_config.symbols or ["BTC", "ETH", "SOL"]
 
     store = ParquetStore(base_dir=data_dir)
@@ -180,7 +188,7 @@ def run_portfolio_backtest(
             funding_helpers=funding_helpers if funding_helpers else None,
         )
 
-        proxy = coordinator.get_proxy(strategy_id)
+        proxy = coordinator.get_proxy(strategy_id, use_manager_equity=True)
         # Point proxy at this strategy's broker (not the coordinator's dummy)
         proxy._broker = strategy_broker
 
@@ -383,6 +391,7 @@ def run_portfolio_backtest(
         per_strategy_metrics=per_strategy_metrics,
         config=backtest_config,
         portfolio_config=portfolio_config,
+        execution_mode=execution_mode,
     )
 
 
@@ -477,8 +486,12 @@ def _process_slot_primary(
     if activate_fn is not None:
         activate_fn()
 
-    # Update portfolio equity (sum of all strategy equities)
-    total_equity = sum(s.broker.get_equity() for s in _all_slots_ref)
+    # Update portfolio equity from one shared-capital ledger, not the sum of
+    # independent account balances.
+    total_equity = _portfolio_equity_from_slots(
+        _all_slots_ref,
+        manager.config.initial_equity,
+    )
     manager.update_equity(total_equity)
 
     # Dispatch bar to strategy
@@ -538,3 +551,20 @@ def _close_slot_positions(
 
 # Module-level reference to all slots (set during run_portfolio_backtest)
 _all_slots_ref: list[_StrategySlot] = []
+
+
+def _portfolio_equity_from_slots(slots: list[_StrategySlot], initial_equity: float) -> float:
+    """Compute shared portfolio equity from strategy-local broker deltas."""
+    unique_brokers: list[SimBroker] = []
+    seen: set[int] = set()
+    for slot in slots:
+        ident = id(slot.broker)
+        if ident in seen:
+            continue
+        seen.add(ident)
+        unique_brokers.append(slot.broker)
+
+    return initial_equity + sum(
+        broker.get_equity() - broker.initial_equity
+        for broker in unique_brokers
+    )

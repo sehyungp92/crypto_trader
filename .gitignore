@@ -49,6 +49,7 @@ data/live_state/
 
 # Optimization archives
 output/**/archive/
+output/journal/
 
 # References
 _references/

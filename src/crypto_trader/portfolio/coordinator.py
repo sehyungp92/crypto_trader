@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 from typing import Any
 
@@ -31,14 +32,25 @@ class BrokerProxy:
         manager: PortfolioManager,
         strategy_id: str,
         coordinator: "StrategyCoordinator | None" = None,
+        use_manager_equity: bool = False,
     ) -> None:
         self._broker = broker
         self._manager = manager
         self.strategy_id = strategy_id
         self._coordinator = coordinator
+        self._use_manager_equity = use_manager_equity
+        self._broker_id_by_client_id: dict[str, str] = {}
+        self._client_id_by_broker_id: dict[str, str] = {}
 
     def submit_order(self, order: Order) -> str:
         """Submit an order, intercepting entries for portfolio approval."""
+        # Stamp every order, including stops/targets, so live and backtest
+        # adapters can keep order visibility and fill routing strategy-scoped.
+        client_order_id = order.order_id
+        order.metadata["strategy_id"] = self.strategy_id
+        if client_order_id:
+            order.metadata.setdefault("client_order_id", client_order_id)
+
         if order.tag == "entry":
             direction = order.side
             risk_R = order.metadata.get("risk_R", 1.0)
@@ -71,22 +83,36 @@ class BrokerProxy:
                     new_qty=order.qty,
                 )
 
-            # Store strategy_id in order metadata for fill routing
-            order.metadata["strategy_id"] = self.strategy_id
-
         result_id = self._broker.submit_order(order)
+        visible_order_id = client_order_id or result_id
 
         # Register order ownership for fill routing (works with any broker)
         if order.status != OrderStatus.REJECTED and self._coordinator is not None:
-            self._coordinator.register_order(result_id, self.strategy_id)
+            self._coordinator.register_order(result_id, self.strategy_id, order)
+            if visible_order_id and visible_order_id != result_id:
+                self._coordinator.register_order(visible_order_id, self.strategy_id, order)
 
-        return result_id
+        if (
+            order.status != OrderStatus.REJECTED
+            and client_order_id
+            and result_id
+            and client_order_id != result_id
+        ):
+            self._broker_id_by_client_id[client_order_id] = result_id
+            self._client_id_by_broker_id[result_id] = client_order_id
+
+        return visible_order_id
 
     def cancel_order(self, order_id: str) -> bool:
-        return self._broker.cancel_order(order_id)
+        broker_order_id = self._broker_id_by_client_id.get(order_id, order_id)
+        return self._broker.cancel_order(broker_order_id)
 
     def cancel_all(self, symbol: str = "") -> int:
-        return self._broker.cancel_all(symbol)
+        cancelled = 0
+        for order in self.get_open_orders(symbol):
+            if self.cancel_order(order.order_id):
+                cancelled += 1
+        return cancelled
 
     def get_position(self, symbol: str) -> Position | None:
         return self._broker.get_position(symbol)
@@ -95,9 +121,16 @@ class BrokerProxy:
         return self._broker.get_positions()
 
     def get_open_orders(self, symbol: str = "") -> list[Order]:
-        return self._broker.get_open_orders(symbol)
+        orders: list[Order] = []
+        for order in self._broker.get_open_orders(symbol):
+            if not self._owns_order(order):
+                continue
+            orders.append(self._strategy_visible_order(order))
+        return orders
 
     def get_equity(self) -> float:
+        if self._use_manager_equity:
+            return self._manager.state.equity
         return self._broker.get_equity()
 
     def get_fills_since(self, since: datetime) -> list[Fill]:
@@ -115,6 +148,23 @@ class BrokerProxy:
             "portfolio_daily_pnl_R": state.portfolio_daily_pnl_R,
             "strategy_daily_pnl_R": state.strategy_daily_pnl_R(self.strategy_id),
         }
+
+    def _owns_order(self, order: Order) -> bool:
+        owner = order.metadata.get("strategy_id")
+        if owner is None and self._coordinator is not None:
+            owner = self._coordinator.get_strategy_for_order(order.order_id)
+        return owner == self.strategy_id
+
+    def _strategy_visible_order(self, order: Order) -> Order:
+        client_order_id = (
+            order.metadata.get("client_order_id")
+            or self._client_id_by_broker_id.get(order.order_id)
+        )
+        if not client_order_id or client_order_id == order.order_id:
+            return order
+        metadata = dict(order.metadata)
+        metadata.setdefault("broker_order_id", order.order_id)
+        return replace(order, order_id=str(client_order_id), metadata=metadata)
 
     # Delegate SimBroker-specific methods for backtest compatibility
     def __getattr__(self, name: str) -> Any:
@@ -139,9 +189,10 @@ class StrategyCoordinator:
         self._broker = broker
         self._manager = manager
         self._proxies: dict[str, BrokerProxy] = {}
+        self._order_metadata: dict[str, dict] = {}
         self._order_owners: dict[str, str] = {}  # order_id → strategy_id
 
-    def get_proxy(self, strategy_id: str) -> BrokerProxy:
+    def get_proxy(self, strategy_id: str, *, use_manager_equity: bool = False) -> BrokerProxy:
         """Get or create a BrokerProxy for a strategy."""
         if strategy_id not in self._proxies:
             self._proxies[strategy_id] = BrokerProxy(
@@ -149,18 +200,33 @@ class StrategyCoordinator:
                 manager=self._manager,
                 strategy_id=strategy_id,
                 coordinator=self,
+                use_manager_equity=use_manager_equity,
             )
+        elif use_manager_equity:
+            self._proxies[strategy_id]._use_manager_equity = True
         return self._proxies[strategy_id]
 
-    def register_order(self, order_id: str, strategy_id: str) -> None:
+    def register_order(
+        self,
+        order_id: str,
+        strategy_id: str,
+        order: Order | None = None,
+    ) -> None:
         """Track which strategy submitted an order."""
         self._order_owners[order_id] = strategy_id
+        metadata = dict(order.metadata) if order is not None else {}
+        metadata.setdefault("strategy_id", strategy_id)
+        self._order_metadata[order_id] = metadata
 
     def get_strategy_for_order(self, order_id: str) -> str | None:
         """Look up which strategy submitted an order."""
         # Primary: our own tracking (works with any broker)
         if order_id in self._order_owners:
             return self._order_owners[order_id]
+        if order_id in self._order_metadata:
+            owner = self._order_metadata[order_id].get("strategy_id")
+            if owner:
+                return str(owner)
         # Fallback: broker._orders (for HyperliquidBroker)
         all_orders = getattr(self._broker, '_orders', {})
         order = all_orders.get(order_id)
@@ -205,6 +271,8 @@ class StrategyCoordinator:
 
     def _get_fill_risk_R(self, fill: Fill) -> float:
         """Extract risk_R from the order that generated a fill."""
+        if fill.order_id in self._order_metadata:
+            return self._order_metadata[fill.order_id].get("risk_R", 1.0)
         # Try HyperliquidBroker's _orders dict
         all_orders = getattr(self._broker, '_orders', {})
         order = all_orders.get(fill.order_id)

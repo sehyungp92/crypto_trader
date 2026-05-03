@@ -211,6 +211,7 @@ class HyperliquidBroker:
 
                 oid = str(raw.get("oid", ""))
                 local_id = self._oid_map.get(oid, oid)
+                tracked_order = self._orders.get(local_id)
 
                 side = Side.LONG if raw.get("side", "") == "B" else Side.SHORT
                 order = Order(
@@ -221,6 +222,12 @@ class HyperliquidBroker:
                     qty=float(raw.get("sz", "0")),
                     limit_price=float(raw.get("limitPx", "0")),
                     status=OrderStatus.WORKING,
+                    tag=tracked_order.tag if tracked_order is not None else "",
+                    metadata=(
+                        dict(tracked_order.metadata)
+                        if tracked_order is not None
+                        else {}
+                    ),
                 )
                 orders.append(order)
 
