@@ -1,0 +1,8 @@
+Portfolio phase 5: Risk Scaling
+Objective: Lean risk aggressively but not recklessly after structure has been chosen.
+Selection basis: development window only.
+Holdout is validation-only and is not part of the immutable score.
+development: trades=45, return=66.65%, PF=6.32, expR=0.526, exit_eff=0.502, DD=3.85%
+holdout: trades=39, return=33.74%, PF=2.55, expR=0.340, exit_eff=0.429, DD=5.42%
+accepted: risk_all_115_dd_guarded
+score_components: {"capture": 0.912054189990288, "drawdown_resilience": 0.5475050125354675, "edge_quality": 0.8958625876062747, "frequency": 0.7758620689655172, "return": 0.8887328849441061, "rule_efficiency": 1.0, "strategy_balance": 0.956535777109778}

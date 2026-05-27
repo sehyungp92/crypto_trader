@@ -66,8 +66,64 @@ class PhaseState:
     phase_results: dict[int, dict] = field(default_factory=dict)
     phase_gate_results: dict[int, dict] = field(default_factory=dict)
     phase_timestamps: dict[int, dict[str, str]] = field(default_factory=dict)
+    contract_hash: str = ""
+    contract: dict[str, Any] = field(default_factory=dict)
+    invalid_phases: dict[int, dict[str, Any]] = field(default_factory=dict)
 
     _path: Path | None = field(default=None, repr=False)
+
+    def set_contract(self, contract: dict[str, Any]) -> None:
+        """Attach the optimization contract used by this state file."""
+        contract_hash = str(contract.get("contract_hash") or "")
+        self.contract_hash = contract_hash
+        self.contract = dict(contract)
+
+    def ensure_contract(self, contract: dict[str, Any], *, strict: bool = True) -> None:
+        """Validate that persisted state belongs to the current run contract."""
+        expected = str(contract.get("contract_hash") or "")
+        if not expected:
+            return
+
+        is_fresh = (
+            not self.contract_hash
+            and not self.contract
+            and self.current_phase == 0
+            and not self.completed_phases
+            and not self.phase_results
+            and not self.phase_metrics
+        )
+        if is_fresh:
+            self.set_contract(contract)
+            return
+
+        if self.contract_hash == expected:
+            if not self.contract:
+                self.contract = dict(contract)
+            return
+
+        if strict:
+            found = self.contract_hash or "<missing>"
+            raise RuntimeError(
+                f"Phase state contract mismatch: found {found}, expected {expected}"
+            )
+
+        self.set_contract(contract)
+
+    def mark_phase_invalid(
+        self,
+        phase: int,
+        *,
+        reason: str,
+        error: str = "",
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Record that a phase produced untrusted final evidence."""
+        self.invalid_phases[phase] = {
+            "reason": reason,
+            "error": error,
+            "metadata": metadata or {},
+            "timestamp": _utc_now_iso(),
+        }
 
     def start_phase(self, phase: int) -> None:
         """Mark a phase as started."""
@@ -96,6 +152,7 @@ class PhaseState:
         if phase not in self.completed_phases:
             self.completed_phases.append(phase)
         self.current_phase = phase + 1
+        self.invalid_phases.pop(phase, None)
 
     def complete_phase(self, phase: int) -> None:
         """Record phase completion timestamp."""
@@ -148,6 +205,7 @@ class PhaseState:
             self.scoring_retries.pop(p, None)
             self.diagnostic_retries.pop(p, None)
             self.retry_count.pop(p, None)
+            self.invalid_phases.pop(p, None)
 
         # Re-derive cumulative mutations from remaining phase results
         self.cumulative_mutations = {}
@@ -178,6 +236,9 @@ class PhaseState:
             "phase_results": {str(k): v for k, v in self.phase_results.items()},
             "phase_gate_results": {str(k): v for k, v in self.phase_gate_results.items()},
             "phase_timestamps": {str(k): v for k, v in self.phase_timestamps.items()},
+            "contract_hash": self.contract_hash,
+            "contract": self.contract,
+            "invalid_phases": {str(k): v for k, v in self.invalid_phases.items()},
         }
 
         _atomic_write_json(data, path)
@@ -200,6 +261,9 @@ class PhaseState:
             phase_results=_int_key_dict(data.get("phase_results", {})),
             phase_gate_results=_int_key_dict(data.get("phase_gate_results", {})),
             phase_timestamps=_int_key_dict(data.get("phase_timestamps", {})),
+            contract_hash=data.get("contract_hash", ""),
+            contract=data.get("contract", {}),
+            invalid_phases=_int_key_dict(data.get("invalid_phases", {})),
             _path=path,
         )
         return state

@@ -1,0 +1,317 @@
+{
+  "portfolio": {
+    "approved_rule_events": 91,
+    "blocked_by_reason": {
+      "symbol_collision=block: BTC already held by momentum": 2,
+      "symbol_collision=block: BTC already held by trend": 6,
+      "symbol_collision=block: ETH already held by trend": 5,
+      "symbol_collision=block: SOL already held by momentum": 1,
+      "symbol_collision=block: SOL already held by trend": 7
+    },
+    "blocked_rule_events": 21,
+    "metrics": {
+      "a_setup_win_rate": 33.33333333333333,
+      "avg_bars_held": 13.433333333333334,
+      "avg_loser_r": -0.3628686621918386,
+      "avg_mae_r": -0.323236869519648,
+      "avg_mfe_r": 1.174651486121118,
+      "avg_winner_r": 1.0487643765623385,
+      "b_setup_win_rate": 55.952380952380956,
+      "calmar_ratio": 17.485302847075324,
+      "edge_ratio": 3.6340269223208668,
+      "exit_efficiency": 0.5408983097911113,
+      "expectancy_r": 0.4056871033521023,
+      "funding_cost_total": 51.98659423347756,
+      "long_win_rate": 52.38095238095239,
+      "max_consecutive_losses": 5.0,
+      "max_drawdown_duration": 5723.0,
+      "max_drawdown_pct": 5.310649582554157,
+      "net_profit": 23214.579066413397,
+      "net_return_pct": 92.85831626565358,
+      "payoff_ratio": 2.849932921647531,
+      "profit_factor": 3.406017394164122,
+      "realized_pnl_net": 23214.579066413353,
+      "recovery_factor": 17.485302847075324,
+      "sharpe_ratio": 5.543421306260748,
+      "short_win_rate": 59.25925925925925,
+      "sortino_ratio": 16.89976467464239,
+      "terminal_mark_count": 0.0,
+      "terminal_mark_pnl_net": 0.0,
+      "total_trades": 90.0,
+      "win_rate": 54.44444444444444
+    },
+    "per_strategy_metrics": {
+      "breakout": {
+        "a_setup_win_rate": 0.0,
+        "avg_bars_held": 5.3125,
+        "avg_loser_r": -0.38724599896231104,
+        "avg_mae_r": -0.26310378836003606,
+        "avg_mfe_r": 1.2991783423905081,
+        "avg_winner_r": 1.2003450713200967,
+        "b_setup_win_rate": 68.75,
+        "calmar_ratio": 10.567780155986137,
+        "edge_ratio": 4.937892952771507,
+        "exit_efficiency": 0.6367581472699118,
+        "expectancy_r": 0.7042228618568442,
+        "funding_cost_total": 9.386374091625083,
+        "long_win_rate": 75.0,
+        "max_consecutive_losses": 2.0,
+        "max_drawdown_duration": 5671.0,
+        "max_drawdown_pct": 2.708077935750566,
+        "net_profit": 7154.593067572183,
+        "net_return_pct": 28.618372270288734,
+        "payoff_ratio": 3.067751692523645,
+        "profit_factor": 6.749053723552019,
+        "realized_pnl_net": 7154.593067572178,
+        "recovery_factor": 10.567780155986137,
+        "sharpe_ratio": 3.8872323743519357,
+        "short_win_rate": 62.5,
+        "sortino_ratio": 5.677581522919616,
+        "terminal_mark_count": 0.0,
+        "terminal_mark_pnl_net": 0.0,
+        "total_trades": 16.0,
+        "win_rate": 68.75
+      },
+      "momentum": {
+        "a_setup_win_rate": 50.0,
+        "avg_bars_held": 9.92,
+        "avg_loser_r": -0.5591354113540555,
+        "avg_mae_r": -0.3898781145655215,
+        "avg_mfe_r": 1.3229820747067464,
+        "avg_winner_r": 1.1011816649958448,
+        "b_setup_win_rate": 52.17391304347826,
+        "calmar_ratio": 2.188644909125813,
+        "edge_ratio": 3.393322234004009,
+        "exit_efficiency": 0.437157532260531,
+        "expectancy_r": 0.30422946834789266,
+        "funding_cost_total": 16.32174040973454,
+        "long_win_rate": 50.0,
+        "max_consecutive_losses": 4.0,
+        "max_drawdown_duration": 10472.0,
+        "max_drawdown_pct": 5.684570524356997,
+        "net_profit": 3110.3765846751485,
+        "net_return_pct": 12.441506338700593,
+        "payoff_ratio": 2.0412743325286806,
+        "profit_factor": 2.2113805269060713,
+        "realized_pnl_net": 3110.376584675141,
+        "recovery_factor": 2.188644909125813,
+        "sharpe_ratio": 2.9527807792942515,
+        "short_win_rate": 66.66666666666666,
+        "sortino_ratio": 5.054244007358778,
+        "terminal_mark_count": 0.0,
+        "terminal_mark_pnl_net": 0.0,
+        "total_trades": 25.0,
+        "win_rate": 52.0
+      },
+      "trend": {
+        "a_setup_win_rate": 25.0,
+        "avg_bars_held": 17.877551020408163,
+        "avg_loser_r": -0.25965667578354834,
+        "avg_mae_r": -0.3088715260993817,
+        "avg_mfe_r": 1.05831078377518,
+        "avg_winner_r": 0.9548118808835016,
+        "b_setup_win_rate": 53.333333333333336,
+        "calmar_ratio": 8.248236706684985,
+        "edge_ratio": 3.426378588988681,
+        "exit_efficiency": 0.5526651856163408,
+        "expectancy_r": 0.35997013884249746,
+        "funding_cost_total": 26.278479732117937,
+        "long_win_rate": 48.484848484848484,
+        "max_consecutive_losses": 4.0,
+        "max_drawdown_duration": 4514.0,
+        "max_drawdown_pct": 6.2799407314151106,
+        "net_profit": 12949.609414166065,
+        "net_return_pct": 51.79843765666426,
+        "payoff_ratio": 3.090001911073044,
+        "profit_factor": 3.218751990701088,
+        "realized_pnl_net": 12949.609414166034,
+        "recovery_factor": 8.248236706684985,
+        "sharpe_ratio": 5.397260244976506,
+        "short_win_rate": 56.25,
+        "sortino_ratio": 13.953417133211902,
+        "terminal_mark_count": 0.0,
+        "terminal_mark_pnl_net": 0.0,
+        "total_trades": 49.0,
+        "win_rate": 51.02040816326531
+      }
+    },
+    "per_strategy_trades": {
+      "breakout": 16,
+      "momentum": 25,
+      "trend": 49
+    },
+    "rule_events": 112,
+    "terminal_mark_count": 0,
+    "trades": 90
+  },
+  "comparison": {
+    "individual_total_trades": 98,
+    "portfolio_total_trades": 90,
+    "portfolio_vs_individual_net_profit_delta": 1222.290395563392,
+    "trade_count_delta": -8
+  },
+  "contract_hash": "b61440554de64a0c1151551839d31cf8287e65e37b80deb6b2237c80471fe180",
+  "contract": {
+    "schema_version": "portfolio_live_baseline_round_v1",
+    "baseline_type": "current_live_config_portfolio_parity_refresh",
+    "economic_profile": {
+      "profile_id": "portfolio_live_config_parity_refresh_20260525_v1",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "initial_equity": 25000.0,
+      "apply_funding": true,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 1.0,
+      "taker_fee_bps": 4.5,
+      "warmup_days": 60,
+      "terminal_accounting_mode": "terminal_mark"
+    },
+    "profile_hash": "5ff874de65b4d9695891375ac906ea1c03722af26eed42becb69a542f6bd81a7",
+    "data_window": {
+      "end": "2026-04-30",
+      "start": "2025-12-01"
+    },
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "required_timeframes": [
+      "15m",
+      "1d",
+      "1h",
+      "30m",
+      "4h"
+    ],
+    "data_fingerprint": {
+      "method": "file_stat_v1",
+      "files": [
+        {
+          "path": "candles\\BTC\\15m.parquet",
+          "exists": true,
+          "size": 316906,
+          "mtime_ns": 1779620410374830100
+        },
+        {
+          "path": "candles\\BTC\\1d.parquet",
+          "exists": true,
+          "size": 54996,
+          "mtime_ns": 1779620413690908900
+        },
+        {
+          "path": "candles\\BTC\\1h.parquet",
+          "exists": true,
+          "size": 242008,
+          "mtime_ns": 1779620411819790600
+        },
+        {
+          "path": "candles\\BTC\\30m.parquet",
+          "exists": true,
+          "size": 264901,
+          "mtime_ns": 1779620410917955900
+        },
+        {
+          "path": "candles\\BTC\\4h.parquet",
+          "exists": true,
+          "size": 221207,
+          "mtime_ns": 1779620413169973900
+        },
+        {
+          "path": "funding\\BTC.parquet",
+          "exists": true,
+          "size": 342509,
+          "mtime_ns": 1779620414985053100
+        },
+        {
+          "path": "candles\\ETH\\15m.parquet",
+          "exists": true,
+          "size": 249111,
+          "mtime_ns": 1779620418089790700
+        },
+        {
+          "path": "candles\\ETH\\1d.parquet",
+          "exists": true,
+          "size": 51569,
+          "mtime_ns": 1779620420333805700
+        },
+        {
+          "path": "candles\\ETH\\1h.parquet",
+          "exists": true,
+          "size": 218636,
+          "mtime_ns": 1779620419289167000
+        },
+        {
+          "path": "candles\\ETH\\30m.parquet",
+          "exists": true,
+          "size": 229181,
+          "mtime_ns": 1779620418696905800
+        },
+        {
+          "path": "candles\\ETH\\4h.parquet",
+          "exists": true,
+          "size": 202933,
+          "mtime_ns": 1779620419845695800
+        },
+        {
+          "path": "funding\\ETH.parquet",
+          "exists": true,
+          "size": 351937,
+          "mtime_ns": 1779620421597854800
+        },
+        {
+          "path": "candles\\SOL\\15m.parquet",
+          "exists": true,
+          "size": 301475,
+          "mtime_ns": 1779620425048188200
+        },
+        {
+          "path": "candles\\SOL\\1d.parquet",
+          "exists": true,
+          "size": 53435,
+          "mtime_ns": 1779620427096948100
+        },
+        {
+          "path": "candles\\SOL\\1h.parquet",
+          "exists": true,
+          "size": 220547,
+          "mtime_ns": 1779620426076088200
+        },
+        {
+          "path": "candles\\SOL\\30m.parquet",
+          "exists": true,
+          "size": 249766,
+          "mtime_ns": 1779620425553857700
+        },
+        {
+          "path": "candles\\SOL\\4h.parquet",
+          "exists": true,
+          "size": 198295,
+          "mtime_ns": 1779620426578140800
+        },
+        {
+          "path": "funding\\SOL.parquet",
+          "exists": true,
+          "size": 367440,
+          "mtime_ns": 1779620428344565900
+        }
+      ],
+      "hash": "5d3d39503a0f12f45770d68a5f4dbda68f39340506294a8155c69f745413e1c8"
+    },
+    "portfolio_config": "config\\portfolio_config.json",
+    "portfolio_config_hash": "c8f3dea702f1eff93333df3e84ced09419f1adc526982868285d74cd39e255c9",
+    "strategy_config_hashes": {
+      "momentum": "05c9a9555d45753957522a8fc05a3426eee03623fed08ef16988501bbffe99f2",
+      "trend": "e5fe9845ee20bf2f0e1fd3b9f769be80fd83a950b1fdbdc313200e6a516605eb",
+      "breakout": "a77dd92821736513f52f0c86b97581ad88d380fa11a495a621249d58c8a6fe2b"
+    },
+    "source_artifacts": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\20260525_parity_contract_refresh\\portfolio_live_config",
+    "archived_legacy_rounds": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\archive\\pre_parity_reset_20260525T111754Z",
+    "generated_at": "2026-05-25T11:17:54.443615+00:00",
+    "contract_hash": "b61440554de64a0c1151551839d31cf8287e65e37b80deb6b2237c80471fe180"
+  },
+  "archived_legacy_rounds": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\archive\\pre_parity_reset_20260525T111754Z"
+}

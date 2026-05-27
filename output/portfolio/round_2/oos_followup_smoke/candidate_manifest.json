@@ -1,0 +1,78 @@
+[
+  {
+    "label": "baseline_current_round2",
+    "kind": "baseline",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {},
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "dc0d0baffc412d2b90ba112e1d36c732dc82e119fa6bde0d432605d2c6e56708"
+  },
+  {
+    "label": "recommended_orderly_body_1_08",
+    "kind": "anchor",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "First-pass recommended candidate.",
+    "fingerprint": "908789e02326b4a654fbed4fdd1fc176f8118abdf5823d5e56e1d3b41de85c8f"
+  }
+]

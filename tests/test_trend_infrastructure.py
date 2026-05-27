@@ -129,7 +129,12 @@ class TestTrendPluginDiagnostics:
             assert isinstance(criteria, list)
             for gc in criteria:
                 assert isinstance(gc, GateCriterion)
-                assert gc.metric in ("total_trades", "max_drawdown_pct", "profit_factor")
+                assert gc.metric in (
+                    "total_trades",
+                    "max_drawdown_pct",
+                    "profit_factor",
+                    "exit_efficiency",
+                )
 
     def test_build_gate_criteria_phase_specific(self):
         from crypto_trader.optimize.trend_plugin import TrendPlugin, PHASE_GATE_CRITERIA
@@ -139,15 +144,15 @@ class TestTrendPluginDiagnostics:
             BacktestConfig(date(2026, 3, 1), date(2026, 4, 1), ["BTC"]),
             TrendConfig(),
         )
-        # Phase 1 has specific criteria (permissive for H1-entry pipeline)
+        # Phase 1 has specific criteria aligned with the stricter round objective.
         criteria = plugin._build_gate_criteria(1)
         thresholds = {gc.metric: gc.threshold for gc in criteria}
-        assert thresholds["total_trades"] == 3
+        assert thresholds["total_trades"] == 30
 
         # Phase 2 also has specific criteria
         criteria2 = plugin._build_gate_criteria(2)
         thresholds2 = {gc.metric: gc.threshold for gc in criteria2}
-        assert thresholds2["total_trades"] == 3  # From PHASE_GATE_CRITERIA
+        assert thresholds2["total_trades"] == 30  # From PHASE_GATE_CRITERIA
 
     def test_get_phase_spec_has_correct_fields(self):
         from crypto_trader.optimize.trend_plugin import TrendPlugin, PHASE_SCORING_EMPHASIS

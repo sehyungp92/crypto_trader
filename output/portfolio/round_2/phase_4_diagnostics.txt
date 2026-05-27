@@ -1,0 +1,8 @@
+Portfolio phase 4: Portfolio Synergy
+Objective: Improve cross-strategy interaction so portfolio rules block crowding rather than good alpha.
+Selection basis: development window only.
+Holdout is validation-only and is not part of the immutable score.
+development: trades=45, return=56.15%, PF=6.40, expR=0.526, exit_eff=0.502, DD=3.35%
+holdout: trades=39, return=28.95%, PF=2.56, expR=0.340, exit_eff=0.429, DD=4.76%
+accepted: collision_cap_250
+score_components: {"capture": 0.912054189990288, "drawdown_resilience": 0.6060279993142306, "edge_quality": 0.8958625876062747, "frequency": 0.7758620689655172, "return": 0.7486597750990803, "rule_efficiency": 1.0, "strategy_balance": 0.956535777109778}

@@ -1,0 +1,53 @@
+{
+  "current_phase": 0,
+  "completed_phases": [],
+  "cumulative_mutations": {},
+  "phase_metrics": {},
+  "round_name": "",
+  "scoring_retries": {},
+  "diagnostic_retries": {},
+  "retry_count": {},
+  "phase_results": {},
+  "phase_gate_results": {},
+  "phase_timestamps": {},
+  "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772",
+  "contract": {
+    "kind": "portfolio_phased_auto",
+    "profile": "LIVE_PARITY_PROFILE",
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "max_workers": 2,
+    "development_window": {
+      "start": "2026-02-25",
+      "end": "2026-04-20"
+    },
+    "holdout_window": {
+      "start": "2026-04-21",
+      "end": "2026-05-23"
+    },
+    "full_window": {
+      "start": "2026-02-25",
+      "end": "2026-05-23"
+    },
+    "score_components": [
+      "return",
+      "frequency",
+      "edge_quality",
+      "capture",
+      "drawdown_resilience",
+      "rule_efficiency",
+      "strategy_balance"
+    ],
+    "source_hashes": {
+      "momentum": "28071850c4b7aaa1f5daabccbebc22799943573d300014e08eb3d1f3894afbae",
+      "trend": "4c72fdb0098392ca965e85f0c02e5a45d4de5886703ea76703ce0e815c50f624",
+      "breakout": "95a3e4f6c6ecc1c9e96020bf5c6b598035dd4ebd4e019dbb2c2583d1fc5fb8a0",
+      "portfolio": "e5971be50cfb5a171d1aa086cd81d02f4cd345bd2da212cb6281852fd7493110"
+    },
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  },
+  "invalid_phases": {}
+}

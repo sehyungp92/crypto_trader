@@ -79,6 +79,40 @@ class TestTrailManager:
         assert stop_low_r is not None and stop_high_r is not None
         assert stop_high_r > stop_low_r  # Tighter = closer to price for long
 
+    def test_mfe_can_drive_adaptive_buffer(self):
+        """Optional MFE mode tightens the buffer after a large peak gives back."""
+        bars = [_make_bar(50500)]
+        ind = _make_ind(atr=200.0)
+        current_r = 0.2
+        mfe_r = 1.8
+
+        current_tm = TrailManager(TrendTrailParams(
+            trail_buffer_wide=1.0,
+            trail_buffer_tight=0.3,
+            trail_r_ceiling=2.0,
+            trail_use_mfe_for_adaptive=False,
+        ))
+        mfe_tm = TrailManager(TrendTrailParams(
+            trail_buffer_wide=1.0,
+            trail_buffer_tight=0.3,
+            trail_r_ceiling=2.0,
+            trail_use_mfe_for_adaptive=True,
+        ))
+
+        current_stop = current_tm.update(
+            "BTC", Side.LONG, bars, ind,
+            current_stop=None, bars_since_entry=8,
+            current_r=current_r, mfe_r=mfe_r,
+        )
+        mfe_stop = mfe_tm.update(
+            "BTC", Side.LONG, bars, ind,
+            current_stop=None, bars_since_entry=8,
+            current_r=current_r, mfe_r=mfe_r,
+        )
+
+        assert current_stop is not None and mfe_stop is not None
+        assert mfe_stop > current_stop
+
     def test_stop_never_retreats_long(self):
         """Long trail stop should only advance, never move down."""
         tm = TrailManager(TrendTrailParams())

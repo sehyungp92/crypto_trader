@@ -45,6 +45,27 @@ def _compute_identity(
     return hashlib.md5(payload.encode()).hexdigest()
 
 
+def _contract_hash_from_context(context: str | None) -> str:
+    payload = _payload_from_context(context)
+    return str(payload.get("contract_hash") or "")
+
+
+def _contract_from_context(context: str | None) -> dict[str, Any]:
+    payload = _payload_from_context(context)
+    contract = payload.get("contract")
+    return contract if isinstance(contract, dict) else {}
+
+
+def _payload_from_context(context: str | None) -> dict[str, Any]:
+    if not context:
+        return {}
+    try:
+        payload = json.loads(context)
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
 def run_greedy(
     candidates: list[Experiment],
     current_mutations: dict[str, Any],
@@ -229,7 +250,7 @@ def run_greedy(
             if checkpoint_path:
                 _save_checkpoint(
                     checkpoint_path, accepted, rejected, active_mutations,
-                    best_score, round_num, identity, rounds,
+                    best_score, round_num, identity, rounds, checkpoint_context,
                 )
     finally:
         # Cleanup evaluate_fn if it has a close method
@@ -269,11 +290,15 @@ def _save_checkpoint(
     round_num: int,
     identity: str,
     rounds: list[GreedyRound],
+    checkpoint_context: str | None = None,
 ) -> None:
     """Save greedy progress to checkpoint file."""
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "identity": identity,
+        "checkpoint_context": checkpoint_context or "",
+        "contract_hash": _contract_hash_from_context(checkpoint_context),
+        "contract": _contract_from_context(checkpoint_context),
         "accepted": [
             {
                 "name": sc.experiment.name,

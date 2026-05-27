@@ -130,6 +130,23 @@ class TestHealthReportBuilder:
         alert_names = [a["name"] for a in report.alerts]
         assert "pipeline_stalled" in alert_names
 
+    def test_missing_cached_funnel_does_not_alert_as_stalled(self):
+        builder = self._make_builder()
+        now = time.monotonic()
+        report = builder.build(
+            uptime_sec=100.0,
+            health_status={"total_errors": 0, "consecutive_errors": 0},
+            stale_feeds=[],
+            funnels={"momentum": {}},
+            positions=[],
+            portfolio_state={},
+            tf_last_bar={},
+            now_mono=now,
+        )
+
+        assert report.signal_funnels == {}
+        assert [a["name"] for a in report.alerts] == []
+
     def test_funnel_summary(self):
         builder = self._make_builder()
         now = time.monotonic()
@@ -155,6 +172,10 @@ class TestHealthReportBuilder:
         )
         assert report.signal_funnels["momentum"]["bars_received"] == 15
         assert report.signal_funnels["momentum"]["entries_attempted"] == 1
+        assert (
+            report.to_dict()["assistant_strategy_ids"]["momentum"]
+            == "MomentumPullback_M15"
+        )
 
     def test_portfolio_info(self):
         builder = self._make_builder()

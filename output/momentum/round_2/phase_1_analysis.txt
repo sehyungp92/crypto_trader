@@ -1,27 +1,26 @@
 ======== PHASE 1 ANALYSIS ========
 Recommendation: advance
-Reason: No experiments help, diagnostic budget exhausted
-Scoring assessment: INEFFECTIVE
+Reason: Gate passed with 1 mutations
+Scoring assessment: EFFECTIVE
 
-Accepted: 0 experiments
-Final score: 0.5790
-Base score: 0.5790
-Rounds: 1
+Accepted: 1 experiments
+Final score: 0.6953
+Base score: 0.0000
+Rounds: 2
 
-Strengths: total_trades, profit_factor, avg_mae_r, max_drawdown_pct
-Weaknesses: net_return_pct
+Strengths: expectancy_r, profit_factor, max_drawdown_pct
 Diagnostic Gaps: High alpha giveback (D1) — trail/stop calibration needs review
 
 Goal Progress:
-  net_return_pct: 6.39 / 12.00 (53%)
-  total_trades: 24.00 / 28.00 (86%)
-  profit_factor: 2.43 / 2.60 (93%)
-  exit_efficiency: 0.44 / 0.55 (79%)
-  avg_mae_r: -0.29 / -0.28 (100%)
-  max_drawdown_pct: 2.94 / 8.00 (200%)
+  net_return_pct: 11.56 / 16.00 (72%)
+  total_trades: 20.00 / 28.00 (71%)
+  expectancy_r: 0.62 / 0.45 (138%)
+  profit_factor: 5.98 / 2.50 (200%)
+  exit_efficiency: 0.43 / 0.55 (77%)
+  max_drawdown_pct: 2.61 / 8.00 (200%)
 
 Extra Analysis:
-  trail_exits: 20
-  avg_capture_pct: 0.4354
-  avg_giveback_pct: 0.5646
-  avg_bars_held: 7.7083
+  trail_exits: 15
+  avg_capture_pct: 0.4260
+  avg_giveback_pct: 0.5740
+  avg_bars_held: 12.2000

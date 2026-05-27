@@ -1,19 +1,16 @@
-"""Tests for zone consumption timing — ensures Model 2 retest path is reachable."""
+"""Tests for market-derived zone lifecycle and Model 2 retest reachability."""
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from crypto_trader.core.models import Bar, Side, SetupGrade, TimeFrame
 from crypto_trader.strategy.breakout.balance import BalanceDetector, BalanceZone
 from crypto_trader.strategy.breakout.config import BreakoutConfig, BreakoutConfirmParams
 from crypto_trader.strategy.breakout.confirmation import (
-    BreakoutConfirmation,
     ConfirmationDetector,
 )
 from crypto_trader.strategy.breakout.setup import BreakoutSetupResult
-from crypto_trader.strategy.breakout.strategy import BreakoutStrategy
+from crypto_trader.strategy.breakout.strategy import BreakoutStrategy, WARMUP_BARS
 from crypto_trader.strategy.momentum.indicators import IndicatorSnapshot
 
 TS = datetime(2026, 3, 15, 12, 0, tzinfo=timezone.utc)
@@ -80,37 +77,80 @@ def _ind(atr=10.0):
 
 
 class TestZoneConsumption:
-    """Test that zone is consumed at the right time — not before entry."""
+    """Test that strategy signals do not trade-consume balance zones."""
 
-    def test_model1_consumes_zone_on_entry(self):
-        """Zone is consumed when Model 1 fires and enters."""
-        balance_detector = MagicMock(spec=BalanceDetector)
-        zone = _zone()
+    def test_model2_registration_stores_pending_and_preserves_zone_with_open_position(self):
+        """Model 2 registration is market state and is not blocked by a position."""
+        cfg = BreakoutConfig(symbols=["BTC"])
+        cfg.confirmation.enable_model1 = False
+        cfg.confirmation.enable_model2 = True
+        strategy = BreakoutStrategy(cfg)
+        ctx = MagicMock()
+        ctx.events.subscribe = MagicMock()
+        ctx.config = {}
+        ctx.bars.get.return_value = [_bar()] * 120
+        ctx.broker.get_position.return_value = MagicMock(qty=1.0)
+        ctx.broker.get_equity.return_value = 10000.0
+        ctx.broker.get_open_orders.return_value = []
+        ctx.broker.submit_order = MagicMock()
+        strategy.on_init(ctx)
+
         setup = _setup()
-        bar = _bar()
+        strategy._m30_bar_count["BTC"] = WARMUP_BARS
+        strategy._m30_inc["BTC"] = MagicMock(update=MagicMock(return_value=_ind()))
+        strategy._current_profile["BTC"] = MagicMock()
+        strategy._balance_detector.update = MagicMock()
+        strategy._balance_detector.get_active_zones = MagicMock(return_value=[setup.balance_zone])
+        strategy._balance_detector.consume_zone = MagicMock()
+        strategy._breakout_detector.detect = MagicMock(return_value=setup)
+        strategy._breakout_detector.consume_blocked_relaxed_body_signals = MagicMock(return_value=[])
+        strategy._context_analyzer.evaluate = MagicMock(return_value=MagicMock(
+            direction=Side.LONG,
+            strength=1.0,
+            reasons=[],
+        ))
+        strategy._manage_positions = MagicMock()
+        strategy._execute_entry = MagicMock(return_value=True)
 
-        # Simulate: strategy detects setup, Model 1 confirms, zone consumed before entry
-        # After the fix, consume_zone should be called exactly once (when Model 1 fires)
-        confirm = BreakoutConfirmation(
-            model="model1_close",
-            trigger_price=103.0,
-            bar_index=0,
-            volume_confirmed=True,
+        strategy._handle_m30(_bar(), "BTC", ctx)
+
+        assert strategy._confirmation_detector.has_pending("BTC")
+        strategy._balance_detector.consume_zone.assert_not_called()
+        strategy._execute_entry.assert_not_called()
+
+    def test_duplicate_model2_registration_keeps_original_retest_expiry(self):
+        cfg = BreakoutConfirmParams(
+            enable_model1=False,
+            enable_model2=True,
+            retest_max_bars=6,
+            retest_zone_atr=0.5,
+        )
+        detector = ConfirmationDetector(cfg)
+        setup = _setup()
+
+        detector.register_breakout(sym="BTC", setup=setup, bar_idx=100)
+        detector.register_breakout(sym="BTC", setup=setup, bar_idx=105)
+
+        retest_bar = Bar(
+            timestamp=TS,
+            symbol="BTC",
+            open=103.0,
+            high=103.5,
+            low=101.5,
+            close=102.5,
+            volume=800.0,
+            timeframe=TimeFrame.M30,
+        )
+        result = detector.check_retest(
+            sym="BTC",
+            bar=retest_bar,
+            bars=[retest_bar],
+            atr=10.0,
+            bar_index=107,
         )
 
-        # Test the consume_zone call ordering directly
-        calls = []
-
-        def track_consume(sym, z):
-            calls.append(("consume", sym))
-
-        balance_detector.consume_zone = track_consume
-
-        # The fixed code: consume happens AFTER check_breakout_close succeeds
-        # Verify by checking that consume_zone is called with correct args
-        balance_detector.consume_zone("BTC", zone)
-        assert len(calls) == 1
-        assert calls[0] == ("consume", "BTC")
+        assert result is None
+        assert not detector.has_pending("BTC")
 
     def test_model2_registration_preserves_setup(self):
         """When Model 1 is disabled, register_breakout stores the setup for retest."""
@@ -157,11 +197,9 @@ class TestZoneConsumption:
             sym="BTC", bar=retest_bar, bars=bars,
             atr=10.0, bar_index=102,
         )
-        # Result depends on whether retest conditions are met — the important
-        # thing is that check_retest is reachable (not blocked by zone consumption)
-        # and the pending was available
-        # Either we get a confirmation or None (depending on exact price/atr math)
-        # but the pending should be consumed either way (matched or expired)
+        # Result depends on whether retest conditions are met; the important
+        # thing is that check_retest is reachable and the pending was available.
+        # Pending state clears only by confirmation or expiry.
 
     def test_model1_preempts_model2(self):
         """With both models enabled, Model 1 fires first; Model 2 not registered."""
@@ -179,8 +217,8 @@ class TestZoneConsumption:
         if confirm is not None:
             assert not detector.has_pending("BTC")
 
-    def test_zone_not_retriggered_after_consumption(self):
-        """Once a zone is consumed, it should not appear in active zones."""
+    def test_market_invalidation_removes_zone_from_active_inventory(self):
+        """Manual zone removal is reserved for market-derived invalidation."""
         detector = BalanceDetector(BreakoutConfig().balance)
 
         # Manually add a zone to the detector's internal state
@@ -191,8 +229,6 @@ class TestZoneConsumption:
 
         assert len(detector.get_active_zones("BTC")) == 1
 
-        # Consume it
         detector.consume_zone("BTC", zone)
 
-        # Should be empty now
         assert len(detector.get_active_zones("BTC")) == 0

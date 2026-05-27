@@ -1,0 +1,58 @@
+{
+  "round": 3,
+  "strategy_type": "breakout",
+  "lineage_status": "restored_pre_portfolio_adoption_strategy_round3",
+  "correction_context": {
+    "portfolio_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+    "portfolio_bundle": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3",
+    "reason": "Portfolio-context overlay must not mutate strategy lineage artifacts."
+  },
+  "source_config_backup": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\optimized_config.pre_portfolio_round3_adoption.json",
+  "strategy_config_hash": "289298be3a6e5a745481b2155e6af48d16d0637dd6ad2d6cb45b061cf5b91f40",
+  "windows": {
+    "full": {
+      "start": "2026-02-25",
+      "end": "2026-05-23"
+    }
+  },
+  "final_metrics": {
+    "net_profit": 2293.2020124855335,
+    "net_return_pct": 22.932020124855335,
+    "realized_pnl_net": 2293.2020124855353,
+    "terminal_mark_pnl_net": 0.0,
+    "terminal_mark_count": 0,
+    "total_trades": 12.0,
+    "win_rate": 91.66666666666666,
+    "avg_winner_r": 0.9785483955589115,
+    "avg_loser_r": -0.36211630634150604,
+    "expectancy_r": 0.8668263370672101,
+    "profit_factor": 23.516110682746156,
+    "max_drawdown_pct": 1.9270458439938891,
+    "max_drawdown_duration": 5674.0,
+    "sharpe_ratio": 5.228736145919529,
+    "sortino_ratio": 0.0,
+    "calmar_ratio": 11.900090595316453,
+    "avg_bars_held": 6.75,
+    "avg_mae_r": -0.32172473509409666,
+    "avg_mfe_r": 1.4735717337171372,
+    "exit_efficiency": 0.55605433428934,
+    "a_setup_win_rate": 0.0,
+    "b_setup_win_rate": 91.66666666666666,
+    "long_win_rate": 83.33333333333334,
+    "short_win_rate": 100.0,
+    "total_fees": 214.73740864471205,
+    "funding_cost_total": -0.9096412773676956,
+    "edge_ratio": 4.580225183140343,
+    "payoff_ratio": 2.1378282438860143,
+    "recovery_factor": 11.900090595316453,
+    "max_consecutive_losses": 1.0
+  },
+  "artifacts": {
+    "optimized_config": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\optimized_config.json",
+    "backtest_report": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\backtest_report.md",
+    "equity_curve": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\equity_curve.csv",
+    "journal": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\journal.csv",
+    "round_final_diagnostics": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\round_final_diagnostics.txt",
+    "round_evaluation": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\round_evaluation.txt"
+  }
+}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import Future
 from dataclasses import dataclass
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,7 @@ import pandas as pd
 import pytest
 
 from crypto_trader.backtest.metrics import PerformanceMetrics, metrics_to_dict
+import crypto_trader.optimize.parallel as parallel_module
 from crypto_trader.optimize.parallel import _CachedStore, evaluate_parallel
 from crypto_trader.optimize.types import Experiment, ScoredCandidate
 from crypto_trader.strategy.momentum.config import MomentumConfig
@@ -45,7 +47,7 @@ class TestMetricsToDict:
             "max_drawdown_pct", "max_drawdown_duration", "sharpe_ratio",
             "sortino_ratio", "calmar_ratio", "avg_bars_held", "avg_mae_r",
             "avg_mfe_r", "exit_efficiency", "a_setup_win_rate", "b_setup_win_rate",
-            "long_win_rate", "short_win_rate", "funding_cost_total",
+            "long_win_rate", "short_win_rate", "total_fees", "funding_cost_total",
             "edge_ratio", "payoff_ratio", "recovery_factor",
             "max_consecutive_losses",
         }
@@ -88,6 +90,31 @@ class TestCachedStore:
 
         assert cached.load_candles("ETH", "15m") is None
         assert cached.load_funding("ETH") is None
+
+    def test_worker_cache_key_separates_timeframe_sets(self, tmp_path, monkeypatch):
+        """Sequential strategy switches should not reuse the wrong cached store."""
+        created = []
+
+        class FakeCachedStore:
+            def __init__(self, store, symbols, timeframes):
+                self.store = store
+                self.symbols = tuple(symbols)
+                self.timeframes = tuple(timeframes)
+                created.append(self)
+
+        monkeypatch.setattr(parallel_module, "_CachedStore", FakeCachedStore)
+        parallel_module._worker_stores.clear()
+        parallel_module._worker_store = None
+
+        parallel_module._init_worker(str(tmp_path), ["BTC"], ["15m", "1h", "4h"])
+        momentum_store = parallel_module._worker_store
+        parallel_module._init_worker(str(tmp_path), ["BTC"], ["30m", "4h"])
+        breakout_store = parallel_module._worker_store
+        parallel_module._init_worker(str(tmp_path), ["BTC"], ["15m", "1h", "4h"])
+
+        assert momentum_store is not breakout_store
+        assert parallel_module._worker_store is momentum_store
+        assert len(created) == 2
 
 
 # ── evaluate_parallel ────────────────────────────────────────────────────
@@ -217,6 +244,63 @@ class TestEvaluateParallel:
 
         assert len(results) == 1
         assert results[0].rejected is True
+
+    def test_parallel_worker_error_is_retried_in_isolated_worker(self, monkeypatch):
+        """A broken batch worker should not become a false strategy reject."""
+
+        class FakeProcessPoolExecutor:
+            instances = []
+
+            def __init__(self, *args, **kwargs):
+                self.call_index = len(self.instances)
+                self.instances.append(self)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def submit(self, fn, item):
+                future = Future()
+                name = item[1]
+                idx = item[0]
+                if self.call_index == 0 and name == "RETRY":
+                    future.set_exception(RuntimeError("process pool broke"))
+                    return future
+
+                score = 0.8 if name == "RETRY" else 0.4
+                future.set_result((
+                    idx,
+                    ScoredCandidate(
+                        experiment=Experiment(name=name, mutations=item[2]),
+                        score=score,
+                        metrics={"total_trades": 20.0},
+                        rejected=False,
+                        reject_reason="",
+                    ),
+                ))
+                return future
+
+        monkeypatch.setattr(parallel_module, "ProcessPoolExecutor", FakeProcessPoolExecutor)
+
+        results = evaluate_parallel(
+            candidates=[Experiment("OK", {}), Experiment("RETRY", {"x": 1})],
+            current_mutations={},
+            cumulative_mutations={},
+            base_config=MomentumConfig(),
+            backtest_config=self._make_bt_config(),
+            data_dir="data",
+            scoring_weights={"coverage": 1.0},
+            hard_rejects={},
+            phase=1,
+            max_workers=2,
+        )
+
+        assert [result.experiment.name for result in results] == ["OK", "RETRY"]
+        assert results[1].rejected is False
+        assert results[1].score == 0.8
+        assert len(FakeProcessPoolExecutor.instances) == 2
 
 
 # ── MomentumConfig round-trip ────────────────────────────────────────────

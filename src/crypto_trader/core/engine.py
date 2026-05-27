@@ -3,22 +3,22 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
-from typing import Any, Iterator, Protocol, runtime_checkable
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import Any, Protocol, runtime_checkable
 
 import structlog
 
 from crypto_trader.core.broker import BrokerAdapter
 from crypto_trader.core.clock import Clock
-from crypto_trader.core.events import BarEvent, EventBus, FillEvent, PositionClosedEvent
-from crypto_trader.core.models import Bar, Fill, TerminalMark, TimeFrame, Trade
+from crypto_trader.core.events import EventBus
+from crypto_trader.core.execution_gateway import ExecutionGateway
+from crypto_trader.core.models import Bar, Fill, TerminalMark, TimeFrame
+from crypto_trader.broker.sim_execution_adapter import SimExecutionAdapter
+from crypto_trader.core.strategy_runtime import StrategySlotRuntime
 
 log = structlog.get_logger()
 
-
-# ---------------------------------------------------------------------------
-# Strategy protocol
-# ---------------------------------------------------------------------------
 
 @runtime_checkable
 class Strategy(Protocol):
@@ -39,15 +39,8 @@ class Strategy(Protocol):
     def on_shutdown(self, ctx: StrategyContext) -> None: ...
 
 
-# ---------------------------------------------------------------------------
-# Multi-timeframe bar storage
-# ---------------------------------------------------------------------------
-
 class MultiTimeFrameBars:
-    """Rolling window of bars per (symbol, timeframe) pair.
-
-    Provides O(1) latest-bar access and O(count) history retrieval.
-    """
+    """Rolling window of bars per (symbol, timeframe) pair."""
 
     def __init__(self, max_bars: int = 500) -> None:
         self._max_bars = max_bars
@@ -56,7 +49,6 @@ class MultiTimeFrameBars:
         )
 
     def append(self, bar: Bar) -> None:
-        """Add a bar to the rolling window."""
         self._bars[(bar.symbol, bar.timeframe)].append(bar)
 
     def get(
@@ -65,7 +57,6 @@ class MultiTimeFrameBars:
         tf: TimeFrame,
         count: int | None = None,
     ) -> list[Bar]:
-        """Get bars for a symbol/timeframe. Returns up to `count` most recent."""
         buf = self._bars.get((symbol, tf))
         if buf is None:
             return []
@@ -74,20 +65,36 @@ class MultiTimeFrameBars:
         return list(buf)[-count:]
 
     def latest(self, symbol: str, tf: TimeFrame) -> Bar | None:
-        """Get the most recent bar, or None if no bars yet."""
         buf = self._bars.get((symbol, tf))
         if not buf:
             return None
         return buf[-1]
 
+    def snapshot_state(self) -> dict[str, Any]:
+        """Return an in-memory checkpoint of rolling bar buffers."""
+        return {
+            "max_bars": self._max_bars,
+            "bars": {
+                key: list(buffer)
+                for key, buffer in self._bars.items()
+            },
+        }
 
-# ---------------------------------------------------------------------------
-# Strategy context
-# ---------------------------------------------------------------------------
+    def restore_state(self, snapshot: dict[str, Any]) -> None:
+        """Restore bar buffers captured by :meth:`snapshot_state`."""
+        self._max_bars = int(snapshot.get("max_bars", self._max_bars))
+        restored: dict[tuple[str, TimeFrame], deque[Bar]] = defaultdict(
+            lambda: deque(maxlen=self._max_bars)
+        )
+        for key, bars in snapshot.get("bars", {}).items():
+            restored[key] = deque(deepcopy(bars), maxlen=self._max_bars)
+        self._bars = restored
+
 
 @dataclass
 class StrategyContext:
-    """Injected into strategy callbacks — provides access to all engine services."""
+    """Injected into strategy callbacks and runtime services."""
+
     broker: BrokerAdapter
     clock: Clock
     bars: MultiTimeFrameBars
@@ -95,34 +102,14 @@ class StrategyContext:
     config: Any = None
 
 
-# ---------------------------------------------------------------------------
-# Strategy engine
-# ---------------------------------------------------------------------------
-
 class StrategyEngine:
-    """Unified engine that drives strategy execution over a data feed.
-
-    The run loop:
-      1. on_init(ctx)
-      2. For each bar from feed:
-         a. clock.advance(bar.timestamp)
-         b. If primary TF: broker.process_bar(bar) -> dispatch fills
-         c. bars.append(bar)
-         d. strategy.on_bar(bar, ctx)
-         e. Emit BarEvent
-      3. on_shutdown(ctx)
-
-    Critical invariants:
-      - process_bar runs BEFORE on_bar: orders from bar N fill against bar N+1
-      - process_bar only runs for primary TF bars (default M15). Higher-TF bars
-        are synthetic aggregates with OHLC that don't represent tradeable prices.
-    """
+    """Drive a single strategy over a feed through the shared slot runtime."""
 
     def __init__(
         self,
         strategy: Strategy,
         broker: BrokerAdapter,
-        feed: Any,  # DataFeed protocol — Any to avoid import cycle
+        feed: Any,
         clock: Clock,
         events: EventBus | None = None,
         config: Any = None,
@@ -135,14 +122,28 @@ class StrategyEngine:
         self.events = events or EventBus()
         self.config = config
         self.primary_timeframe = primary_timeframe
+        self.execution_gateway = ExecutionGateway(
+            adapter=SimExecutionAdapter(self.broker),
+            broker=self.broker,
+            events=self.events,
+        )
 
         self._bars = MultiTimeFrameBars()
         self._ctx = StrategyContext(
-            broker=self.broker,
+            broker=self.execution_gateway,
             clock=self.clock,
             bars=self._bars,
             events=self.events,
             config=self.config,
+        )
+        self._runtime = StrategySlotRuntime(
+            strategy=self.strategy,
+            ctx=self._ctx,
+            broker=self.broker,
+            bars=self._bars,
+            events=self.events,
+            primary_timeframe=self.primary_timeframe,
+            strategy_id=getattr(self.strategy, "name", "strategy"),
         )
         self._bar_count = 0
         self._fill_count = 0
@@ -170,121 +171,85 @@ class StrategyEngine:
         )
 
     def _process_single_bar(self, bar: Bar) -> None:
-        """Process a single bar through the engine pipeline.
-
-        For primary TF bars:
-          1. process_bar: fill pending orders (deferred NOT included yet)
-          2. Dispatch fills to strategy (on_fill submits protective stops)
-          3. Recheck entry-bar stops against the same bar (Finding 2)
-          4. Emit PositionClosedEvents
-          5. Activate deferred orders for NEXT primary bar (Finding 1)
-          6. Append bar + notify strategy (new orders go to active, fill at NEXT process_bar)
-
-        For higher-TF bars:
-          - Defer all orders submitted during on_bar so they don't fill at the
-            co-boundary primary bar (prevents timing leak — Finding 1).
-        """
-        # Step a: advance clock
-        if hasattr(self.clock, "advance"):
-            self.clock.advance(bar.timestamp)
-
-        # Step b: process fills only on primary TF bars
-        if bar.timeframe == self.primary_timeframe:
-            # Snapshot closed trade count to detect new trades
-            closed_before = len(getattr(self.broker, '_closed_trades', []))
-            fills = self._try_process_bar(bar)
-            for fill in fills:
-                self._fill_count += 1
-                self.strategy.on_fill(fill, self._ctx)
-                self.events.emit(FillEvent(timestamp=fill.timestamp, fill=fill))
-
-            # Step b2: recheck newly submitted protective stops against entry bar
-            if fills:
-                check_fn = getattr(self.broker, 'check_entry_bar_stops', None)
-                if check_fn is not None:
-                    recheck_fills = check_fn(bar)
-                    for fill in recheck_fills:
-                        self._fill_count += 1
-                        self.strategy.on_fill(fill, self._ctx)
-                        self.events.emit(FillEvent(timestamp=fill.timestamp, fill=fill))
-                    if recheck_fills:
-                        refresh_fn = getattr(self.broker, "refresh_current_bar_equity", None)
-                        if refresh_fn is not None:
-                            refresh_fn(bar.timestamp)
-
-            # Step b3: emit PositionClosedEvents for ALL new trades since snapshot
-            closed_trades = getattr(self.broker, '_closed_trades', [])
-            for trade in closed_trades[closed_before:]:
-                self.events.emit(PositionClosedEvent(timestamp=trade.exit_time, trade=trade))
-
-            # Step b4: promote deferred orders for NEXT primary bar
-            activate_fn = getattr(self.broker, 'activate_deferred', None)
-            if activate_fn is not None:
-                activate_fn()
-
-            # Step c: append bar, then notify strategy
-            self._bars.append(bar)
-            self.strategy.on_bar(bar, self._ctx)
-            self._bar_count += 1
-            self.events.emit(BarEvent(timestamp=bar.timestamp, bar=bar))
-        else:
-            # Higher-TF bar: defer any orders submitted during on_bar
-            self._bars.append(bar)
-
-            start_fn = getattr(self.broker, 'start_deferring', None)
-            stop_fn = getattr(self.broker, 'stop_deferring', None)
-
-            if start_fn is not None:
-                start_fn()
-
-            self.strategy.on_bar(bar, self._ctx)
-            self._bar_count += 1
-
-            if stop_fn is not None:
-                stop_fn()
-
-            self.events.emit(BarEvent(timestamp=bar.timestamp, bar=bar))
+        """Process a single bar through the shared slot runtime."""
+        self._runtime.process_bar(bar)
+        self._bar_count = self._runtime.bar_count
+        self._fill_count = self._runtime.fill_count
 
     def close_open_positions(self) -> list[Fill]:
-        """Force-close all open positions, dispatching fills through the strategy.
-
-        Must be called instead of broker.close_open_positions() so that
-        the strategy receives on_fill callbacks and PositionClosedEvents,
-        enabling trade enrichment (r_multiple, mae_r, mfe_r, etc.).
-        """
-        close_fn = getattr(self.broker, "close_open_positions", None)
-        if close_fn is None:
-            return []
-
-        closed_before = len(getattr(self.broker, '_closed_trades', []))
-        fills = close_fn()
-
-        for fill in fills:
-            self._fill_count += 1
-            self.strategy.on_fill(fill, self._ctx)
-            self.events.emit(FillEvent(timestamp=fill.timestamp, fill=fill))
-
-        closed_trades = getattr(self.broker, '_closed_trades', [])
-        for trade in closed_trades[closed_before:]:
-            self.events.emit(PositionClosedEvent(timestamp=trade.exit_time, trade=trade))
-
+        """Force-close positions while dispatching fills and close events."""
+        fills = self._runtime.close_open_positions()
+        self._fill_count = self._runtime.fill_count
         return fills
 
     def mark_open_positions(self) -> list[TerminalMark]:
         """Create explicit terminal marks and let the strategy enrich them."""
-        mark_fn = getattr(self.broker, "mark_open_positions", None)
-        if mark_fn is None:
-            return []
+        return self._runtime.mark_open_positions()
 
-        terminal_marks = mark_fn()
-        enrich_fn = getattr(self.strategy, "enrich_terminal_marks", None)
-        if enrich_fn is not None and terminal_marks:
-            enrich_fn(terminal_marks)
-        return terminal_marks
+    def snapshot_state(self) -> dict[str, Any]:
+        """Return an in-memory checkpoint suitable for split-run continuation."""
+        strategy_snapshot = None
+        snapshot_strategy = getattr(self.strategy, "snapshot_state", None)
+        if callable(snapshot_strategy):
+            strategy_snapshot = snapshot_strategy()
 
-    def _try_process_bar(self, bar: Bar) -> list[Fill]:
-        """Call broker.process_bar if available (duck-type check)."""
-        process_bar = getattr(self.broker, "process_bar", None)
-        if process_bar is not None:
-            return process_bar(bar)
-        return []
+        return {
+            "broker": self.broker.snapshot_state()
+            if hasattr(self.broker, "snapshot_state")
+            else None,
+            "clock": self.clock.snapshot_state()
+            if hasattr(self.clock, "snapshot_state")
+            else None,
+            "bars": self._bars.snapshot_state(),
+            "runtime": {
+                "bar_count": self._runtime.bar_count,
+                "fill_count": self._runtime.fill_count,
+                "engine_bar_count": self._bar_count,
+                "engine_fill_count": self._fill_count,
+            },
+            "strategy": strategy_snapshot,
+            "execution_gateway": {
+                "last_reports": deepcopy(getattr(self.execution_gateway, "_last_reports", [])),
+                "pending_immediate_fill_syncs": deepcopy(
+                    getattr(self.execution_gateway, "_pending_immediate_fill_syncs", [])
+                ),
+            },
+        }
+
+    def restore_state(self, snapshot: dict[str, Any]) -> None:
+        """Restore an engine checkpoint before continuing with a new feed."""
+        broker_snapshot = snapshot.get("broker")
+        if broker_snapshot is not None and hasattr(self.broker, "restore_state"):
+            self.broker.restore_state(broker_snapshot)
+
+        clock_snapshot = snapshot.get("clock")
+        if clock_snapshot is not None and hasattr(self.clock, "restore_state"):
+            self.clock.restore_state(clock_snapshot)
+
+        bars_snapshot = snapshot.get("bars")
+        if bars_snapshot is not None:
+            self._bars.restore_state(bars_snapshot)
+
+        strategy_snapshot = snapshot.get("strategy")
+        restore_strategy = getattr(self.strategy, "restore_state", None)
+        if strategy_snapshot is not None and callable(restore_strategy):
+            restore_strategy(strategy_snapshot)
+
+        runtime = snapshot.get("runtime", {})
+        self._runtime.bar_count = int(runtime.get("bar_count", self._runtime.bar_count))
+        self._runtime.fill_count = int(runtime.get("fill_count", self._runtime.fill_count))
+        self._bar_count = int(runtime.get("engine_bar_count", self._runtime.bar_count))
+        self._fill_count = int(runtime.get("engine_fill_count", self._runtime.fill_count))
+
+        gateway_snapshot = snapshot.get("execution_gateway", {})
+        if gateway_snapshot:
+            self.execution_gateway._last_reports = deepcopy(
+                gateway_snapshot.get("last_reports", [])
+            )
+            self.execution_gateway._pending_immediate_fill_syncs = deepcopy(
+                gateway_snapshot.get("pending_immediate_fill_syncs", [])
+            )
+
+        sync_open_orders = getattr(self.execution_gateway.adapter, "sync_open_orders", None)
+        if callable(sync_open_orders):
+            sync_open_orders()

@@ -1,0 +1,15 @@
+# Portfolio Round 1 Evaluation
+
+Baseline: current live strategy configs through current portfolio overlay.
+Legacy portfolio optimization artifacts were archived.
+
+Trades: 90
+Net return: 92.86%
+Net profit: $23,214.58
+Expectancy R: 0.4057
+Exit efficiency: 0.5409
+Portfolio blocks: 21 / 112
+Block reasons: {'symbol_collision=block: BTC already held by momentum': 2, 'symbol_collision=block: BTC already held by trend': 6, 'symbol_collision=block: ETH already held by trend': 5, 'symbol_collision=block: SOL already held by momentum': 1, 'symbol_collision=block: SOL already held by trend': 7}
+Contract hash: b61440554de64a0c1151551839d31cf8287e65e37b80deb6b2237c80471fe180
+
+Decision: accepted as operational portfolio baseline; requires fresh portfolio search for optimality/robustness proof.

@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
 
+import crypto_trader.optimize.phase_runner as phase_runner_module
 from crypto_trader.optimize.phase_runner import PhaseRunner
 from crypto_trader.optimize.phase_state import PhaseState
 from crypto_trader.optimize.types import (
@@ -142,6 +144,11 @@ class FailingGatePlugin(MockPlugin):
         self.diagnostics_calls += 1
         self.enhanced_diagnostics_calls += 1
         return "enhanced diagnostics text"
+
+
+class FinalMetricsFailurePlugin(MockPlugin):
+    def compute_final_metrics(self, mutations):
+        raise RuntimeError("walk-forward unavailable")
 
 
 class TestPhaseRunner:
@@ -306,6 +313,56 @@ class TestPhaseRunner:
         assert (tmp_path / "phase_1_greedy.json").exists()
         assert (tmp_path / "phase_1_diagnostics.txt").exists()
         assert (tmp_path / "phase_1_analysis.txt").exists()
+
+    def test_strict_final_validation_failure_marks_invalid_and_raises(self, tmp_path):
+        plugin = FinalMetricsFailurePlugin()
+        runner = PhaseRunner(
+            plugin,
+            tmp_path,
+            contract={"contract_hash": "strict_hash"},
+            validation_mode="strict",
+        )
+        state = PhaseState()
+
+        with pytest.raises(RuntimeError, match="strict mode refuses fallback"):
+            runner.run_phase(1, state)
+
+        assert state.invalid_phases[1]["reason"] == "final_validation_failed"
+        assert state.invalid_phases[1]["metadata"]["contract_hash"] == "strict_hash"
+        assert 1 not in state.completed_phases
+
+    def test_fast_validation_failure_uses_annotated_fallback(self, tmp_path):
+        plugin = FinalMetricsFailurePlugin()
+        runner = PhaseRunner(plugin, tmp_path, validation_mode="fast")
+        state = PhaseState()
+
+        runner.run_phase(1, state)
+
+        assert 1 in state.completed_phases
+        result = state.phase_results[1]
+        assert result["final_validation"]["status"] == "fallback"
+        assert result["final_validation"]["fallback_source"] == "greedy_in_sample"
+
+    def test_checkpoint_context_includes_contract_hash(self, tmp_path, monkeypatch):
+        plugin = MockPlugin()
+        captured: list[dict] = []
+
+        def fake_run_greedy(*args, **kwargs):
+            captured.append(json.loads(kwargs["checkpoint_context"]))
+            return GreedyResult(
+                accepted_experiments=[],
+                rejected_experiments=[],
+                final_mutations={},
+                final_score=0.25,
+                base_score=0.1,
+                accepted_count=0,
+            )
+
+        monkeypatch.setattr(phase_runner_module, "run_greedy", fake_run_greedy)
+        runner = PhaseRunner(plugin, tmp_path, contract={"contract_hash": "hash_a"})
+        runner.run_phase(1, PhaseState())
+
+        assert captured[0]["contract_hash"] == "hash_a"
 
     def test_rerun_completed_phase(self, tmp_path):
         """Re-running a completed phase rolls back stale data."""

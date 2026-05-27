@@ -1,24 +1,30 @@
 {
-  "accepted": [],
+  "accepted": [
+    "weak_volume_110"
+  ],
   "rejected": [
-    "hammer_off",
+    "base_break_off",
+    "inside_as_weak_gate2",
+    "inside_as_weak_gate3",
+    "inside_base_as_weak_gate2",
     "weak_volume_105",
-    "weak_volume_110",
-    "weak_gate_3",
-    "weak_gate_4",
+    "trigger_volume_105",
+    "zone_prox_050",
+    "zone_prox_035",
     "micro_shift_4",
     "micro_shift_5",
-    "min_b_conf_1",
-    "min_b_conf_2",
-    "room_b_14",
-    "zone_prox_050",
-    "zone_prox_025",
-    "reject_extended_reaction_on",
-    "outside_session_require_a",
-    "rsi_pullback_35"
+    "hammer_wick_25",
+    "rsi_pullback_35",
+    "room_b_140",
+    "quality_stack_light",
+    "quality_stack_location"
   ],
-  "final_score": 0.5789922208174012,
-  "base_score": 0.5789922208174012,
-  "rounds": 1,
-  "elapsed_seconds": 0.0
+  "final_score": 0.6953357771458846,
+  "base_score": 0.0,
+  "rounds": 2,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258",
+  "final_validation": {
+    "status": "passed"
+  }
 }

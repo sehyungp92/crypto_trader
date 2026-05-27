@@ -1,0 +1,274 @@
+{
+  "created_at": "2026-05-27T20:48:40.330129+00:00",
+  "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+  "correction": "Restored global strategy round_3 lineage and moved live deployment reference to the portfolio round_3 bundle.",
+  "portfolio_round_3_preserved": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3",
+  "restored_strategy_lineage": {
+    "momentum": {
+      "optimized_config": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\round_3\\optimized_config.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\round_3\\optimized_config.json",
+        "before_hash": "4f717b578728e1ba9ffb9a9ebd0446215fa0ad75f86450913c110ee359bf1a08",
+        "after_hash": "4f717b578728e1ba9ffb9a9ebd0446215fa0ad75f86450913c110ee359bf1a08"
+      },
+      "rounds_manifest": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\archive\\root_cleanup_20260527\\rounds_manifest.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\rounds_manifest.json",
+        "before_hash": null,
+        "after_hash": "db5749491c85f5bdf464d2eacc0d4112bd9620cd70d62d52caa572cb2726a20e"
+      }
+    },
+    "trend": {
+      "optimized_config": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\trend\\round_3\\optimized_config.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\trend\\round_3\\optimized_config.json",
+        "before_hash": "4a395d14e5663e8ec686a9bf40e15474f111e398887e047f9721318feee70c7e",
+        "after_hash": "4a395d14e5663e8ec686a9bf40e15474f111e398887e047f9721318feee70c7e"
+      },
+      "rounds_manifest": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\trend\\archive\\root_cleanup_20260527\\rounds_manifest.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\trend\\rounds_manifest.json",
+        "before_hash": null,
+        "after_hash": "c4fd89629b5c76a7171e20a1aa05c6e2e2ab32cbeb7e7c526023da40504122b5"
+      }
+    },
+    "breakout": {
+      "optimized_config": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\optimized_config.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\optimized_config.json",
+        "before_hash": "fcdd301aa314c84bc78c6f4ef7bf1e81f48c0807d58012e3f2c6a8ba6acd7d49",
+        "after_hash": "fcdd301aa314c84bc78c6f4ef7bf1e81f48c0807d58012e3f2c6a8ba6acd7d49"
+      },
+      "rounds_manifest": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\archive\\root_cleanup_20260527\\rounds_manifest.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\rounds_manifest.json",
+        "before_hash": null,
+        "after_hash": "df69a5029025fcd206cc7327c3c4176895e4b848ebd8340330d2083d4c042a6b"
+      }
+    }
+  },
+  "restored_baseline_config_materialization": {
+    "portfolio_config": {
+      "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\portfolio_config.pre_portfolio_round3_adoption.json",
+      "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\portfolio_config.json",
+      "before_hash": "c8f3dea702f1eff93333df3e84ced09419f1adc526982868285d74cd39e255c9",
+      "after_hash": "c8f3dea702f1eff93333df3e84ced09419f1adc526982868285d74cd39e255c9"
+    },
+    "strategies": {
+      "momentum": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\momentum.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\momentum.json",
+        "before_hash": "035d95cdadea393550839ee4c10cf7873df08b19005f303eb35b9921267b7690",
+        "after_hash": "035d95cdadea393550839ee4c10cf7873df08b19005f303eb35b9921267b7690"
+      },
+      "trend": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\trend.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\trend.json",
+        "before_hash": "c50870d05177d96c6b2dcbe63a54049e228c7b52f9e784b03f7e9ee920089388",
+        "after_hash": "c50870d05177d96c6b2dcbe63a54049e228c7b52f9e784b03f7e9ee920089388"
+      },
+      "breakout": {
+        "source": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\breakout.pre_portfolio_round3_adoption.json",
+        "destination": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\breakout.json",
+        "before_hash": "6bc50cfb7f0b73de691c3e3a134268a64c49d882280d05ac3c7579b15e203bda",
+        "after_hash": "6bc50cfb7f0b73de691c3e3a134268a64c49d882280d05ac3c7579b15e203bda"
+      }
+    }
+  },
+  "live_example": {
+    "path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\live_config.example.json",
+    "strategy_configs": {
+      "momentum": "output/portfolio/round_3/recommended_strategy_configs/momentum.json",
+      "trend": "output/portfolio/round_3/recommended_strategy_configs/trend.json",
+      "breakout": "output/portfolio/round_3/recommended_strategy_configs/breakout.json"
+    },
+    "portfolio_config_path": "output/portfolio/round_3/recommended_portfolio_config.json",
+    "deployment_manifest_path": "output/portfolio/round_3/deployment_manifest.json"
+  },
+  "strategy_diagnostics_after_restore": {
+    "momentum": {
+      "metrics": {
+        "net_profit": 3507.408910092465,
+        "net_return_pct": 35.07408910092465,
+        "realized_pnl_net": 3507.4089100924766,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0,
+        "total_trades": 46.0,
+        "win_rate": 56.52173913043478,
+        "avg_winner_r": 1.1366306521470473,
+        "avg_loser_r": -0.5030097876044511,
+        "expectancy_r": 0.4237435044290046,
+        "profit_factor": 2.717037912872105,
+        "max_drawdown_pct": 5.043451250531249,
+        "max_drawdown_duration": 10148.0,
+        "sharpe_ratio": 3.8667121956701016,
+        "sortino_ratio": 8.21068214639741,
+        "calmar_ratio": 6.954382496951892,
+        "avg_bars_held": 9.08695652173913,
+        "avg_mae_r": -0.330001795330785,
+        "avg_mfe_r": 1.4481335922365357,
+        "exit_efficiency": 0.43319203379698173,
+        "a_setup_win_rate": 50.0,
+        "b_setup_win_rate": 57.14285714285714,
+        "long_win_rate": 56.52173913043478,
+        "short_win_rate": 0.0,
+        "total_fees": 1244.8720278607634,
+        "funding_cost_total": 22.179105379448455,
+        "edge_ratio": 4.38825973896586,
+        "payoff_ratio": 2.090029163747774,
+        "recovery_factor": 6.954382496951892,
+        "max_consecutive_losses": 2.0
+      },
+      "strategy_config_hash": "702e9ffc2e7c5acc1917502e536cca440a5e67c406b86b1e66c30c4ee63e5fec",
+      "round_final_diagnostics": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\round_3\\round_final_diagnostics.txt"
+    },
+    "trend": {
+      "metrics": {
+        "net_profit": 2851.5868410260136,
+        "net_return_pct": 28.515868410260136,
+        "realized_pnl_net": 2851.5868410260136,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0,
+        "total_trades": 29.0,
+        "win_rate": 55.172413793103445,
+        "avg_winner_r": 0.8083972670788654,
+        "avg_loser_r": -0.16307396269420268,
+        "expectancy_r": 0.3729101640771451,
+        "profit_factor": 5.926115552728403,
+        "max_drawdown_pct": 3.3487620058290286,
+        "max_drawdown_duration": 8119.0,
+        "sharpe_ratio": 4.381087451702481,
+        "sortino_ratio": 18.490414831203523,
+        "calmar_ratio": 8.515346375951452,
+        "avg_bars_held": 19.586206896551722,
+        "avg_mae_r": -0.34779116774566,
+        "avg_mfe_r": 1.0778708685879221,
+        "exit_efficiency": 0.4906843102188689,
+        "a_setup_win_rate": 25.0,
+        "b_setup_win_rate": 60.0,
+        "long_win_rate": 47.368421052631575,
+        "short_win_rate": 70.0,
+        "total_fees": 566.9554773562857,
+        "funding_cost_total": 10.37927277590909,
+        "edge_ratio": 3.099189883327256,
+        "payoff_ratio": 4.814968886591827,
+        "recovery_factor": 8.515346375951452,
+        "max_consecutive_losses": 4.0
+      },
+      "strategy_config_hash": "9afa0748fe45ec63f59645f4f0aeab7fd41fe6ff2f48af5189412e4216e9c917",
+      "round_final_diagnostics": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\trend\\round_3\\round_final_diagnostics.txt"
+    },
+    "breakout": {
+      "metrics": {
+        "net_profit": 2293.2020124855335,
+        "net_return_pct": 22.932020124855335,
+        "realized_pnl_net": 2293.2020124855353,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0,
+        "total_trades": 12.0,
+        "win_rate": 91.66666666666666,
+        "avg_winner_r": 0.9785483955589115,
+        "avg_loser_r": -0.36211630634150604,
+        "expectancy_r": 0.8668263370672101,
+        "profit_factor": 23.516110682746156,
+        "max_drawdown_pct": 1.9270458439938891,
+        "max_drawdown_duration": 5674.0,
+        "sharpe_ratio": 5.228736145919529,
+        "sortino_ratio": 0.0,
+        "calmar_ratio": 11.900090595316453,
+        "avg_bars_held": 6.75,
+        "avg_mae_r": -0.32172473509409666,
+        "avg_mfe_r": 1.4735717337171372,
+        "exit_efficiency": 0.55605433428934,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 91.66666666666666,
+        "long_win_rate": 83.33333333333334,
+        "short_win_rate": 100.0,
+        "total_fees": 214.73740864471205,
+        "funding_cost_total": -0.9096412773676956,
+        "edge_ratio": 4.580225183140343,
+        "payoff_ratio": 2.1378282438860143,
+        "recovery_factor": 11.900090595316453,
+        "max_consecutive_losses": 1.0
+      },
+      "strategy_config_hash": "289298be3a6e5a745481b2155e6af48d16d0637dd6ad2d6cb45b061cf5b91f40",
+      "round_final_diagnostics": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\breakout\\round_3\\round_final_diagnostics.txt"
+    }
+  },
+  "portfolio_bundle_parity": {
+    "status": "matched",
+    "created_at": "2026-05-27T20:48:40.319875+00:00",
+    "profile": {
+      "profile_id": "live_parity_v1",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "initial_equity": 10000.0,
+      "taker_fee_bps": 4.5,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 1.0,
+      "train_pct": 0.7,
+      "apply_funding": true,
+      "warmup_days": 60,
+      "terminal_accounting_mode": "terminal_mark"
+    },
+    "terminal_accounting_mode": "terminal_mark",
+    "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+    "live_config_example": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\live_config.example.json",
+    "deployment_model": "live_config_example_points_to_portfolio_round_3_bundle",
+    "bundle_paths": {
+      "portfolio_config_path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_portfolio_config.json",
+      "strategy_config_paths": {
+        "momentum": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs\\momentum.json",
+        "trend": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs\\trend.json",
+        "breakout": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs\\breakout.json"
+      }
+    },
+    "portfolio_metric_replay": {
+      "status": "matched",
+      "deltas": {
+        "net_return_pct": 0.0,
+        "net_profit": 0.0,
+        "realized_pnl_net": 0.0,
+        "terminal_mark_pnl_net": 0.0,
+        "total_trades": 0.0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "expectancy_r": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0,
+        "calmar_ratio": 0.0,
+        "exit_efficiency": 0.0
+      },
+      "max_abs_delta": 0.0,
+      "tolerance": 1e-09
+    },
+    "live_config_hashes": {
+      "portfolio": {
+        "path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_portfolio_config.json",
+        "hash": "7faa6556e49d45ef4b8f1de45c80e11288e59d6f3591ac24f7e5f50ac79d6924",
+        "status": "matched"
+      },
+      "strategies": {
+        "momentum": {
+          "path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs\\momentum.json",
+          "hash": "23e2ac0a463e02cc1c7358eff30d4b801397a7d4329804edb7e5c3effcbeab9d",
+          "status": "matched"
+        },
+        "trend": {
+          "path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs\\trend.json",
+          "hash": "bd080036447f692b87982e63a95c132cb514bc36fd59a6a629b446373294e931",
+          "status": "matched"
+        },
+        "breakout": {
+          "path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs\\breakout.json",
+          "hash": "423992e9019877752e5d79151c71dd42fe21b232776e2fbff05f9257760b8e5c",
+          "status": "matched"
+        }
+      }
+    }
+  }
+}

@@ -40,15 +40,19 @@ class TestPositionPartialFields:
         pos = Position(symbol="BTC", direction=Side.LONG, qty=1.0, avg_entry=50000.0)
         assert pos.partial_exit_pnl == 0.0
         assert pos.partial_exit_commission == 0.0
+        assert pos.partial_exit_qty == 0.0
 
     def test_position_partial_fields_accumulate(self):
         pos = Position(symbol="BTC", direction=Side.LONG, qty=1.0, avg_entry=50000.0)
         pos.partial_exit_pnl += 100.0
         pos.partial_exit_commission += 5.0
+        pos.partial_exit_qty += 0.25
         pos.partial_exit_pnl += 200.0
         pos.partial_exit_commission += 3.0
+        pos.partial_exit_qty += 0.5
         assert pos.partial_exit_pnl == 300.0
         assert pos.partial_exit_commission == 8.0
+        assert pos.partial_exit_qty == pytest.approx(0.75)
 
 
 class TestSimBrokerPartialFillPnl:
@@ -93,6 +97,7 @@ class TestSimBrokerPartialFillPnl:
         assert pos.qty == pytest.approx(0.5)
         # PnL from partial: 0.5 * (52000 - 50000) = 1000
         assert pos.partial_exit_pnl == pytest.approx(1000.0)
+        assert pos.partial_exit_qty == pytest.approx(0.5)
 
     def test_partial_close_accumulates_commission(self):
         """Partial close should accumulate commission on the Position."""
@@ -148,6 +153,8 @@ class TestSimBrokerPartialFillPnl:
         trade = broker._closed_trades[0]
         # Total PnL = TP1(1000) + stop(-500) = 500
         assert trade.pnl == pytest.approx(500.0)
+        assert trade.qty == pytest.approx(1.0)
+        assert trade.exit_price == pytest.approx(50500.0)
 
     def test_trade_commission_includes_all_fills(self):
         """Trade.commission should include entry + partial exit + final exit."""
@@ -209,6 +216,8 @@ class TestSimBrokerPartialFillPnl:
         trade = broker._closed_trades[0]
         # Total = 600 + 1200 + (-800) = 1000
         assert trade.pnl == pytest.approx(1000.0)
+        assert trade.qty == pytest.approx(1.0)
+        assert trade.exit_price == pytest.approx(51000.0)
 
     def test_no_partial_unchanged_behavior(self):
         """Entry → stop (no partials) should work identically to before."""
@@ -228,6 +237,8 @@ class TestSimBrokerPartialFillPnl:
 
         trade = broker._closed_trades[0]
         assert trade.pnl == pytest.approx(-1000.0)
+        assert trade.qty == pytest.approx(1.0)
+        assert trade.exit_price == pytest.approx(49000.0)
 
     def test_zero_pnl_partial_does_not_corrupt(self):
         """Partial close at entry price should add zero to accumulator."""
@@ -318,4 +329,6 @@ class TestForceClose:
         trade = broker._closed_trades[0]
         # Total = TP1(1000) + final(1000) = 2000
         assert trade.pnl == pytest.approx(2000.0)
+        assert trade.qty == pytest.approx(1.0)
+        assert trade.exit_price == pytest.approx(52000.0)
         assert trade.exit_reason == "backtest_end"

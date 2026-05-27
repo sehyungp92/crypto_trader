@@ -41,7 +41,8 @@ class TrailManager:
 
         # R-adaptive buffer calculation
         if cfg.trail_r_adaptive:
-            r_clamped = max(0.0, min(current_r, cfg.trail_r_ceiling))
+            adaptive_r = mfe_r if cfg.trail_use_mfe_for_adaptive else current_r
+            r_clamped = max(0.0, min(adaptive_r, cfg.trail_r_ceiling))
             r_frac = r_clamped / cfg.trail_r_ceiling if cfg.trail_r_ceiling > 0 else 0
             buffer_mult = cfg.trail_buffer_wide * (1 - r_frac) + cfg.trail_buffer_tight * r_frac
         else:

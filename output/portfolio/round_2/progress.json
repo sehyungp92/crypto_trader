@@ -1,0 +1,38 @@
+{
+  "1": {
+    "name": "Signal Discrimination",
+    "accepted": 1,
+    "final_score": 0.8028057059208424,
+    "gate_passed": true,
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  },
+  "last_updated": "2026-05-27T11:13:23.274236+00:00",
+  "2": {
+    "name": "Capture And Exit Quality",
+    "accepted": 1,
+    "final_score": 0.805274937032392,
+    "gate_passed": true,
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  },
+  "3": {
+    "name": "Frequency Expansion",
+    "accepted": 0,
+    "final_score": 0.805274937032392,
+    "gate_passed": true,
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  },
+  "4": {
+    "name": "Portfolio Synergy",
+    "accepted": 1,
+    "final_score": 0.8102259776489955,
+    "gate_passed": true,
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  },
+  "5": {
+    "name": "Risk Scaling",
+    "accepted": 1,
+    "final_score": 0.8463956119246269,
+    "gate_passed": true,
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  }
+}

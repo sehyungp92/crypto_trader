@@ -1,10 +1,14 @@
 {
   "accepted": [
-    "scratch_030_lock_2"
+    "scratch_floor_0_00"
   ],
   "rejected": [],
-  "final_score": 0.7434412619674111,
-  "base_score": 0.7396491692219462,
+  "final_score": 0.6700548698364225,
+  "base_score": 0.6662078817385871,
   "rounds": 2,
-  "elapsed_seconds": 44.607834577560425
+  "elapsed_seconds": 200.72414445877075,
+  "contract_hash": "abea552891debbe69fd2aed965722c3c6c84488d13570d8df19b549d17d0712a",
+  "final_validation": {
+    "status": "passed"
+  }
 }

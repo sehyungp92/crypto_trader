@@ -17,9 +17,11 @@ from crypto_trader.instrumentation.types import (
     ErrorEvent,
     EventMetadata,
     FilterDecision,
+    HealthReportSnapshot,
     InstrumentedTradeEvent,
     MarketContext,
     MissedOpportunityEvent,
+    PipelineFunnelSnapshot,
     ROOT_CAUSE_TAXONOMY,
     SignalFactor,
 )
@@ -172,6 +174,7 @@ class TestEventMetadata:
         d = m.to_dict()
         assert d["bot_id"] == "bot1"
         assert d["strategy_id"] == "momentum"
+        assert d["assistant_strategy_id"] == "MomentumPullback_M15"
         assert "event_id" in d
         assert "trace_id" in d
 
@@ -202,6 +205,7 @@ class TestInstrumentedTradeEvent:
         assert d["trade_id"] == "t001"
         assert len(d["filter_decisions"]) == 1
         assert len(d["signal_factors"]) == 1
+        assert d["bias_direction"] == "LONG"
         assert d["market_context"]["atr"] == 100.0
 
     def test_to_dict_no_context(self):
@@ -209,6 +213,7 @@ class TestInstrumentedTradeEvent:
         meta = EventMetadata.create("bot1", "momentum", ts, "trade", "t001")
         event = InstrumentedTradeEvent(metadata=meta)
         d = event.to_dict()
+        assert d["bias_direction"] is None
         assert d["market_context"] is None
 
 
@@ -246,6 +251,22 @@ class TestErrorEvent:
         d = err.to_dict()
         assert d["error_type"] == "order_reject"
         assert d["severity"] == "high"
+
+
+class TestPipelineFunnelSnapshot:
+    def test_to_dict_includes_assistant_strategy_id(self):
+        snap = PipelineFunnelSnapshot(
+            strategy_id="breakout",
+            timestamp="2026-05-10T00:00:00+00:00",
+            period_start="2026-05-09T23:00:00+00:00",
+            period_end="2026-05-10T00:00:00+00:00",
+            funnel={"bars_received": {"BTC": 1}},
+        )
+
+        d = snap.to_dict()
+
+        assert d["strategy_id"] == "breakout"
+        assert d["assistant_strategy_id"] == "VolumeProfileBreakout_M30"
 
 
 class TestRootCauseTaxonomy:
@@ -344,6 +365,18 @@ class TestInstrumentationCollector:
         assert event.root_causes == ["normal_win"]
         assert len(event.filter_decisions) == 1
         assert event.market_context.bias_direction == "LONG"
+
+    def test_on_trade_closed_emits_canonical_economics(self):
+        c = InstrumentationCollector("momentum", bot_id="test_bot")
+        trade = _make_trade(pnl=8.0, commission=0.5, funding_paid=2.0)
+
+        event = c.on_trade_closed("BTC", trade)
+
+        assert event.pnl == pytest.approx(7.5)
+        assert event.price_pnl_gross == pytest.approx(10.0)
+        assert event.total_fees == pytest.approx(0.5)
+        assert event.funding_paid == pytest.approx(2.0)
+        assert event.realized_pnl_net == pytest.approx(7.5)
 
     def test_on_trade_closed_clears_entry_state(self):
         c = InstrumentationCollector("momentum")
@@ -588,6 +621,22 @@ class TestJsonlSink:
         path = tmp_path / "errors.jsonl"
         assert path.exists()
 
+    def test_writes_funnel_and_health_files(self, tmp_path):
+        sink = JsonlSink(tmp_path)
+        sink.write_funnel(PipelineFunnelSnapshot(
+            strategy_id="momentum",
+            timestamp="2026-05-10T00:00:00+00:00",
+            period_start="2026-05-09T23:00:00+00:00",
+            period_end="2026-05-10T00:00:00+00:00",
+        ))
+        sink.write_health_report(HealthReportSnapshot(
+            timestamp="2026-05-10T00:00:00+00:00",
+            report={"assessment": "healthy"},
+        ))
+
+        assert (tmp_path / "pipeline_funnels.jsonl").exists()
+        assert (tmp_path / "health_reports.jsonl").exists()
+
     def test_appends_multiple_events(self, tmp_path):
         sink = JsonlSink(tmp_path)
         ts = datetime(2025, 1, 1, tzinfo=timezone.utc)
@@ -680,6 +729,16 @@ class TestEventEmitter:
 # ===========================================================================
 
 class TestSidecarForwarder:
+    def test_sidecar_polls_funnel_and_health_files(self):
+        from crypto_trader.instrumentation.sidecar import _EVENT_FILES
+
+        assert "instrumented_trades" in _EVENT_FILES
+        assert "missed_opportunities" in _EVENT_FILES
+        assert "daily_snapshots" in _EVENT_FILES
+        assert "errors" in _EVENT_FILES
+        assert "pipeline_funnels" in _EVENT_FILES
+        assert "health_reports" in _EVENT_FILES
+
     def test_watermark_persistence(self, tmp_path):
         from crypto_trader.instrumentation.sidecar import SidecarForwarder
 
@@ -724,6 +783,84 @@ class TestSidecarForwarder:
         assert len(events) == 1
         assert events[0]["event_id"] == "e4"
 
+    def test_read_since_watermark_resets_after_file_truncation(self, tmp_path):
+        from crypto_trader.instrumentation.sidecar import SidecarForwarder
+
+        jsonl_path = tmp_path / "instrumented_trades.jsonl"
+        jsonl_path.write_text('{"event_id":"new"}\n', encoding="utf-8")
+
+        s = SidecarForwarder(tmp_path, "http://localhost:8000", "bot1", "secret")
+        s._watermarks["instrumented_trades"] = 10_000
+
+        events, offset = s._read_since_watermark(jsonl_path, "instrumented_trades")
+
+        assert events == [{"event_id": "new"}]
+        assert 0 < offset < 10_000
+
+    def test_sidecar_reads_telemetry_files(self, tmp_path):
+        from crypto_trader.instrumentation.sidecar import SidecarForwarder
+
+        (tmp_path / "pipeline_funnels.jsonl").write_text(
+            '{"strategy_id":"momentum","timestamp":"2026-05-10T00:00:00+00:00","funnel":{}}\n',
+            encoding="utf-8",
+        )
+        (tmp_path / "health_reports.jsonl").write_text(
+            '{"timestamp":"2026-05-10T00:00:00+00:00","report":{"assessment":"healthy"}}\n',
+            encoding="utf-8",
+        )
+
+        s = SidecarForwarder(tmp_path, "http://localhost:8000", "bot1", "secret")
+
+        funnel_events, funnel_offset = s._read_since_watermark(
+            tmp_path / "pipeline_funnels.jsonl",
+            "pipeline_funnels",
+        )
+        health_events, health_offset = s._read_since_watermark(
+            tmp_path / "health_reports.jsonl",
+            "health_reports",
+        )
+
+        assert len(funnel_events) == 1
+        assert funnel_events[0]["strategy_id"] == "momentum"
+        assert funnel_offset > 0
+        assert len(health_events) == 1
+        assert health_events[0]["report"]["assessment"] == "healthy"
+        assert health_offset > 0
+
+    def test_sidecar_sends_telemetry_files_and_persists_watermarks(self, tmp_path):
+        from crypto_trader.instrumentation.sidecar import SidecarForwarder
+
+        (tmp_path / "pipeline_funnels.jsonl").write_text(
+            '{"strategy_id":"momentum","timestamp":"2026-05-10T00:00:00+00:00"}\n',
+            encoding="utf-8",
+        )
+        (tmp_path / "health_reports.jsonl").write_text(
+            '{"timestamp":"2026-05-10T00:00:00+00:00","report":{"assessment":"healthy"}}\n',
+            encoding="utf-8",
+        )
+
+        s = SidecarForwarder(tmp_path, "http://localhost:8000", "bot1", "secret")
+        sent: list[tuple[str, list[dict]]] = []
+
+        def fake_send(events: list[dict], event_type: str) -> bool:
+            sent.append((event_type, events))
+            return True
+
+        s._send_batch = fake_send  # type: ignore[method-assign]
+        s._poll_once()
+
+        assert [event_type for event_type, _ in sent] == [
+            "pipeline_funnels",
+            "health_reports",
+        ]
+        assert s._watermarks["pipeline_funnels"] > 0
+        assert s._watermarks["health_reports"] > 0
+
+        s2 = SidecarForwarder(tmp_path, "http://localhost:8000", "bot1", "secret")
+        s2._load_watermarks()
+        assert s2._watermarks["pipeline_funnels"] == s._watermarks["pipeline_funnels"]
+        assert s2._watermarks["health_reports"] == s._watermarks["health_reports"]
+
     def test_start_stop_lifecycle(self, tmp_path):
         from crypto_trader.instrumentation.sidecar import SidecarForwarder
 
@@ -764,6 +901,32 @@ class TestDailyAggregator:
         assert snap.net_pnl == 5.0
         assert snap.missed_count == 1
         assert snap.avg_process_quality == 80.0
+
+    def test_compute_snapshot_uses_explicit_economic_fields(self):
+        from crypto_trader.instrumentation.daily_aggregator import DailyAggregator
+
+        agg = DailyAggregator(bot_id="test")
+        ts = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        meta = EventMetadata.create("test", "momentum", ts, "trade", "t1")
+
+        agg.record_trade(InstrumentedTradeEvent(
+            metadata=meta, pnl=999.0, commission=99.0,
+            price_pnl_gross=12.0, total_fees=1.0, funding_paid=2.0,
+            realized_pnl_net=9.0,
+        ))
+        agg.record_trade(InstrumentedTradeEvent(
+            metadata=meta, pnl=999.0, commission=99.0,
+            price_pnl_gross=1.0, total_fees=0.5, funding_paid=1.5,
+            realized_pnl_net=-1.0,
+        ))
+
+        snap = agg.compute_snapshot("2025-01-01")
+
+        assert snap.win_count == 1
+        assert snap.loss_count == 1
+        assert snap.gross_pnl == pytest.approx(13.0)
+        assert snap.net_pnl == pytest.approx(8.0)
+        assert snap.per_strategy_summary["momentum"]["pnl"] == pytest.approx(8.0)
 
     def test_compute_snapshot_resets_accumulators(self):
         from crypto_trader.instrumentation.daily_aggregator import DailyAggregator
@@ -928,10 +1091,17 @@ class TestRelayStore:
         store.ack_events(["e1"])
 
         health = store.get_health()
+        assert health["status"] == "ok"
+        assert health["pending_events"] == 1
         assert health["total_events"] == 2
         assert health["pending"] == 1
         assert health["acked"] == 1
         assert "bot1" in health["per_bot"]
+        assert health["per_bot_pending"]["bot1"] == 1
+        assert health["last_event_per_bot"]["bot1"] is not None
+        assert health["oldest_pending_age_seconds"] is not None
+        assert health["db_size_bytes"] > 0
+        assert health["uptime_seconds"] >= 0
         store.close()
 
     def test_purge_acked(self, tmp_path):
@@ -977,6 +1147,39 @@ class TestRelayStore:
 
         batch3 = store.get_events(since_id=batch2[-1]["id"], limit=2)
         assert len(batch3) == 1
+        store.close()
+
+    def test_round_trips_pipeline_funnel_event(self, tmp_path):
+        from crypto_trader.relay.store import RelayStore
+        store = RelayStore(tmp_path / "relay.db")
+
+        events = [{
+            "strategy_id": "momentum",
+            "timestamp": "2026-05-10T00:00:00+00:00",
+            "funnel": {"bars_received": {"BTC": 10}},
+        }]
+
+        assert store.insert_events("crypto_trader", "pipeline_funnels", events) == 1
+        out = store.get_events(limit=10)
+
+        assert out[0]["event_type"] == "pipeline_funnels"
+        assert out[0]["payload"]["strategy_id"] == "momentum"
+        store.close()
+
+    def test_round_trips_health_report_event(self, tmp_path):
+        from crypto_trader.relay.store import RelayStore
+        store = RelayStore(tmp_path / "relay.db")
+
+        events = [{
+            "timestamp": "2026-05-10T00:00:00+00:00",
+            "report": {"assessment": "healthy"},
+        }]
+
+        assert store.insert_events("crypto_trader", "health_reports", events) == 1
+        out = store.get_events(limit=10)
+
+        assert out[0]["event_type"] == "health_reports"
+        assert out[0]["payload"]["report"]["assessment"] == "healthy"
         store.close()
 
 

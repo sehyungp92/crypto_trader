@@ -3,8 +3,16 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+
+_CREDENTIAL_PLACEHOLDER_RE = re.compile(
+    r"(your|placeholder|changeme|change_me|example|here|<|>)",
+    re.IGNORECASE,
+)
+_WALLET_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+_PRIVATE_KEY_RE = re.compile(r"^0x[0-9a-fA-F]{64}$")
 
 
 @dataclass
@@ -16,14 +24,21 @@ class LiveConfig:
     is_testnet: bool = True
     poll_interval_sec: float = 15.0  # candle poll frequency
     fill_poll_interval_sec: float = 30.0
+    fill_query_overlap_sec: float = 300.0
     equity_snapshot_interval_sec: float = 300.0  # 5 minutes
     health_check_interval_sec: float = 60.0
+    health_report_interval_sec: float = 300.0
+    funnel_report_interval_sec: float = 3600.0
     rate_limit_per_sec: float = 5.0
     max_slippage_pct: float = 0.005  # 0.5% for market orders
+    reconciliation_policy: str = "block"
+    allow_manual_flatten: bool = False
+    strict_live_parity: bool = False
 
     # Strategy configs
     strategy_configs: dict[str, Path] = field(default_factory=dict)
     portfolio_config_path: Path | None = None
+    deployment_manifest_path: Path | None = None
 
     # Trading universe
     symbols: list[str] = field(default_factory=lambda: ["BTC", "ETH", "SOL"])
@@ -31,6 +46,7 @@ class LiveConfig:
     # Paths
     data_dir: Path = field(default_factory=lambda: Path("data"))
     state_dir: Path = field(default_factory=lambda: Path("data/live_state"))
+    asset_meta_path: Path | None = None
 
     # Instrumentation / relay (optional)
     bot_id: str = ""
@@ -49,10 +65,23 @@ class LiveConfig:
     def validate(self) -> list[str]:
         """Return list of validation errors (empty = valid)."""
         errors = []
-        if not self.wallet_address:
+        wallet_address = str(self.wallet_address or "").strip()
+        private_key = "" if self.private_key is None else str(self.private_key).strip()
+
+        if not wallet_address:
             errors.append("wallet_address is required")
-        if self.private_key is None:
+        elif _is_placeholder(wallet_address):
+            errors.append("wallet_address must be replaced with a real 0x wallet address")
+        elif not _WALLET_RE.fullmatch(wallet_address):
+            errors.append("wallet_address must be 0x followed by 40 hex characters")
+
+        if self.private_key is None or not private_key:
             errors.append("private_key is required for trading (None = read-only)")
+        elif _is_placeholder(private_key):
+            errors.append("private_key must be replaced with a real 0x private key")
+        elif not _PRIVATE_KEY_RE.fullmatch(private_key):
+            errors.append("private_key must be 0x followed by 64 hex characters")
+
         if not self.symbols:
             errors.append("at least one symbol required")
         if any((self.relay_url, self.relay_secret)):
@@ -62,6 +91,12 @@ class LiveConfig:
                 errors.append("relay_url is required when relay is configured")
             if not self.relay_secret:
                 errors.append("relay_secret is required when relay is configured")
+        if self.reconciliation_policy not in {"block", "cancel_unmanaged_orders", "flatten_unmanaged_positions"}:
+            errors.append("reconciliation_policy must be block, cancel_unmanaged_orders, or flatten_unmanaged_positions")
+        if self.reconciliation_policy == "flatten_unmanaged_positions" and not self.allow_manual_flatten:
+            errors.append("allow_manual_flatten=true is required for flatten_unmanaged_positions")
+        if not self.is_testnet and self.asset_meta_path is None:
+            errors.append("asset_meta_path is required for mainnet parity")
         return errors
 
     @classmethod
@@ -76,15 +111,23 @@ class LiveConfig:
             is_testnet=d.get("is_testnet", True),
             poll_interval_sec=d.get("poll_interval_sec", 15.0),
             fill_poll_interval_sec=d.get("fill_poll_interval_sec", 30.0),
+            fill_query_overlap_sec=d.get("fill_query_overlap_sec", 300.0),
             equity_snapshot_interval_sec=d.get("equity_snapshot_interval_sec", 300.0),
             health_check_interval_sec=d.get("health_check_interval_sec", 60.0),
+            health_report_interval_sec=d.get("health_report_interval_sec", 300.0),
+            funnel_report_interval_sec=d.get("funnel_report_interval_sec", 3600.0),
             rate_limit_per_sec=d.get("rate_limit_per_sec", 5.0),
             max_slippage_pct=d.get("max_slippage_pct", 0.005),
+            reconciliation_policy=d.get("reconciliation_policy", "block"),
+            allow_manual_flatten=d.get("allow_manual_flatten", False),
+            strict_live_parity=d.get("strict_live_parity", False),
             strategy_configs=strategy_configs,
             portfolio_config_path=Path(d["portfolio_config_path"]) if d.get("portfolio_config_path") else None,
+            deployment_manifest_path=Path(d["deployment_manifest_path"]) if d.get("deployment_manifest_path") else None,
             symbols=d.get("symbols", ["BTC", "ETH", "SOL"]),
             data_dir=Path(d.get("data_dir", "data")),
             state_dir=Path(d.get("state_dir", "data/live_state")),
+            asset_meta_path=Path(d["asset_meta_path"]) if d.get("asset_meta_path") else None,
             bot_id=d.get("bot_id", ""),
             relay_url=d.get("relay_url", ""),
             relay_secret=d.get("relay_secret", ""),
@@ -98,17 +141,29 @@ class LiveConfig:
             "is_testnet": self.is_testnet,
             "poll_interval_sec": self.poll_interval_sec,
             "fill_poll_interval_sec": self.fill_poll_interval_sec,
+            "fill_query_overlap_sec": self.fill_query_overlap_sec,
             "equity_snapshot_interval_sec": self.equity_snapshot_interval_sec,
             "health_check_interval_sec": self.health_check_interval_sec,
+            "health_report_interval_sec": self.health_report_interval_sec,
+            "funnel_report_interval_sec": self.funnel_report_interval_sec,
             "rate_limit_per_sec": self.rate_limit_per_sec,
             "max_slippage_pct": self.max_slippage_pct,
+            "reconciliation_policy": self.reconciliation_policy,
+            "allow_manual_flatten": self.allow_manual_flatten,
+            "strict_live_parity": self.strict_live_parity,
             "strategy_configs": {k: str(v) for k, v in self.strategy_configs.items()},
             "portfolio_config_path": str(self.portfolio_config_path) if self.portfolio_config_path else None,
+            "deployment_manifest_path": str(self.deployment_manifest_path) if self.deployment_manifest_path else None,
             "symbols": self.symbols,
             "data_dir": str(self.data_dir),
             "state_dir": str(self.state_dir),
+            "asset_meta_path": str(self.asset_meta_path) if self.asset_meta_path else None,
             "bot_id": self.bot_id,
             "relay_url": self.relay_url,
             "relay_secret": self.relay_secret,
             "postgres_dsn": self.postgres_dsn,
         }
+
+
+def _is_placeholder(value: str) -> bool:
+    return bool(_CREDENTIAL_PLACEHOLDER_RE.search(value))

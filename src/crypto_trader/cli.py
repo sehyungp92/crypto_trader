@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,7 +106,7 @@ def _build_strategy_config(strategy: str, config_path: str | None, raw: dict | N
 @click.option("--walk-forward", is_flag=True, help="Run walk-forward analysis")
 @click.option("--strategy", default="momentum", type=click.Choice(["momentum", "trend", "breakout"]),
               help="Strategy type")
-@click.option("--warmup-days", default=0, type=int, help="Extra days before start for indicator warmup")
+@click.option("--warmup-days", default=None, type=int, help="Extra days before start for indicator warmup")
 def backtest(
     config_path: str | None,
     start_date: str,
@@ -116,7 +117,7 @@ def backtest(
     equity: float,
     walk_forward: bool,
     strategy: str,
-    warmup_days: int,
+    warmup_days: int | None,
 ) -> None:
     """Run a backtest with the specified strategy."""
     from datetime import date
@@ -129,7 +130,10 @@ def backtest(
         generate_report,
         print_summary,
     )
-    from crypto_trader.backtest.config import BacktestConfig
+    from crypto_trader.backtest.profiles import (
+        LIVE_PARITY_PROFILE,
+        build_backtest_config_from_profile,
+    )
     from crypto_trader.backtest.runner import run, run_walk_forward
 
     log = structlog.get_logger()
@@ -144,7 +148,8 @@ def backtest(
     sym_list = [s.strip().upper() for s in symbols.split(",")]
     strategy_cfg.symbols = sym_list
 
-    bt_cfg = BacktestConfig(
+    bt_cfg = build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=sym_list,
         start_date=date.fromisoformat(start_date),
         end_date=date.fromisoformat(end_date),
@@ -190,6 +195,11 @@ def _update_rounds_manifest(
     round_num: int,
     mutations: dict,
     metrics: dict | None,
+    *,
+    contract: dict | None = None,
+    phase_result: dict | None = None,
+    gate_result: dict | None = None,
+    reject_reason: str = "",
 ) -> None:
     """Append round entry to rounds_manifest.json."""
     from crypto_trader.optimize.phase_state import _atomic_write_json
@@ -200,22 +210,110 @@ def _update_rounds_manifest(
             manifest = json.load(f)
     else:
         manifest = {"rounds": []}
+    manifest.setdefault("rounds", [])
+    try:
+        manifest["schema_version"] = max(int(manifest.get("schema_version", 1)), 3)
+    except (TypeError, ValueError):
+        manifest["schema_version"] = 3
 
     # Replace entry for same round_num if re-running
     manifest["rounds"] = [
         r for r in manifest["rounds"] if r.get("round") != round_num
     ]
 
+    if contract is None:
+        metadata_path = base_dir / f"round_{round_num}" / "optimized_config.json"
+        if metadata_path.exists():
+            try:
+                payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+                metadata = payload.get("metadata", {})
+                contract = metadata.get("contract") or {
+                    "contract_hash": metadata.get("contract_hash", ""),
+                    "profile_hash": metadata.get("profile_hash", ""),
+                    "strategy_config_hash": metadata.get("strategy_config_hash", ""),
+                    "portfolio_config_hash": metadata.get("portfolio_config_hash", ""),
+                    "data_window": metadata.get("data_window", {}),
+                    "data_fingerprint": metadata.get("data_fingerprint", {}),
+                    "symbols": metadata.get("symbols", []),
+                    "required_timeframes": metadata.get("required_timeframes", []),
+                }
+            except (OSError, json.JSONDecodeError):
+                contract = {}
+        else:
+            contract = {}
+    phase_result = phase_result or {}
+    gate_result = gate_result or {}
+    if not phase_result or not gate_result:
+        state_path = base_dir / f"round_{round_num}" / "phase_state.json"
+        if state_path.exists():
+            try:
+                state_payload = json.loads(state_path.read_text(encoding="utf-8"))
+                phase_results = state_payload.get("phase_results", {})
+                gate_results = state_payload.get("phase_gate_results", {})
+                phase_ids = sorted(int(key) for key in phase_results)
+                if phase_ids:
+                    last_phase = str(phase_ids[-1])
+                    phase_result = phase_result or phase_results.get(last_phase, {})
+                    gate_result = gate_result or gate_results.get(last_phase, {})
+            except (OSError, json.JSONDecodeError, ValueError):
+                pass
+    failure_reasons = gate_result.get("failure_reasons") or []
+    gate_passed = gate_result.get("passed")
+    if reject_reason:
+        manifest_reject_reason = reject_reason
+    elif failure_reasons:
+        manifest_reject_reason = "; ".join(str(reason) for reason in failure_reasons)
+    else:
+        manifest_reject_reason = ""
+
     entry: dict = {
         "round": round_num,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "mutations_count": len(mutations),
         "mutations": mutations,
+        "score": phase_result.get("final_score"),
+        "gate_status": (
+            "passed" if gate_passed is True
+            else "failed" if gate_passed is False
+            else "unknown"
+        ),
+        "gate_passed": gate_passed,
+        "gate_failure_reasons": failure_reasons,
+        "reject_reason": manifest_reject_reason,
+        "contract_hash": contract.get("contract_hash", ""),
+        "profile_hash": contract.get("profile_hash", ""),
+        "strategy_config_hash": contract.get("strategy_config_hash", ""),
+        "portfolio_config_hash": contract.get("portfolio_config_hash", ""),
+        "data_window": contract.get("data_window", {}),
+        "symbols": contract.get("symbols", []),
+        "required_timeframes": contract.get("required_timeframes", []),
+        "data_fingerprint": contract.get("data_fingerprint", {}),
+        "economic_profile": contract.get("economic_profile", {}),
+        "contract": contract,
+        "metrics": metrics or {},
+        "gate_result": gate_result,
+        "final_validation": phase_result.get("final_validation", {}),
+        "accepted_count": phase_result.get("accepted_count"),
+        "new_mutations": phase_result.get("new_mutations", {}),
     }
     if metrics:
-        for k in ["total_trades", "win_rate", "profit_factor",
-                   "max_drawdown_pct", "sharpe_ratio", "calmar_ratio",
-                   "net_return_pct"]:
+        for k in [
+            "total_trades",
+            "win_rate",
+            "profit_factor",
+            "max_drawdown_pct",
+            "sharpe_ratio",
+            "calmar_ratio",
+            "net_return_pct",
+            "expectancy_r",
+            "exit_efficiency",
+            "realized_pnl_net",
+            "terminal_mark_pnl_net",
+            "net_profit",
+            "total_fees",
+            "funding_cost_total",
+            "terminal_mark_count",
+        ]:
             if k in metrics:
                 entry[k] = metrics[k]
 
@@ -240,7 +338,9 @@ def _update_rounds_manifest(
               help="Load round N's optimized config as baseline and start round N+1")
 @click.option("--strategy", default="momentum", type=click.Choice(["momentum", "trend", "breakout"]),
               help="Strategy type")
-@click.option("--warmup-days", default=0, type=int, help="Extra days before start for indicator warmup")
+@click.option("--warmup-days", default=None, type=int, help="Extra days before start for indicator warmup")
+@click.option("--validation-mode", default="strict", type=click.Choice(["strict", "fast", "dev"]),
+              help="Final validation mode; strict refuses fallback metrics")
 def optimize(
     config_path: str | None,
     start_date: str,
@@ -254,14 +354,22 @@ def optimize(
     workers: int | None,
     round_num: int | None,
     strategy: str,
-    warmup_days: int,
+    warmup_days: int | None,
+    validation_mode: str,
 ) -> None:
     """Run phased auto-optimization of the specified strategy."""
     from datetime import date
 
     import yaml
 
-    from crypto_trader.backtest.config import BacktestConfig
+    from crypto_trader.backtest.profiles import (
+        LIVE_PARITY_PROFILE,
+        build_backtest_config_from_profile,
+    )
+    from crypto_trader.optimize.contracts import (
+        build_optimization_contract,
+        run_optimization_preflight,
+    )
     from crypto_trader.optimize.phase_runner import PhaseRunner
     from crypto_trader.optimize.phase_state import PhaseState
 
@@ -307,7 +415,8 @@ def optimize(
     sym_list = [s.strip().upper() for s in symbols.split(",")]
     strategy_cfg.symbols = sym_list
 
-    bt_cfg = BacktestConfig(
+    bt_cfg = build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=sym_list,
         start_date=date.fromisoformat(start_date),
         end_date=date.fromisoformat(end_date),
@@ -325,7 +434,29 @@ def optimize(
     else:
         from crypto_trader.optimize.momentum_plugin import MomentumPlugin
         plugin = MomentumPlugin(bt_cfg, strategy_cfg, data_dir=Path(data_dir), max_workers=workers)
-    runner = PhaseRunner(plugin, round_dir)
+
+    contract = build_optimization_contract(
+        strategy_type=strategy,
+        strategy_config=strategy_cfg,
+        backtest_config=bt_cfg,
+        data_dir=Path(data_dir),
+        profile=LIVE_PARITY_PROFILE,
+        plugin=plugin,
+    )
+    run_optimization_preflight(
+        contract=contract,
+        backtest_config=bt_cfg,
+        data_dir=Path(data_dir),
+        output_dir=round_dir,
+        profile=LIVE_PARITY_PROFILE,
+        validation_mode=validation_mode,
+    )
+    runner = PhaseRunner(
+        plugin,
+        round_dir,
+        contract=contract,
+        validation_mode=validation_mode,
+    )
 
     # Load or create state
     state_path = round_dir / "phase_state.json"
@@ -334,6 +465,14 @@ def optimize(
         log.info("optimize.resumed", current_phase=state.current_phase, round=next_round)
     else:
         state = PhaseState(_path=state_path)
+    if not state.completed_phases and not state.cumulative_mutations:
+        state.ensure_contract(contract, strict=validation_mode == "strict")
+        initial = plugin.initial_mutations
+        if initial:
+            state.cumulative_mutations.update(initial)
+    else:
+        state.ensure_contract(contract, strict=validation_mode == "strict")
+    state.save(state_path)
 
     # Run
     log.info("optimize.start", round=next_round, output_dir=str(round_dir))
@@ -349,9 +488,20 @@ def optimize(
     if state.phase_metrics:
         last_phase = max(state.phase_metrics.keys())
         final_metrics = state.phase_metrics[last_phase]
+        phase_result = state.phase_results.get(last_phase, {})
+        gate_result = state.phase_gate_results.get(last_phase, {})
+    else:
+        phase_result = {}
+        gate_result = {}
 
     _update_rounds_manifest(
-        base_out, next_round, state.cumulative_mutations, final_metrics,
+        base_out,
+        next_round,
+        state.cumulative_mutations,
+        final_metrics,
+        contract=contract,
+        phase_result=phase_result,
+        gate_result=gate_result,
     )
 
     # Summary
@@ -378,6 +528,12 @@ def paper(config_path: str) -> None:
 
     from crypto_trader.live.config import LiveConfig
     from crypto_trader.live.engine import LiveEngine
+    from crypto_trader.live.execution_adapter import HyperliquidExecutionAdapter
+    from crypto_trader.live.parity_warnings import (
+        collect_live_parity_warnings,
+        should_block_live_startup,
+    )
+    from crypto_trader.portfolio.config import PortfolioConfig
 
     log = structlog.get_logger()
 
@@ -391,6 +547,40 @@ def paper(config_path: str) -> None:
             log.error("config.validation", error=e)
         raise click.ClickException("Invalid configuration. See errors above.")
 
+    path_errors = _live_config_path_errors(config)
+    if path_errors:
+        for e in path_errors:
+            log.error("config.path_validation", error=e)
+        raise click.ClickException("Live configuration preflight failed. See errors above.")
+
+    portfolio_cfg = None
+    if config.portfolio_config_path and config.portfolio_config_path.exists():
+        with open(config.portfolio_config_path, "r", encoding="utf-8") as f:
+            portfolio_cfg = PortfolioConfig.from_dict(json.load(f))
+
+    strategy_cfgs = {}
+    for strategy_id, path in config.strategy_configs.items():
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                strategy_cfgs[strategy_id] = _build_strategy_config(
+                    strategy_id,
+                    str(path),
+                    json.load(f),
+                )
+
+    parity_warnings = collect_live_parity_warnings(
+        config,
+        portfolio_cfg,
+        durable_oms_available=True,
+        exchange_metadata_enforced=config.asset_meta_path is not None,
+        strategy_configs=strategy_cfgs,
+        capabilities=HyperliquidExecutionAdapter.capabilities,
+    )
+    for warning in parity_warnings:
+        log.warning("config.live_parity_warning", **warning.to_dict())
+    if should_block_live_startup(parity_warnings, config):
+        raise click.ClickException("Live parity warnings must be resolved before this run.")
+
     engine = LiveEngine(config)
 
     log.info("paper.starting", testnet=config.is_testnet)
@@ -398,6 +588,230 @@ def paper(config_path: str) -> None:
         asyncio.run(engine.run())
     except KeyboardInterrupt:
         log.info("paper.interrupted")
+
+
+def _live_config_path_errors(
+    config,
+    *,
+    runtime_root: Path | str | None = None,
+    require_deployment_manifest: bool = True,
+) -> list[str]:
+    """Return runtime config path errors before LiveEngine can fall back to defaults."""
+    root = Path.cwd() if runtime_root is None else Path(runtime_root)
+    errors: list[str] = []
+    manifest_path = getattr(config, "deployment_manifest_path", None)
+
+    if config.portfolio_config_path is None:
+        errors.append("portfolio_config_path is required")
+    elif not _runtime_path(config.portfolio_config_path, root).exists():
+        errors.append(f"portfolio_config_path does not exist: {config.portfolio_config_path}")
+
+    if manifest_path is not None and not _runtime_path(manifest_path, root).exists():
+        errors.append(f"deployment_manifest_path does not exist: {manifest_path}")
+
+    if not config.strategy_configs:
+        errors.append("at least one strategy config path is required")
+    for strategy_id, path in config.strategy_configs.items():
+        if not _runtime_path(path, root).exists():
+            errors.append(f"strategy_configs.{strategy_id} does not exist: {path}")
+
+    if config.asset_meta_path is not None and not _runtime_path(config.asset_meta_path, root).exists():
+        errors.append(f"asset_meta_path does not exist: {config.asset_meta_path}")
+    if config.asset_meta_path is not None:
+        errors.extend(_asset_meta_path_errors(config, root))
+
+    if require_deployment_manifest:
+        if manifest_path is None:
+            errors.append("deployment_manifest_path is required for deployment bundle preflight")
+        elif _runtime_path(manifest_path, root).exists():
+            errors.extend(_live_config_deployment_manifest_errors(config, root, _runtime_path(manifest_path, root)))
+
+    return errors
+
+
+def _runtime_path(path: Path, runtime_root: Path) -> Path:
+    return path if path.is_absolute() else runtime_root / path
+
+
+def _asset_meta_path_errors(config, runtime_root: Path) -> list[str]:
+    path = _runtime_path(config.asset_meta_path, runtime_root)
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"asset_meta_path could not be read: {exc}"]
+    if not isinstance(payload, dict):
+        return ["asset_meta_path must contain a JSON object"]
+
+    errors: list[str] = []
+    required_maps = ("asset_index", "tick_sizes", "lot_sizes")
+    for key in required_maps:
+        if not isinstance(payload.get(key), dict):
+            errors.append(f"asset_meta_path.{key} must be an object")
+    if errors:
+        return errors
+
+    symbols = [str(symbol) for symbol in getattr(config, "symbols", [])]
+    for key in required_maps:
+        values = payload[key]
+        missing = sorted(symbol for symbol in symbols if symbol not in values)
+        if missing:
+            errors.append(f"asset_meta_path.{key} missing symbols: {', '.join(missing)}")
+            continue
+        if key == "asset_index":
+            continue
+        invalid = []
+        for symbol in symbols:
+            try:
+                parsed = float(values[symbol])
+            except (TypeError, ValueError):
+                invalid.append(symbol)
+                continue
+            if not math.isfinite(parsed) or parsed <= 0.0:
+                invalid.append(symbol)
+        if invalid:
+            errors.append(f"asset_meta_path.{key} has invalid positive numeric values for: {', '.join(invalid)}")
+    return errors
+
+
+def _live_config_deployment_manifest_errors(config, runtime_root: Path, manifest_path: Path) -> list[str]:
+    errors: list[str] = []
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"deployment_manifest_path could not be read: {exc}"]
+    if not isinstance(manifest, dict):
+        return ["deployment_manifest_path must contain a JSON object"]
+
+    strategy_refs = manifest.get("strategy_configs")
+    if not isinstance(strategy_refs, dict) or not strategy_refs:
+        errors.append("deployment_manifest.strategy_configs must be a non-empty object")
+        strategy_refs = {}
+    required_strategy_ids = manifest.get("required_strategy_ids", list(strategy_refs))
+    if not isinstance(required_strategy_ids, list) or not all(isinstance(item, str) for item in required_strategy_ids):
+        errors.append("deployment_manifest.required_strategy_ids must be a list of strategy ids")
+        required_strategy_ids = []
+
+    required = set(required_strategy_ids)
+    configured = set(config.strategy_configs)
+    missing = sorted(required - configured)
+    unexpected = sorted(configured - required)
+    if missing:
+        errors.append(f"strategy_configs missing required deployment strategies: {', '.join(missing)}")
+    if unexpected:
+        errors.append(f"strategy_configs includes strategies not in deployment manifest: {', '.join(unexpected)}")
+
+    if config.portfolio_config_path is not None:
+        portfolio_ref = manifest.get("portfolio_config_path")
+        if not isinstance(portfolio_ref, str) or not portfolio_ref:
+            errors.append("deployment_manifest.portfolio_config_path is required")
+        else:
+            expected_portfolio = _runtime_path(Path(portfolio_ref), runtime_root)
+            actual_portfolio = _runtime_path(config.portfolio_config_path, runtime_root)
+            error = _json_identity_error(
+                "portfolio_config_path",
+                actual_portfolio,
+                expected_portfolio,
+            )
+            if error:
+                errors.append(error)
+
+    for strategy_id in required_strategy_ids:
+        ref = strategy_refs.get(strategy_id)
+        if not isinstance(ref, str) or not ref:
+            errors.append(f"deployment_manifest.strategy_configs.{strategy_id} is required")
+            continue
+        actual_config = config.strategy_configs.get(strategy_id)
+        if actual_config is None:
+            continue
+        error = _json_identity_error(
+            f"strategy_configs.{strategy_id}",
+            _runtime_path(actual_config, runtime_root),
+            _runtime_path(Path(ref), runtime_root),
+        )
+        if error:
+            errors.append(error)
+
+    errors.extend(_portfolio_manifest_errors(manifest, runtime_root))
+    errors.extend(_parity_alignment_errors(manifest, runtime_root))
+    return errors
+
+
+def _portfolio_manifest_errors(manifest: dict, runtime_root: Path) -> list[str]:
+    path_text = manifest.get("portfolio_rounds_manifest_path")
+    required_rounds = manifest.get("required_portfolio_rounds")
+    if path_text is None and required_rounds is None:
+        return []
+    if not isinstance(path_text, str) or not path_text:
+        return ["deployment_manifest.portfolio_rounds_manifest_path is required when portfolio rounds are required"]
+    path = _runtime_path(Path(path_text), runtime_root)
+    if not path.exists():
+        return [f"portfolio rounds manifest is missing: {path_text}"]
+    if required_rounds is None:
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"portfolio rounds manifest could not be read: {exc}"]
+    rounds = payload.get("rounds") if isinstance(payload, dict) else None
+    actual_rounds = [item.get("round") for item in rounds if isinstance(item, dict)] if isinstance(rounds, list) else []
+    if actual_rounds != required_rounds:
+        return [f"portfolio rounds manifest rounds {actual_rounds} do not match required {required_rounds}"]
+    return []
+
+
+def _parity_alignment_errors(manifest: dict, runtime_root: Path) -> list[str]:
+    path_text = manifest.get("parity_alignment_path")
+    if path_text is None:
+        return []
+    if not isinstance(path_text, str) or not path_text:
+        return ["deployment_manifest.parity_alignment_path must be a path string"]
+    path = _runtime_path(Path(path_text), runtime_root)
+    if not path.exists():
+        return [f"portfolio parity evidence is missing: {path_text}"]
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"portfolio parity evidence could not be read: {exc}"]
+    replay = payload.get("portfolio_metric_replay", {}) if isinstance(payload, dict) else {}
+    if not isinstance(replay, dict):
+        return [f"portfolio parity evidence has invalid portfolio_metric_replay: {path_text}"]
+    if replay.get("status") != "matched":
+        return [f"portfolio parity evidence is not matched: {path_text}"]
+    missing = [key for key in ("max_abs_delta", "tolerance") if key not in replay]
+    if missing:
+        return [f"portfolio parity evidence missing numeric fields: {', '.join(missing)}"]
+    try:
+        max_abs_delta = float(replay["max_abs_delta"])
+        tolerance = float(replay["tolerance"])
+    except (TypeError, ValueError) as exc:
+        return [f"portfolio parity evidence has invalid numeric fields: {exc}"]
+    if (
+        not math.isfinite(max_abs_delta)
+        or not math.isfinite(tolerance)
+        or max_abs_delta < 0.0
+        or tolerance < 0.0
+    ):
+        return ["portfolio parity evidence has non-finite or negative numeric fields"]
+    if max_abs_delta > tolerance:
+        return [f"portfolio parity max_abs_delta {max_abs_delta} exceeds tolerance {tolerance}"]
+    return []
+
+
+def _json_identity_error(label: str, actual: Path, expected: Path) -> str:
+    if not expected.exists():
+        return f"{label} deployment manifest reference is missing: {expected}"
+    if not actual.exists():
+        return ""
+    try:
+        actual_payload = json.loads(actual.read_text(encoding="utf-8"))
+        expected_payload = json.loads(expected.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return f"{label} could not be compared with deployment manifest reference: {exc}"
+    if actual_payload != expected_payload:
+        return f"{label} does not match deployment manifest reference: {actual}"
+    return ""
 
 
 @cli.command()
@@ -484,6 +898,46 @@ def status(state_dir: str) -> None:
         print(f"  No funnel data found in {state / 'pipeline_funnels.jsonl'}")
 
     print()
+
+
+@cli.command("parity-report")
+@click.option("--state-dir", default="data/live_state", type=click.Path(), help="Live state directory")
+@click.option("--output", default=None, type=click.Path(), help="Optional JSON report output path")
+def parity_report(state_dir: str, output: str | None) -> None:
+    """Build a parity report from recorded canonical live/paper events."""
+    from crypto_trader.parity.report import build_parity_report
+
+    report = build_parity_report(Path(state_dir))
+    payload = report.to_dict()
+    text = json.dumps(payload, indent=2, sort_keys=True)
+    if output:
+        out = Path(output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text + "\n", encoding="utf-8")
+    click.echo(text)
+
+
+@cli.command("parity-gate")
+@click.option("--report", "report_path", required=True, type=click.Path(exists=True), help="Parity report JSON file")
+def parity_gate(report_path: str) -> None:
+    """Evaluate promotion/deployment gates from a parity report."""
+    from crypto_trader.parity.report import ParityReport, evaluate_promotion_gate
+
+    payload = json.loads(Path(report_path).read_text(encoding="utf-8"))
+    report = ParityReport(
+        stream_counts=payload.get("stream_counts", {}),
+        decision_drift_count=payload.get("decision_drift_count", 0),
+        order_intent_drift_count=payload.get("order_intent_drift_count", 0),
+        unresolved_oms_discrepancies=payload.get("unresolved_oms_discrepancies", []),
+        fill_watermark_age_sec=payload.get("fill_watermark_age_sec"),
+        stale_fill_watermark=payload.get("stale_fill_watermark", False),
+        unprotected_entry_fills=payload.get("unprotected_entry_fills", []),
+        accounting_mismatch_count=payload.get("accounting_mismatch_count", 0),
+    )
+    result = evaluate_promotion_gate(report)
+    click.echo(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    if not result.passed:
+        raise click.ClickException("Parity promotion gate failed")
 
 
 @cli.command("paper-status")

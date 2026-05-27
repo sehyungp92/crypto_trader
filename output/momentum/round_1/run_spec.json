@@ -1,237 +1,191 @@
 {
   "strategy": "momentum",
-  "baseline_seed": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\revalidated\\20260421T192408Z\\momentum\\cleaned_seed\\cleaned_seed_config.json",
-  "rerun_reason": "Cleaned-seed rerun after manifest replay, ablation, and perturbation.",
-  "immutable_scoring_weights": {
-    "coverage": 0.24,
-    "returns": 0.22,
-    "edge": 0.18,
-    "capture": 0.16,
-    "entry_quality": 0.1,
-    "risk": 0.1
+  "round": 1,
+  "run_id": "20260525T111754Z",
+  "contract_hash": "08568276931fdd61573b0541e190845cb72b15ec27d5b2a26fa1b8c8b9b08d7d",
+  "profile_hash": "c6886eb9ad8515140f9fe3f6b671fcae6b42851009fd90fdf198c67573ad36ce",
+  "baseline_type": "current_live_config_parity_refresh",
+  "source_artifacts": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\20260525_parity_contract_refresh\\live_config_backtests\\momentum",
+  "archived_legacy_rounds": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\archive\\pre_parity_reset_20260525T111754Z",
+  "window": {
+    "start_date": "2025-12-01",
+    "end_date": "2026-04-30"
   },
-  "immutable_scoring_ceilings": {
-    "coverage": 30.0,
-    "returns": 22.0,
-    "edge": 4.0,
-    "risk": 10.0
+  "metrics": {
+    "net_profit": 1224.4315416291738,
+    "net_return_pct": 12.24431541629174,
+    "realized_pnl_net": 1224.4315416291665,
+    "terminal_mark_pnl_net": 0.0,
+    "terminal_mark_count": 0.0,
+    "total_trades": 31.0,
+    "win_rate": 54.83870967741935,
+    "avg_winner_r": 1.1559349487152055,
+    "avg_loser_r": -0.49658815408124823,
+    "expectancy_r": 0.4096341926135813,
+    "profit_factor": 2.9982431913404657,
+    "max_drawdown_pct": 2.6931553884309505,
+    "max_drawdown_duration": 10472.0,
+    "sharpe_ratio": 3.9603363307623933,
+    "sortino_ratio": 8.767313857916395,
+    "calmar_ratio": 4.546457092260598,
+    "avg_bars_held": 10.03225806451613,
+    "avg_mae_r": -0.3436007902731869,
+    "avg_mfe_r": 1.399259364154216,
+    "exit_efficiency": 0.45410918067911893,
+    "a_setup_win_rate": 50.0,
+    "b_setup_win_rate": 55.172413793103445,
+    "long_win_rate": 50.0,
+    "short_win_rate": 80.0,
+    "total_fees": 309.93391728221593,
+    "funding_cost_total": 4.0381352212314265,
+    "edge_ratio": 4.072340354752112,
+    "payoff_ratio": 2.469141451692148,
+    "recovery_factor": 4.546457092260598,
+    "max_consecutive_losses": 4.0
   },
-  "hard_rejects": {
-    "total_trades": [
-      ">=",
-      16.0
-    ],
-    "profit_factor": [
-      ">=",
-      1.15
-    ],
-    "max_drawdown_pct": [
-      "<=",
-      12.0
-    ],
-    "exit_efficiency": [
-      ">=",
-      0.42
-    ]
+  "expected_supplied_metrics": {
+    "net_return_pct": 12.2443,
+    "expectancy_r": 0.41,
+    "exit_efficiency": 0.45,
+    "total_trades": 31
   },
-  "phase_gate_criteria": {
-    "1": [
-      {
-        "metric": "total_trades",
-        "operator": ">=",
-        "threshold": 18.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "profit_factor",
-        "operator": ">=",
-        "threshold": 1.2,
-        "weight": 1.0
-      },
-      {
-        "metric": "exit_efficiency",
-        "operator": ">=",
-        "threshold": 0.45,
-        "weight": 1.0
-      },
-      {
-        "metric": "max_drawdown_pct",
-        "operator": "<=",
-        "threshold": 12.0,
-        "weight": 1.0
-      }
+  "contract": {
+    "schema_version": "live_baseline_round_v1",
+    "strategy_type": "momentum",
+    "baseline_type": "current_live_config_parity_refresh",
+    "economic_profile": {
+      "profile_id": "live_config_parity_refresh_20260525_supplied_v1",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "initial_equity": 10000.0,
+      "taker_fee_bps": 3.5,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 2.0,
+      "apply_funding": true,
+      "warmup_days": 60,
+      "terminal_accounting_mode": "terminal_mark"
+    },
+    "data_window": {
+      "start_date": "2025-12-01",
+      "end_date": "2026-04-30"
+    },
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
     ],
-    "2": [
-      {
-        "metric": "total_trades",
-        "operator": ">=",
-        "threshold": 18.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "profit_factor",
-        "operator": ">=",
-        "threshold": 1.2,
-        "weight": 1.0
-      },
-      {
-        "metric": "avg_mae_r",
-        "operator": ">=",
-        "threshold": -0.4,
-        "weight": 1.0
-      },
-      {
-        "metric": "exit_efficiency",
-        "operator": ">=",
-        "threshold": 0.45,
-        "weight": 1.0
-      },
-      {
-        "metric": "max_drawdown_pct",
-        "operator": "<=",
-        "threshold": 12.0,
-        "weight": 1.0
-      }
+    "required_timeframes": [
+      "15m",
+      "1h",
+      "4h"
     ],
-    "3": [
-      {
-        "metric": "net_return_pct",
-        "operator": ">=",
-        "threshold": 16.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "total_trades",
-        "operator": ">=",
-        "threshold": 18.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "profit_factor",
-        "operator": ">=",
-        "threshold": 1.2,
-        "weight": 1.0
-      },
-      {
-        "metric": "exit_efficiency",
-        "operator": ">=",
-        "threshold": 0.5,
-        "weight": 1.0
-      },
-      {
-        "metric": "max_drawdown_pct",
-        "operator": "<=",
-        "threshold": 12.0,
-        "weight": 1.0
-      }
-    ],
-    "4": [
-      {
-        "metric": "net_return_pct",
-        "operator": ">=",
-        "threshold": 16.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "total_trades",
-        "operator": ">=",
-        "threshold": 20.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "profit_factor",
-        "operator": ">=",
-        "threshold": 1.15,
-        "weight": 1.0
-      },
-      {
-        "metric": "exit_efficiency",
-        "operator": ">=",
-        "threshold": 0.48,
-        "weight": 1.0
-      },
-      {
-        "metric": "max_drawdown_pct",
-        "operator": "<=",
-        "threshold": 12.0,
-        "weight": 1.0
-      }
-    ],
-    "5": [
-      {
-        "metric": "net_return_pct",
-        "operator": ">=",
-        "threshold": 18.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "total_trades",
-        "operator": ">=",
-        "threshold": 20.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "profit_factor",
-        "operator": ">=",
-        "threshold": 1.2,
-        "weight": 1.0
-      },
-      {
-        "metric": "sharpe_ratio",
-        "operator": ">=",
-        "threshold": 2.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "exit_efficiency",
-        "operator": ">=",
-        "threshold": 0.48,
-        "weight": 1.0
-      },
-      {
-        "metric": "max_drawdown_pct",
-        "operator": "<=",
-        "threshold": 10.0,
-        "weight": 1.0
-      }
-    ],
-    "6": [
-      {
-        "metric": "net_return_pct",
-        "operator": ">=",
-        "threshold": 18.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "total_trades",
-        "operator": ">=",
-        "threshold": 20.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "profit_factor",
-        "operator": ">=",
-        "threshold": 1.2,
-        "weight": 1.0
-      },
-      {
-        "metric": "sharpe_ratio",
-        "operator": ">=",
-        "threshold": 2.0,
-        "weight": 1.0
-      },
-      {
-        "metric": "exit_efficiency",
-        "operator": ">=",
-        "threshold": 0.48,
-        "weight": 1.0
-      },
-      {
-        "metric": "max_drawdown_pct",
-        "operator": "<=",
-        "threshold": 10.0,
-        "weight": 1.0
-      }
-    ]
+    "data_dir": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\data",
+    "data_fingerprint": {
+      "method": "file_stat_v1",
+      "files": [
+        {
+          "path": "candles\\BTC\\15m.parquet",
+          "exists": true,
+          "size": 316906,
+          "mtime_ns": 1779620410374830100
+        },
+        {
+          "path": "candles\\BTC\\1h.parquet",
+          "exists": true,
+          "size": 242008,
+          "mtime_ns": 1779620411819790600
+        },
+        {
+          "path": "candles\\BTC\\4h.parquet",
+          "exists": true,
+          "size": 221207,
+          "mtime_ns": 1779620413169973900
+        },
+        {
+          "path": "funding\\BTC.parquet",
+          "exists": true,
+          "size": 342509,
+          "mtime_ns": 1779620414985053100
+        },
+        {
+          "path": "candles\\ETH\\15m.parquet",
+          "exists": true,
+          "size": 249111,
+          "mtime_ns": 1779620418089790700
+        },
+        {
+          "path": "candles\\ETH\\1h.parquet",
+          "exists": true,
+          "size": 218636,
+          "mtime_ns": 1779620419289167000
+        },
+        {
+          "path": "candles\\ETH\\4h.parquet",
+          "exists": true,
+          "size": 202933,
+          "mtime_ns": 1779620419845695800
+        },
+        {
+          "path": "funding\\ETH.parquet",
+          "exists": true,
+          "size": 351937,
+          "mtime_ns": 1779620421597854800
+        },
+        {
+          "path": "candles\\SOL\\15m.parquet",
+          "exists": true,
+          "size": 301475,
+          "mtime_ns": 1779620425048188200
+        },
+        {
+          "path": "candles\\SOL\\1h.parquet",
+          "exists": true,
+          "size": 220547,
+          "mtime_ns": 1779620426076088200
+        },
+        {
+          "path": "candles\\SOL\\4h.parquet",
+          "exists": true,
+          "size": 198295,
+          "mtime_ns": 1779620426578140800
+        },
+        {
+          "path": "funding\\SOL.parquet",
+          "exists": true,
+          "size": 367440,
+          "mtime_ns": 1779620428344565900
+        }
+      ],
+      "hash": "c5cefe646b19985313e207ff958ed5e5ffca29dc4f9f70287732391aab6c5887"
+    },
+    "backtest_config": {
+      "apply_funding": true,
+      "end_date": "2026-04-30",
+      "initial_equity": 10000.0,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 2.0,
+      "start_date": "2025-12-01",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "taker_fee_bps": 3.5,
+      "train_pct": 0.7,
+      "warmup_days": 60
+    },
+    "strategy_config_path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\momentum.json",
+    "strategy_config_hash": "05c9a9555d45753957522a8fc05a3426eee03623fed08ef16988501bbffe99f2",
+    "portfolio_config_hash": "",
+    "source_artifacts": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\20260525_parity_contract_refresh\\live_config_backtests\\momentum",
+    "archived_legacy_rounds": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\archive\\pre_parity_reset_20260525T111754Z",
+    "generated_at": "2026-05-25T11:17:54.443615+00:00",
+    "profile_hash": "c6886eb9ad8515140f9fe3f6b671fcae6b42851009fd90fdf198c67573ad36ce",
+    "contract_hash": "08568276931fdd61573b0541e190845cb72b15ec27d5b2a26fa1b8c8b9b08d7d"
   }
 }

@@ -21,9 +21,9 @@ structlog.configure(
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.backtest.diagnostics import generate_diagnostics
 from crypto_trader.backtest.metrics import compute_metrics, metrics_to_dict
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.backtest.runner import run as run_individual
 from crypto_trader.portfolio.backtest_runner import run_portfolio_backtest
 from crypto_trader.portfolio.config import PortfolioConfig, StrategyAllocation
@@ -41,17 +41,11 @@ CONFIG_PATHS = {
 }
 
 # Common backtest params — covers full available data range
-BACKTEST_CONFIG = BacktestConfig(
+BACKTEST_CONFIG = build_backtest_config_from_profile(
+    profile=LIVE_PARITY_PROFILE,
     start_date=date(2025, 12, 1),   # warmup will push load earlier
     end_date=date(2026, 4, 18),
     symbols=["BTC", "ETH", "SOL"],
-    initial_equity=10_000.0,
-    taker_fee_bps=4.5,
-    maker_fee_bps=1.0,
-    slippage_bps=2.0,
-    spread_bps=1.0,
-    apply_funding=True,
-    warmup_days=60,  # needed for trend D1 EMA50
 )
 
 

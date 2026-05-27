@@ -1,39 +1,45 @@
 {
   "1": {
-    "name": "Re-Earn Revalidated Alpha",
-    "accepted": 1,
-    "final_score": 0.7790527075305504,
-    "gate_passed": true
+    "name": "Broad Signal Discrimination",
+    "accepted": 0,
+    "final_score": 0.6766774497145975,
+    "gate_passed": true,
+    "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4"
   },
-  "last_updated": "2026-04-21T21:21:08.673643+00:00",
+  "last_updated": "2026-05-26T00:34:26.576247+00:00",
   "2": {
-    "name": "Signal Discrimination",
-    "accepted": 1,
-    "final_score": 0.8272094930945119,
-    "gate_passed": true
+    "name": "Variant & Direction Audit",
+    "accepted": 2,
+    "final_score": 0.7383535837871253,
+    "gate_passed": true,
+    "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4"
   },
   "3": {
     "name": "Entry Architecture",
     "accepted": 0,
-    "final_score": 0.8272094930945119,
-    "gate_passed": true
+    "final_score": 0.7383535837871253,
+    "gate_passed": true,
+    "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4"
   },
   "4": {
-    "name": "Capture & Management",
-    "accepted": 1,
-    "final_score": 0.8308811486158278,
-    "gate_passed": true
+    "name": "Capture & Failure Handling",
+    "accepted": 2,
+    "final_score": 0.7547205753980846,
+    "gate_passed": true,
+    "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4"
   },
   "5": {
     "name": "Structural Frequency",
     "accepted": 2,
-    "final_score": 0.88309067922354,
-    "gate_passed": true
+    "final_score": 0.7719799448636403,
+    "gate_passed": false,
+    "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4"
   },
   "6": {
     "name": "Finetune",
-    "accepted": 0,
-    "final_score": 0.88309067922354,
-    "gate_passed": true
+    "accepted": 1,
+    "final_score": 0.8001746845115667,
+    "gate_passed": false,
+    "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4"
   }
 }

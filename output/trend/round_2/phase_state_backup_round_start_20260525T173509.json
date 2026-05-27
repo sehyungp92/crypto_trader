@@ -1,0 +1,549 @@
+{
+  "current_phase": 0,
+  "completed_phases": [],
+  "cumulative_mutations": {},
+  "phase_metrics": {},
+  "round_name": "",
+  "scoring_retries": {},
+  "diagnostic_retries": {},
+  "retry_count": {},
+  "phase_results": {},
+  "phase_gate_results": {},
+  "phase_timestamps": {},
+  "contract_hash": "243c315318f3ae4cd297946f14f95b387c275412d13a66c589296a679fae9757",
+  "contract": {
+    "schema_version": "optimizer_contract_v1",
+    "strategy_type": "trend",
+    "economic_profile": {
+      "profile_id": "live_parity_v1",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "initial_equity": 10000.0,
+      "taker_fee_bps": 4.5,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 1.0,
+      "train_pct": 0.7,
+      "apply_funding": true,
+      "warmup_days": 60,
+      "terminal_accounting_mode": "terminal_mark"
+    },
+    "code_identity": {
+      "contract_schema_version": "optimizer_contract_v1",
+      "plugin": {
+        "module": "crypto_trader.optimize.trend_plugin",
+        "class": "TrendPlugin",
+        "source_hash": "a1d0a4fdcc5c1a7d598b8abfa36222e7c05e68246420f9e28eaae82eeb366199"
+      }
+    },
+    "profile_hash": "599bce679e21017b6b824d80ec50ca321eb25a164c37e91a26d61da264672b6f",
+    "data_dir": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\data",
+    "data_window": {
+      "start_date": "2025-12-01",
+      "end_date": "2026-04-20"
+    },
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "required_timeframes": [
+      "15m",
+      "1h",
+      "1d"
+    ],
+    "data_fingerprint": {
+      "method": "file_stat_v1",
+      "files": [
+        {
+          "path": "candles\\BTC\\15m.parquet",
+          "exists": true,
+          "size": 316906,
+          "mtime_ns": 1779620410374830100
+        },
+        {
+          "path": "candles\\BTC\\1h.parquet",
+          "exists": true,
+          "size": 242008,
+          "mtime_ns": 1779620411819790600
+        },
+        {
+          "path": "candles\\BTC\\1d.parquet",
+          "exists": true,
+          "size": 54996,
+          "mtime_ns": 1779620413690908900
+        },
+        {
+          "path": "funding\\BTC.parquet",
+          "exists": true,
+          "size": 342509,
+          "mtime_ns": 1779620414985053100
+        },
+        {
+          "path": "candles\\ETH\\15m.parquet",
+          "exists": true,
+          "size": 249111,
+          "mtime_ns": 1779620418089790700
+        },
+        {
+          "path": "candles\\ETH\\1h.parquet",
+          "exists": true,
+          "size": 218636,
+          "mtime_ns": 1779620419289167000
+        },
+        {
+          "path": "candles\\ETH\\1d.parquet",
+          "exists": true,
+          "size": 51569,
+          "mtime_ns": 1779620420333805700
+        },
+        {
+          "path": "funding\\ETH.parquet",
+          "exists": true,
+          "size": 351937,
+          "mtime_ns": 1779620421597854800
+        },
+        {
+          "path": "candles\\SOL\\15m.parquet",
+          "exists": true,
+          "size": 301475,
+          "mtime_ns": 1779620425048188200
+        },
+        {
+          "path": "candles\\SOL\\1h.parquet",
+          "exists": true,
+          "size": 220547,
+          "mtime_ns": 1779620426076088200
+        },
+        {
+          "path": "candles\\SOL\\1d.parquet",
+          "exists": true,
+          "size": 53435,
+          "mtime_ns": 1779620427096948100
+        },
+        {
+          "path": "funding\\SOL.parquet",
+          "exists": true,
+          "size": 367440,
+          "mtime_ns": 1779620428344565900
+        }
+      ],
+      "hash": "6a1020676aaa49cfb4cf8cd7610f48737654b62e62ca700f3155e0d16492f280"
+    },
+    "backtest_config": {
+      "apply_funding": true,
+      "end_date": "2026-04-20",
+      "initial_equity": 10000.0,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 1.0,
+      "start_date": "2025-12-01",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "taker_fee_bps": 4.5,
+      "train_pct": 0.7,
+      "warmup_days": 60
+    },
+    "strategy_config_hash": "55df105268d215bb6b00956b35355c09e3cf102b3cee2829cfd770089d03382e",
+    "portfolio_config_hash": "",
+    "phase_contract": {
+      "num_phases": 6,
+      "phases": [
+        {
+          "phase_num": 1,
+          "name": "Signal & Setup",
+          "scoring_weights": {
+            "returns": 0.22,
+            "coverage": 0.17,
+            "edge": 0.16,
+            "expectancy": 0.14,
+            "capture": 0.13,
+            "entry_quality": 0.1,
+            "risk": 0.08
+          },
+          "hard_rejects": {
+            "max_drawdown_pct": [
+              "<=",
+              12.0
+            ],
+            "total_trades": [
+              ">=",
+              30
+            ],
+            "profit_factor": [
+              ">=",
+              1.5
+            ],
+            "expectancy_r": [
+              ">=",
+              0.1
+            ],
+            "net_return_pct": [
+              ">=",
+              20.0
+            ]
+          },
+          "gate_criteria": [
+            {
+              "metric": "total_trades",
+              "operator": ">=",
+              "threshold": 30,
+              "weight": 1.0
+            },
+            {
+              "metric": "max_drawdown_pct",
+              "operator": "<=",
+              "threshold": 12,
+              "weight": 1.0
+            },
+            {
+              "metric": "profit_factor",
+              "operator": ">=",
+              "threshold": 1.5,
+              "weight": 1.0
+            }
+          ],
+          "has_gate_criteria_fn": true,
+          "min_delta": 0.004,
+          "max_rounds": 4,
+          "prune_threshold": 0.0,
+          "focus": "Signal & Setup"
+        },
+        {
+          "phase_num": 2,
+          "name": "Confirmation & Entry",
+          "scoring_weights": {
+            "returns": 0.22,
+            "coverage": 0.17,
+            "edge": 0.16,
+            "expectancy": 0.14,
+            "capture": 0.13,
+            "entry_quality": 0.1,
+            "risk": 0.08
+          },
+          "hard_rejects": {
+            "max_drawdown_pct": [
+              "<=",
+              12.0
+            ],
+            "total_trades": [
+              ">=",
+              30
+            ],
+            "profit_factor": [
+              ">=",
+              1.5
+            ],
+            "expectancy_r": [
+              ">=",
+              0.1
+            ],
+            "net_return_pct": [
+              ">=",
+              20.0
+            ]
+          },
+          "gate_criteria": [
+            {
+              "metric": "total_trades",
+              "operator": ">=",
+              "threshold": 30,
+              "weight": 1.0
+            },
+            {
+              "metric": "max_drawdown_pct",
+              "operator": "<=",
+              "threshold": 12,
+              "weight": 1.0
+            },
+            {
+              "metric": "profit_factor",
+              "operator": ">=",
+              "threshold": 1.5,
+              "weight": 1.0
+            }
+          ],
+          "has_gate_criteria_fn": true,
+          "min_delta": 0.004,
+          "max_rounds": 4,
+          "prune_threshold": 0.0,
+          "focus": "Confirmation & Entry"
+        },
+        {
+          "phase_num": 3,
+          "name": "Early Trade Management",
+          "scoring_weights": {
+            "returns": 0.22,
+            "coverage": 0.17,
+            "edge": 0.16,
+            "expectancy": 0.14,
+            "capture": 0.13,
+            "entry_quality": 0.1,
+            "risk": 0.08
+          },
+          "hard_rejects": {
+            "max_drawdown_pct": [
+              "<=",
+              12.0
+            ],
+            "total_trades": [
+              ">=",
+              30
+            ],
+            "profit_factor": [
+              ">=",
+              1.5
+            ],
+            "expectancy_r": [
+              ">=",
+              0.1
+            ],
+            "net_return_pct": [
+              ">=",
+              20.0
+            ]
+          },
+          "gate_criteria": [
+            {
+              "metric": "total_trades",
+              "operator": ">=",
+              "threshold": 30,
+              "weight": 1.0
+            },
+            {
+              "metric": "max_drawdown_pct",
+              "operator": "<=",
+              "threshold": 12,
+              "weight": 1.0
+            },
+            {
+              "metric": "profit_factor",
+              "operator": ">=",
+              "threshold": 1.5,
+              "weight": 1.0
+            },
+            {
+              "metric": "exit_efficiency",
+              "operator": ">=",
+              "threshold": 0.45,
+              "weight": 1.0
+            }
+          ],
+          "has_gate_criteria_fn": true,
+          "min_delta": 0.004,
+          "max_rounds": 4,
+          "prune_threshold": 0.0,
+          "focus": "Early Trade Management"
+        },
+        {
+          "phase_num": 4,
+          "name": "Trail & Profit Capture",
+          "scoring_weights": {
+            "returns": 0.22,
+            "coverage": 0.17,
+            "edge": 0.16,
+            "expectancy": 0.14,
+            "capture": 0.13,
+            "entry_quality": 0.1,
+            "risk": 0.08
+          },
+          "hard_rejects": {
+            "max_drawdown_pct": [
+              "<=",
+              12.0
+            ],
+            "total_trades": [
+              ">=",
+              30
+            ],
+            "profit_factor": [
+              ">=",
+              1.5
+            ],
+            "expectancy_r": [
+              ">=",
+              0.1
+            ],
+            "net_return_pct": [
+              ">=",
+              20.0
+            ]
+          },
+          "gate_criteria": [
+            {
+              "metric": "total_trades",
+              "operator": ">=",
+              "threshold": 30,
+              "weight": 1.0
+            },
+            {
+              "metric": "max_drawdown_pct",
+              "operator": "<=",
+              "threshold": 12,
+              "weight": 1.0
+            },
+            {
+              "metric": "profit_factor",
+              "operator": ">=",
+              "threshold": 1.5,
+              "weight": 1.0
+            },
+            {
+              "metric": "exit_efficiency",
+              "operator": ">=",
+              "threshold": 0.45,
+              "weight": 1.0
+            }
+          ],
+          "has_gate_criteria_fn": true,
+          "min_delta": 0.004,
+          "max_rounds": 4,
+          "prune_threshold": 0.0,
+          "focus": "Trail & Profit Capture"
+        },
+        {
+          "phase_num": 5,
+          "name": "Frequency Expansion",
+          "scoring_weights": {
+            "returns": 0.22,
+            "coverage": 0.17,
+            "edge": 0.16,
+            "expectancy": 0.14,
+            "capture": 0.13,
+            "entry_quality": 0.1,
+            "risk": 0.08
+          },
+          "hard_rejects": {
+            "max_drawdown_pct": [
+              "<=",
+              12.0
+            ],
+            "total_trades": [
+              ">=",
+              30
+            ],
+            "profit_factor": [
+              ">=",
+              1.5
+            ],
+            "expectancy_r": [
+              ">=",
+              0.1
+            ],
+            "net_return_pct": [
+              ">=",
+              20.0
+            ]
+          },
+          "gate_criteria": [
+            {
+              "metric": "total_trades",
+              "operator": ">=",
+              "threshold": 30,
+              "weight": 1.0
+            },
+            {
+              "metric": "max_drawdown_pct",
+              "operator": "<=",
+              "threshold": 12,
+              "weight": 1.0
+            },
+            {
+              "metric": "profit_factor",
+              "operator": ">=",
+              "threshold": 1.5,
+              "weight": 1.0
+            }
+          ],
+          "has_gate_criteria_fn": true,
+          "min_delta": 0.004,
+          "max_rounds": 4,
+          "prune_threshold": 0.0,
+          "focus": "Frequency Expansion"
+        },
+        {
+          "phase_num": 6,
+          "name": "Risk & Finetune",
+          "scoring_weights": {
+            "returns": 0.22,
+            "coverage": 0.17,
+            "edge": 0.16,
+            "expectancy": 0.14,
+            "capture": 0.13,
+            "entry_quality": 0.1,
+            "risk": 0.08
+          },
+          "hard_rejects": {
+            "max_drawdown_pct": [
+              "<=",
+              12.0
+            ],
+            "total_trades": [
+              ">=",
+              30
+            ],
+            "profit_factor": [
+              ">=",
+              1.5
+            ],
+            "expectancy_r": [
+              ">=",
+              0.1
+            ],
+            "net_return_pct": [
+              ">=",
+              20.0
+            ]
+          },
+          "gate_criteria": [
+            {
+              "metric": "total_trades",
+              "operator": ">=",
+              "threshold": 30,
+              "weight": 1.0
+            },
+            {
+              "metric": "max_drawdown_pct",
+              "operator": "<=",
+              "threshold": 12,
+              "weight": 1.0
+            },
+            {
+              "metric": "profit_factor",
+              "operator": ">=",
+              "threshold": 1.5,
+              "weight": 1.0
+            }
+          ],
+          "has_gate_criteria_fn": true,
+          "min_delta": 0.004,
+          "max_rounds": 4,
+          "prune_threshold": 0.0,
+          "focus": "Risk & Finetune"
+        }
+      ]
+    },
+    "scoring_contract": {
+      "scoring_weights": {},
+      "hard_rejects": {},
+      "gate_criteria": {},
+      "scoring_ceilings": {
+        "returns": 85.0,
+        "coverage": 85.0,
+        "edge": 4.0,
+        "expectancy": 0.6,
+        "capture": 0.75,
+        "entry_quality": 0.75,
+        "risk": 12.0
+      }
+    },
+    "contract_hash": "243c315318f3ae4cd297946f14f95b387c275412d13a66c589296a679fae9757"
+  },
+  "invalid_phases": {}
+}

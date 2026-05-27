@@ -117,6 +117,9 @@ class Fill:
     commission: float
     timestamp: datetime
     tag: str
+    exchange_order_id: str = ""
+    exchange_fill_id: str = ""
+    raw: dict = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +137,7 @@ class Position:
     realized_pnl: float = 0.0
     partial_exit_pnl: float = 0.0
     partial_exit_commission: float = 0.0
+    partial_exit_qty: float = 0.0
     open_time: datetime | None = None
     leverage: float = 1.0
     liquidation_price: float | None = None

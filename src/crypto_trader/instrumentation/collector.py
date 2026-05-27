@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+from crypto_trader.core.runtime_types import TradeOutcome
 from crypto_trader.instrumentation.pipeline_tracker import PipelineTracker
 from crypto_trader.instrumentation.types import (
     EventMetadata,
@@ -169,20 +170,26 @@ class InstrumentationCollector:
         passed = [d.filter_name for d in decisions if d.passed]
         active = [d.filter_name for d in decisions]
 
+        outcome = TradeOutcome.from_trade(trade)
+        reporting_r = (
+            outcome.realized_r_net
+            if outcome.realized_r_net is not None
+            else outcome.geometric_r
+        )
         exit_eff = None
         if (
-            trade.r_multiple is not None
+            reporting_r is not None
             and trade.mfe_r is not None
-            and trade.r_multiple > 0
+            and reporting_r > 0
             and trade.mfe_r > 0
         ):
-            exit_eff = trade.r_multiple / trade.mfe_r
+            exit_eff = reporting_r / trade.mfe_r
 
         pnl_pct = 0.0
         if trade.entry_price > 0 and trade.qty > 0:
             notional = trade.entry_price * trade.qty
             if notional > 0:
-                pnl_pct = trade.net_pnl / notional * 100
+                pnl_pct = outcome.realized_pnl_net / notional * 100
 
         metadata = EventMetadata.create(
             bot_id=self._bot_id,
@@ -202,11 +209,14 @@ class InstrumentationCollector:
             entry_price=trade.entry_price,
             exit_price=trade.exit_price,
             position_size=trade.qty,
-            pnl=trade.net_pnl,
+            pnl=outcome.realized_pnl_net,
+            price_pnl_gross=outcome.price_pnl_gross,
+            total_fees=outcome.total_fees,
+            realized_pnl_net=outcome.realized_pnl_net,
             pnl_pct=pnl_pct,
-            r_multiple=trade.r_multiple,
-            commission=trade.commission,
-            funding_paid=trade.funding_paid,
+            r_multiple=reporting_r,
+            commission=outcome.total_fees,
+            funding_paid=outcome.funding_paid,
             entry_signal=trade.confirmation_type or "",
             entry_signal_strength=strength,
             setup_grade=trade.setup_grade.value if trade.setup_grade else "",

@@ -1,39 +1,45 @@
 {
   "1": {
-    "name": "Signal Discrimination",
-    "accepted": 0,
-    "final_score": 0.5789922208174012,
-    "gate_passed": false
+    "name": "Broad Signal Discrimination",
+    "accepted": 1,
+    "final_score": 0.6953357771458846,
+    "gate_passed": true,
+    "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258"
   },
-  "last_updated": "2026-04-21T20:50:37.532853+00:00",
+  "last_updated": "2026-05-26T02:19:50.366638+00:00",
   "2": {
-    "name": "Entry Quality",
+    "name": "Entry Architecture",
     "accepted": 0,
-    "final_score": 0.5789922208174012,
-    "gate_passed": false
+    "final_score": 0.6953357771458846,
+    "gate_passed": true,
+    "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258"
   },
   "3": {
-    "name": "Capture & Management",
-    "accepted": 3,
-    "final_score": 0.7099260691020952,
-    "gate_passed": false
+    "name": "Proof & Failure Control",
+    "accepted": 1,
+    "final_score": 0.7043310745679423,
+    "gate_passed": false,
+    "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258"
   },
   "4": {
-    "name": "Frequency Expansion",
-    "accepted": 2,
-    "final_score": 0.783712110691766,
-    "gate_passed": false
+    "name": "Runner Capture",
+    "accepted": 3,
+    "final_score": 0.7310443925566587,
+    "gate_passed": true,
+    "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258"
   },
   "5": {
-    "name": "Risk Validation & Scaling",
-    "accepted": 0,
-    "final_score": 0.783712110691766,
-    "gate_passed": false
+    "name": "Structural Frequency",
+    "accepted": 1,
+    "final_score": 0.7368219196866888,
+    "gate_passed": true,
+    "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258"
   },
   "6": {
-    "name": "Finetune",
-    "accepted": 0,
-    "final_score": 0.783712110691766,
-    "gate_passed": false
+    "name": "Risk Scaling & Finetune",
+    "accepted": 1,
+    "final_score": 0.8194760526289406,
+    "gate_passed": true,
+    "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258"
   }
 }

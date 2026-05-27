@@ -117,7 +117,7 @@ class BalanceDetector:
         return list(self._zones.get(sym, []))
 
     def consume_zone(self, sym: str, zone: BalanceZone) -> None:
-        """Remove a zone after breakout detection (prevents re-triggering)."""
+        """Remove a zone from active inventory for market-derived invalidation."""
         zones = self._zones.get(sym, [])
         self._zones[sym] = [z for z in zones if z is not zone]
 

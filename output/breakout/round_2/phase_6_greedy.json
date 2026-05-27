@@ -1,23 +1,22 @@
 {
-  "accepted": [],
-  "rejected": [
-    "finetune_trail_buffer_tight_0_038",
-    "finetune_trail_buffer_tight_0_042",
-    "finetune_tp1_frac_0_19",
-    "finetune_tp1_frac_0_21",
-    "finetune_max_zone_age_bars_34",
-    "finetune_max_zone_age_bars_38",
-    "finetune_relaxed_body_min_0_3325",
-    "finetune_relaxed_body_min_0_3675",
-    "finetune_relaxed_body_min_room_r_1_33",
-    "finetune_relaxed_body_min_room_r_1_47",
-    "finetune_body_ratio_min_0_6175",
-    "finetune_body_ratio_min_0_6825",
-    "finetune_lookback_bars_36",
-    "finetune_lookback_bars_40"
+  "accepted": [
+    "finetune_hvn_threshold_pct_1_47"
   ],
-  "final_score": 0.88309067922354,
-  "base_score": 0.88309067922354,
-  "rounds": 1,
-  "elapsed_seconds": 0.0
+  "rejected": [
+    "finetune_tp1_frac_0_095",
+    "finetune_tp1_frac_0_105",
+    "finetune_trail_buffer_tight_0_057",
+    "finetune_trail_buffer_tight_0_063",
+    "finetune_hvn_threshold_pct_1_33",
+    "finetune_max_zone_age_bars_40",
+    "finetune_max_zone_age_bars_44"
+  ],
+  "final_score": 0.8001746845115667,
+  "base_score": 0.7719799448636403,
+  "rounds": 2,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4",
+  "final_validation": {
+    "status": "passed"
+  }
 }

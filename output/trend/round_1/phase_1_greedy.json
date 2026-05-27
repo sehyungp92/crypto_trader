@@ -1,15 +1,14 @@
 {
   "accepted": [],
-  "rejected": [
-    "scratch_reentry_wait4_conf1_risk075",
-    "scratch_reentry_wait4_conf1_fullrisk",
-    "scratch_reentry_wait6_conf1_risk075",
-    "scratch_reentry_wait6_conf0_risk075",
-    "scratch_reentry_wait6_double_risk075",
-    "scratch_reentry_wait8_conf1_risk050"
-  ],
-  "final_score": 0.0,
-  "base_score": 0.0,
-  "rounds": 1,
-  "elapsed_seconds": 2.8047919273376465
+  "rejected": [],
+  "final_score": null,
+  "base_score": null,
+  "rounds": 0,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "c73b3fa12c1506209fb1c03bc020f3515375ae20632f0cd64b171d101ee61b97",
+  "final_validation": {
+    "status": "passed",
+    "source": "live_config_backtest_refresh",
+    "note": "Operational live config accepted as new baseline; not proof of optimality."
+  }
 }

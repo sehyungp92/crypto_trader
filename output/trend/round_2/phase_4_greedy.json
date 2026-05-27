@@ -1,10 +1,14 @@
 {
   "accepted": [
-    "tp2_1_8"
+    "trail_activation_0_50_bars_4"
   ],
   "rejected": [],
-  "final_score": 0.7582392005218064,
-  "base_score": 0.7511518837575124,
+  "final_score": 0.6809365391973065,
+  "base_score": 0.6700548698364225,
   "rounds": 2,
-  "elapsed_seconds": 61.69877219200134
+  "elapsed_seconds": 154.31463527679443,
+  "contract_hash": "abea552891debbe69fd2aed965722c3c6c84488d13570d8df19b549d17d0712a",
+  "final_validation": {
+    "status": "passed"
+  }
 }

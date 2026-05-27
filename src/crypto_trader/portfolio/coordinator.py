@@ -9,7 +9,7 @@ from typing import Any
 import structlog
 
 from crypto_trader.core.broker import BrokerAdapter
-from crypto_trader.core.models import Fill, Order, OrderStatus, Position, Side
+from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, Position, Side
 from crypto_trader.portfolio.manager import PortfolioManager
 
 log = structlog.get_logger()
@@ -88,9 +88,8 @@ class BrokerProxy:
 
         # Register order ownership for fill routing (works with any broker)
         if order.status != OrderStatus.REJECTED and self._coordinator is not None:
-            self._coordinator.register_order(result_id, self.strategy_id, order)
-            if visible_order_id and visible_order_id != result_id:
-                self._coordinator.register_order(visible_order_id, self.strategy_id, order)
+            for tracking_id in self._tracking_order_ids(result_id, visible_order_id, order):
+                self._coordinator.register_order(tracking_id, self.strategy_id, order)
 
         if (
             order.status != OrderStatus.REJECTED
@@ -103,6 +102,19 @@ class BrokerProxy:
 
         return visible_order_id
 
+    def _tracking_order_ids(self, result_id: str, visible_order_id: str, order: Order) -> list[str]:
+        ids = [
+            result_id,
+            visible_order_id,
+            order.metadata.get("exchange_order_id"),
+            order.metadata.get("broker_order_id"),
+            order.metadata.get("client_order_id"),
+        ]
+        local_to_oid = getattr(self._broker, "_local_to_oid", None)
+        if isinstance(local_to_oid, dict) and (exchange_oid := local_to_oid.get(result_id)):
+            ids.append(str(exchange_oid))
+        return list(dict.fromkeys(str(oid) for oid in ids if oid))
+
     def cancel_order(self, order_id: str) -> bool:
         broker_order_id = self._broker_id_by_client_id.get(order_id, order_id)
         return self._broker.cancel_order(broker_order_id)
@@ -113,6 +125,17 @@ class BrokerProxy:
             if self.cancel_order(order.order_id):
                 cancelled += 1
         return cancelled
+
+    def expire_ttl_orders_for_bar(self, bar: Bar) -> list:
+        expire_fn = getattr(self._broker, "expire_ttl_orders_for_bar", None)
+        if callable(expire_fn):
+            return expire_fn(bar)
+        return []
+
+    def drain_immediate_fill_syncs(self) -> None:
+        drain = getattr(self._broker, "drain_immediate_fill_syncs", None)
+        if callable(drain):
+            drain()
 
     def get_position(self, symbol: str) -> Position | None:
         return self._broker.get_position(symbol)
@@ -214,7 +237,11 @@ class StrategyCoordinator:
     ) -> None:
         """Track which strategy submitted an order."""
         self._order_owners[order_id] = strategy_id
-        metadata = dict(order.metadata) if order is not None else {}
+        metadata = (
+            dict(order.metadata)
+            if order is not None
+            else dict(self._order_metadata.get(order_id, {}))
+        )
         metadata.setdefault("strategy_id", strategy_id)
         self._order_metadata[order_id] = metadata
 

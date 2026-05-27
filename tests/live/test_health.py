@@ -1,9 +1,5 @@
 """Tests for health monitoring."""
 
-import time
-
-import pytest
-
 from crypto_trader.live.health import HealthMonitor
 
 
@@ -15,13 +11,12 @@ class TestHealthMonitor:
 
     def test_stale_detection(self):
         h = HealthMonitor(expected_bar_interval_sec=0.01, stale_multiplier=2.0)
-        # Wait for stale threshold
-        time.sleep(0.03)
+        h._last_bar_time -= 0.03
         assert h.is_stale()
 
     def test_bar_received_resets_stale(self):
         h = HealthMonitor(expected_bar_interval_sec=0.01, stale_multiplier=2.0)
-        time.sleep(0.03)
+        h._last_bar_time -= 0.03
         assert h.is_stale()
         h.on_bar_received()
         assert not h.is_stale()

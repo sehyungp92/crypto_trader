@@ -8,7 +8,7 @@ import hmac
 import json
 import os
 import threading
-import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import structlog
@@ -21,6 +21,8 @@ _EVENT_FILES = (
     "missed_opportunities",
     "daily_snapshots",
     "errors",
+    "pipeline_funnels",
+    "health_reports",
 )
 
 
@@ -45,6 +47,7 @@ class SidecarForwarder:
         batch_size: int = 50,
     ) -> None:
         self._state_dir = state_dir
+        self._state_dir.mkdir(parents=True, exist_ok=True)
         self._relay_url = relay_url.rstrip("/")
         self._bot_id = bot_id
         self._secret = shared_secret.encode()
@@ -55,6 +58,9 @@ class SidecarForwarder:
         self._watermark_file = state_dir / ".sidecar_watermarks.json"
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
+        self._last_successful_send_at: str | None = None
+        self._consecutive_send_failures = 0
+        self._last_send_error: str | None = None
 
     def start(self) -> None:
         """Start the sidecar polling thread."""
@@ -74,24 +80,40 @@ class SidecarForwarder:
     def is_running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
 
+    def status(self) -> dict:
+        """Return sidecar state suitable for health report enrichment."""
+        return {
+            "enabled": True,
+            "running": self.is_running,
+            "event_files": list(_EVENT_FILES),
+            "watermarks": dict(self._watermarks),
+            "watermark_file": str(self._watermark_file),
+            "last_successful_send_at": self._last_successful_send_at,
+            "consecutive_send_failures": self._consecutive_send_failures,
+            "last_error": self._last_send_error,
+        }
+
     def _poll_loop(self) -> None:
         """Main loop: read new JSONL lines, batch, sign, POST to relay."""
         while not self._stop_event.is_set():
-            for event_type in _EVENT_FILES:
-                try:
-                    path = self._state_dir / f"{event_type}.jsonl"
-                    if not path.exists():
-                        continue
-                    new_events, new_offset = self._read_since_watermark(path, event_type)
-                    if new_events:
-                        if self._send_batch(new_events, event_type):
-                            # Only advance watermark after successful send
-                            self._watermarks[event_type] = new_offset
-                            self._save_watermarks()
-                except Exception:
-                    log.exception("sidecar.poll_error", event_type=event_type)
-
+            self._poll_once()
             self._stop_event.wait(self._poll_interval)
+
+    def _poll_once(self) -> None:
+        """Poll each configured JSONL event file once."""
+        for event_type in _EVENT_FILES:
+            try:
+                path = self._state_dir / f"{event_type}.jsonl"
+                if not path.exists():
+                    continue
+                new_events, new_offset = self._read_since_watermark(path, event_type)
+                if new_events:
+                    if self._send_batch(new_events, event_type):
+                        # Only advance watermark after successful send
+                        self._watermarks[event_type] = new_offset
+                        self._save_watermarks()
+            except Exception:
+                log.exception("sidecar.poll_error", event_type=event_type)
 
     def _read_since_watermark(self, path: Path, key: str) -> tuple[list[dict], int]:
         """Read new lines since last watermark offset.
@@ -100,6 +122,15 @@ class SidecarForwarder:
         the watermark only after successful delivery.
         """
         offset = self._watermarks.get(key, 0)
+        file_size = path.stat().st_size
+        if offset > file_size:
+            log.warning(
+                "sidecar.watermark_beyond_eof",
+                file=key,
+                watermark=offset,
+                file_size=file_size,
+            )
+            offset = 0
         events: list[dict] = []
         new_offset = offset
 
@@ -127,6 +158,7 @@ class SidecarForwarder:
 
         Returns True if the batch was delivered successfully.
         """
+        last_error: str | None = None
         try:
             import urllib.request
 
@@ -153,27 +185,34 @@ class SidecarForwarder:
                 headers["Content-Encoding"] = "gzip"
 
             url = f"{self._relay_url}/events"
-            req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-
             max_retries = 5
             for attempt in range(max_retries):
                 try:
+                    req = urllib.request.Request(url, data=body, headers=headers, method="POST")
                     with urllib.request.urlopen(req, timeout=10) as resp:
                         if resp.status < 300:
+                            self._last_successful_send_at = datetime.now(timezone.utc).isoformat()
+                            self._consecutive_send_failures = 0
+                            self._last_send_error = None
                             log.debug("sidecar.batch_sent",
                                      event_type=event_type, count=len(events))
                             return True
                 except Exception as e:
+                    last_error = str(e)
                     if attempt < max_retries - 1:
                         wait = min(2 ** attempt, 60)
                         log.warning("sidecar.retry", attempt=attempt + 1, wait=wait, error=str(e))
-                        time.sleep(wait)
+                        if self._stop_event.wait(wait):
+                            break
                     else:
                         log.error("sidecar.send_failed", event_type=event_type, error=str(e))
 
-        except Exception:
+        except Exception as exc:
+            last_error = str(exc)
             log.exception("sidecar.batch_error", event_type=event_type)
 
+        self._consecutive_send_failures += 1
+        self._last_send_error = last_error
         return False
 
     def _load_watermarks(self) -> None:

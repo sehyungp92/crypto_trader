@@ -56,6 +56,10 @@ class PortfolioManager:
         Returns PortfolioRuleResult with approved=True and any size multiplier,
         or approved=False with denial_reason.
         """
+        blocked_reason = getattr(self, "entries_blocked_reason", "")
+        if blocked_reason:
+            return PortfolioRuleResult(False, blocked_reason)
+
         cfg = self.config
         state = self.state
 

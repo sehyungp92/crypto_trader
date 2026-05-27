@@ -1,20 +1,26 @@
 {
   "accepted": [
-    "body_ratio_065"
+    "eth_relaxed_long_only",
+    "sol_short_only"
   ],
   "rejected": [
-    "body_ratio_060",
+    "relaxed_body_off",
+    "relaxed_body_min_045",
+    "relaxed_body_min_050",
+    "relaxed_body_conf_6",
+    "relaxed_body_room_16",
+    "relaxed_body_strict",
+    "sol_relaxed_short_only",
+    "relaxed_selective_pockets",
     "eth_long_only",
-    "sol_disabled",
-    "sol_short_only",
-    "no_countertrend",
-    "model1_vol_110",
-    "model1_vol_115",
-    "quality_stack_060_sol_disabled",
-    "quality_stack_065_sol_short"
+    "sol_disabled"
   ],
-  "final_score": 0.8272094930945119,
-  "base_score": 0.7790527075305504,
-  "rounds": 2,
-  "elapsed_seconds": 0.0
+  "final_score": 0.7383535837871253,
+  "base_score": 0.6766774497145975,
+  "rounds": 3,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4",
+  "final_validation": {
+    "status": "passed"
+  }
 }

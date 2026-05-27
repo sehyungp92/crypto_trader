@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
 
+from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.core.events import PositionClosedEvent
 from crypto_trader.core.models import Bar, Fill, SetupGrade, Side, TimeFrame, Trade
 from crypto_trader.strategy.breakout.balance import BalanceZone
 from crypto_trader.strategy.breakout.config import BreakoutConfig
-from crypto_trader.strategy.breakout.strategy import BreakoutStrategy, _PositionMeta
+from crypto_trader.strategy.breakout.confirmation import BreakoutConfirmation
+from crypto_trader.strategy.breakout.setup import BreakoutSetupResult
+from crypto_trader.strategy.breakout.strategy import BreakoutStrategy, WARMUP_BARS, _PositionMeta
+from crypto_trader.strategy.momentum.indicators import IndicatorSnapshot
 from crypto_trader.strategy.momentum.journal import TradeJournal
 
 
@@ -93,6 +97,95 @@ def _make_fill(tag: str = "entry", sym: str = "BTC") -> Fill:
         commission=0.01,
         timestamp=_TS,
         tag=tag,
+    )
+
+
+def _make_indicator() -> IndicatorSnapshot:
+    return IndicatorSnapshot(
+        ema_fast=101.0,
+        ema_mid=100.0,
+        ema_slow=99.0,
+        ema_fast_arr=None,
+        ema_mid_arr=None,
+        ema_slow_arr=None,
+        adx=25.0,
+        di_plus=20.0,
+        di_minus=10.0,
+        adx_rising=True,
+        atr=1.0,
+        atr_avg=1.0,
+        rsi=55.0,
+        volume_ma=1000.0,
+    )
+
+
+def _make_zone() -> BalanceZone:
+    return BalanceZone(
+        center=100.0,
+        upper=101.0,
+        lower=99.0,
+        bars_in_zone=5,
+        touches=2,
+        formation_bar_idx=10,
+        volume_contracting=True,
+        width_atr=0.8,
+    )
+
+
+def _make_setup() -> BreakoutSetupResult:
+    return BreakoutSetupResult(
+        grade=SetupGrade.B,
+        is_a_plus=False,
+        direction=Side.LONG,
+        balance_zone=_make_zone(),
+        breakout_price=101.0,
+        lvn_runway_atr=1.5,
+        confluences=("ema_alignment",),
+        room_r=1.8,
+        volume_mult=1.2,
+        body_ratio=0.6,
+    )
+
+
+def _make_confirmation() -> BreakoutConfirmation:
+    return BreakoutConfirmation(
+        model="model1_close",
+        trigger_price=100.5,
+        bar_index=0,
+        volume_confirmed=True,
+    )
+
+
+def _prime_model1_signal_path(
+    strategy: BreakoutStrategy,
+    ctx: _MockCtx,
+    setup: BreakoutSetupResult,
+    *,
+    m30_ind: IndicatorSnapshot | None = None,
+) -> None:
+    m30_ind = m30_ind or _make_indicator()
+    strategy._m30_bar_count["BTC"] = WARMUP_BARS
+    strategy._m30_inc["BTC"] = MagicMock(update=MagicMock(return_value=m30_ind))
+    strategy._current_profile["BTC"] = MagicMock()
+    strategy._profile_bar_count["BTC"] = 0
+    ctx.bars.get = MagicMock(return_value=[_make_bar()] * 120)
+    ctx.broker.get_position = MagicMock(return_value=None)
+    ctx.broker.get_equity = MagicMock(return_value=10000.0)
+    ctx.broker.get_open_orders = MagicMock(return_value=[])
+    ctx.broker.submit_order = MagicMock()
+    strategy._manage_positions = MagicMock()
+    strategy._balance_detector.update = MagicMock()
+    strategy._balance_detector.get_active_zones = MagicMock(return_value=[setup.balance_zone])
+    strategy._balance_detector.consume_zone = MagicMock()
+    strategy._breakout_detector.detect = MagicMock(return_value=setup)
+    strategy._breakout_detector.consume_blocked_relaxed_body_signals = MagicMock(return_value=[])
+    strategy._context_analyzer.evaluate = MagicMock(return_value=MagicMock(
+        direction=Side.LONG,
+        strength=1.0,
+        reasons=[],
+    ))
+    strategy._confirmation_detector.check_breakout_close = MagicMock(
+        return_value=_make_confirmation()
     )
 
 
@@ -271,7 +364,190 @@ class TestBreakoutStrategyBehavior:
         assert trade.r_multiple == pytest.approx(0.4)
         assert trade.realized_r_multiple == pytest.approx(-0.2)
         assert s._recent_exits["BTC"]["loss_r"] == pytest.approx(0.2)
+        s._confirmation_detector.clear_pending.assert_not_called()
         s._risk_manager.record_trade_exit.assert_called_once_with(
             trade.net_pnl,
             trade.exit_time,
         )
+
+
+class TestBreakoutPathIndependentSignalState:
+    """Signal-state updates should not depend on execution-state gates."""
+
+    def _init_strategy_and_ctx(
+        self,
+        cfg: BreakoutConfig | None = None,
+    ) -> tuple[BreakoutStrategy, _MockCtx]:
+        cfg = cfg or BreakoutConfig(symbols=["BTC"])
+        s = BreakoutStrategy(config=cfg)
+        ctx = _MockCtx()
+        s.on_init(ctx)
+        return s, ctx
+
+    def test_model1_preserves_zone_before_measurement_without_order(self):
+        s, ctx = self._init_strategy_and_ctx()
+        ctx.config = BacktestConfig(
+            symbols=["BTC"],
+            start_date=date(2026, 1, 5),
+            initial_equity=10000.0,
+        )
+        setup = _make_setup()
+        _prime_model1_signal_path(s, ctx, setup)
+        s._execute_entry = MagicMock(return_value=True)
+
+        s._handle_m30(
+            _make_bar(ts=datetime(2026, 1, 4, 23, 30, tzinfo=timezone.utc)),
+            "BTC",
+            ctx,
+        )
+
+        s._balance_detector.consume_zone.assert_not_called()
+        s._execute_entry.assert_not_called()
+        ctx.broker.submit_order.assert_not_called()
+
+    def test_model1_preserves_zone_with_open_position_without_order(self):
+        s, ctx = self._init_strategy_and_ctx()
+        setup = _make_setup()
+        _prime_model1_signal_path(s, ctx, setup)
+        ctx.broker.get_position.return_value = MagicMock(qty=1.0)
+        s._execute_entry = MagicMock(return_value=True)
+
+        s._handle_m30(_make_bar(), "BTC", ctx)
+
+        s._balance_detector.consume_zone.assert_not_called()
+        s._execute_entry.assert_not_called()
+        ctx.broker.submit_order.assert_not_called()
+
+    def test_model1_preserves_zone_when_risk_stopped_without_order(self):
+        s, ctx = self._init_strategy_and_ctx()
+        setup = _make_setup()
+        _prime_model1_signal_path(s, ctx, setup)
+        s._risk_manager.is_session_stopped = MagicMock(return_value=(True, "daily_loss_limit"))
+        s._execute_entry = MagicMock(return_value=True)
+
+        s._handle_m30(_make_bar(), "BTC", ctx)
+
+        s._balance_detector.consume_zone.assert_not_called()
+        s._execute_entry.assert_not_called()
+        ctx.broker.submit_order.assert_not_called()
+
+    def test_reentry_cooldown_blocks_order_not_signal_state(self):
+        s, ctx = self._init_strategy_and_ctx()
+        setup = _make_setup()
+        _prime_model1_signal_path(s, ctx, setup)
+        s._recent_exits["BTC"] = {
+            "bar_idx": WARMUP_BARS,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+        s._execute_entry = MagicMock(return_value=True)
+
+        s._handle_m30(_make_bar(), "BTC", ctx)
+
+        s._balance_detector.consume_zone.assert_not_called()
+        s._execute_entry.assert_not_called()
+        assert s._recent_exits["BTC"]["loss_r"] == pytest.approx(0.4)
+
+    def test_stale_recent_exit_is_cleared_after_max_wait_bars(self):
+        s, _ = self._init_strategy_and_ctx()
+        s._m30_bar_count["BTC"] = 100
+        s._recent_exits["BTC"] = {
+            "bar_idx": 80,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+        s._reentry_count["BTC"] = 1
+
+        is_reentry, block_reason = s._evaluate_reentry_for_execution("BTC", Side.LONG)
+
+        assert is_reentry is False
+        assert block_reason == ""
+        assert s._recent_exits["BTC"] == {}
+        assert s._reentry_count["BTC"] == 0
+
+    def test_max_reentries_reached_clears_after_cooldown_for_fresh_signals(self):
+        s, _ = self._init_strategy_and_ctx()
+        s._m30_bar_count["BTC"] = 100
+        s._recent_exits["BTC"] = {
+            "bar_idx": 96,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+        s._reentry_count["BTC"] = s._cfg.reentry.max_reentries
+
+        is_reentry, block_reason = s._evaluate_reentry_for_execution("BTC", Side.LONG)
+
+        assert is_reentry is False
+        assert block_reason == ""
+        assert s._recent_exits["BTC"] == {}
+        assert s._reentry_count["BTC"] == 0
+
+    def test_nonpositive_max_wait_preserves_unbounded_reentry_wait(self):
+        cfg = BreakoutConfig(symbols=["BTC"])
+        cfg.reentry.max_wait_bars = 0
+        s, _ = self._init_strategy_and_ctx(cfg)
+        s._m30_bar_count["BTC"] = 100
+        s._recent_exits["BTC"] = {
+            "bar_idx": 10,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+        s._reentry_count["BTC"] = 0
+
+        is_reentry, block_reason = s._evaluate_reentry_for_execution("BTC", Side.LONG)
+
+        assert is_reentry is True
+        assert block_reason == ""
+        assert s._recent_exits["BTC"]["bar_idx"] == 10
+
+    def test_opposite_direction_after_loss_is_normal_signal(self):
+        s, _ = self._init_strategy_and_ctx()
+        s._m30_bar_count["BTC"] = 104
+        s._recent_exits["BTC"] = {
+            "bar_idx": 100,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+
+        is_reentry, block_reason = s._evaluate_reentry_for_execution("BTC", Side.SHORT)
+
+        assert is_reentry is False
+        assert block_reason == ""
+        assert s._recent_exits["BTC"] == {}
+
+    def test_reentry_disabled_clears_recent_loss_without_cooldown_block(self):
+        cfg = BreakoutConfig(symbols=["BTC"])
+        cfg.reentry.enabled = False
+        s, _ = self._init_strategy_and_ctx(cfg)
+        s._m30_bar_count["BTC"] = 101
+        s._recent_exits["BTC"] = {
+            "bar_idx": 100,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+
+        is_reentry, block_reason = s._evaluate_reentry_for_execution("BTC", Side.LONG)
+
+        assert is_reentry is False
+        assert block_reason == ""
+        assert s._recent_exits["BTC"] == {}
+
+    def test_reentry_risk_scale_is_execution_overlay(self):
+        cfg = BreakoutConfig(symbols=["BTC"])
+        cfg.reentry.cooldown_bars = 0
+        cfg.reentry.risk_scale = 0.5
+        s, ctx = self._init_strategy_and_ctx(cfg)
+        setup = _make_setup()
+        _prime_model1_signal_path(s, ctx, setup)
+        s._recent_exits["BTC"] = {
+            "bar_idx": WARMUP_BARS,
+            "side": Side.LONG,
+            "loss_r": 0.4,
+        }
+        s._execute_entry = MagicMock(return_value=True)
+
+        s._handle_m30(_make_bar(), "BTC", ctx)
+
+        execution_setup = s._execute_entry.call_args.args[3]
+        assert execution_setup.risk_scale == pytest.approx(0.5)
+        assert setup.risk_scale == pytest.approx(1.0)

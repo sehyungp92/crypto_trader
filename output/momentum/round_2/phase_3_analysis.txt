@@ -3,24 +3,24 @@ Recommendation: advance
 Reason: Gate failed after accepted mutations, but the score is intentionally immutable for this round
 Scoring assessment: MISALIGNED
 
-Accepted: 3 experiments
-Final score: 0.7099
-Base score: 0.5790
-Rounds: 4
+Accepted: 1 experiments
+Final score: 0.7043
+Base score: 0.6953
+Rounds: 2
 
-Strengths: net_return_pct, total_trades, profit_factor, avg_mae_r, max_drawdown_pct
-Diagnostic Gaps: Value-destroying signals (D4) — hammer have negative avg R, Single-trade concentration risk (D3) — risk sizing review needed
+Strengths: expectancy_r, profit_factor, exit_efficiency, max_drawdown_pct
+Diagnostic Gaps: Single-trade concentration risk (D3) — risk sizing review needed
 
 Goal Progress:
-  net_return_pct: 11.22 / 12.00 (94%)
-  total_trades: 24.00 / 28.00 (86%)
-  profit_factor: 3.28 / 2.60 (126%)
+  net_return_pct: 11.71 / 16.00 (73%)
+  total_trades: 20.00 / 28.00 (71%)
+  expectancy_r: 0.62 / 0.45 (138%)
+  profit_factor: 7.09 / 2.50 (200%)
   exit_efficiency: 0.44 / 0.55 (80%)
-  avg_mae_r: -0.29 / -0.28 (100%)
-  max_drawdown_pct: 3.40 / 8.00 (200%)
+  max_drawdown_pct: 2.21 / 8.00 (200%)
 
 Extra Analysis:
-  confirmation_types: 3
-  positive_confirmations: 2
-  negative_confirmations: 1
+  confirmation_types: 4
+  positive_confirmations: 3
+  negative_confirmations: 0
   confluence_levels: 4

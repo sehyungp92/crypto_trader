@@ -1,0 +1,5022 @@
+[
+  {
+    "label": "baseline_current_round2",
+    "kind": "baseline",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {},
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "dc0d0baffc412d2b90ba112e1d36c732dc82e119fa6bde0d432605d2c6e56708"
+  },
+  {
+    "label": "recommended_orderly_body_1_08",
+    "kind": "anchor",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "First-pass recommended candidate.",
+    "fingerprint": "908789e02326b4a654fbed4fdd1fc176f8118abdf5823d5e56e1d3b41de85c8f"
+  },
+  {
+    "label": "local_trend_orderly_body_0.94",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 0.94
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "cdf4f38a5d46ae11904bb9d0a4bbe6ba432e3ba38f7fb228321cef4d6a28066f"
+  },
+  {
+    "label": "local_trend_orderly_body_0.96",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 0.96
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "40d7f181d658f971ab400562a88aca38169f55b44fa1ae283114ceecca73564d"
+  },
+  {
+    "label": "local_trend_orderly_body_0.98",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 0.98
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "6fc8655d791db19fe7ad41a137c20dd0b11cfc674b2ff7b8f49443f7b57ff8ea"
+  },
+  {
+    "label": "local_trend_orderly_body_1",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.0
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "292c04cc615a86c63813df32a115189c298af7e2fc2e2b0597bb13aee23a7a45"
+  },
+  {
+    "label": "local_trend_orderly_body_1.02",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "2d9090473fdc33cb54b7543c675da132afc80b28f1aad2587fca6460344b389b"
+  },
+  {
+    "label": "local_trend_orderly_body_1.04",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.04
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "bc4a4a6ef9b849427a6a61eca8ba457d642afd97fcc6a94eb28e3e6807ec2f99"
+  },
+  {
+    "label": "local_trend_orderly_body_1.06",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.06
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "13377fc4bdd242771901d90211fce35069db15440ebd31ef2189878944f50986"
+  },
+  {
+    "label": "local_trend_orderly_body_1.1",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "e217c79307eb583ad12f8991f46a6eb493c549d137154864aa1253b051aff769"
+  },
+  {
+    "label": "local_trend_orderly_body_1.12",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "c4b5992565343912ea1e4ace81f671090aa1a9af816c41ac196235fa37ff0972"
+  },
+  {
+    "label": "local_trend_orderly_body_1.15",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.15
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "c4986eef58cd3ecf2da5270749aa7087dc67cfab579771058b4221a84e233c94"
+  },
+  {
+    "label": "local_trend_orderly_body_1.18",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.18
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "369d7f1b2d2e2c32543a17916627c409912eaa38939507613cfd14b859ee6f7b"
+  },
+  {
+    "label": "local_trend_orderly_body_1.2",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.2
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "077f6f8dc05f4fd1b3b4ce1e6dbbcaa7457a1a50687db075a7a8c42aef2be96c"
+  },
+  {
+    "label": "local_trend_orderly_body_1.25",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.25
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass OOS winner.",
+    "fingerprint": "a1c9a0c093d62d058b913b88d683e909bfa70b3593645114dc7ee3fdcff1b7af"
+  },
+  {
+    "label": "combo_body108_momentum_risk_b_0.016",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.016
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "d1fd280b94ebc3fea403180a80082c0e73c9320de6bfd9b499c284a1a49307d2"
+  },
+  {
+    "label": "combo_body108_momentum_risk_b_0.0165",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0165
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "51047f3b95dbc49e96848929119c32c1b2a6ce5526a91d261ea125535fbaa033"
+  },
+  {
+    "label": "combo_body108_momentum_risk_b_0.01725",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.01725
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "6a50f027a82261d57d29713b2d04dde401ef756fcebdb422eaddaa2a2fc94821"
+  },
+  {
+    "label": "combo_body108_momentum_risk_b_0.018",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.018
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "193be758f015f6e889c53c6bd446b7f050ce2224acc82d4ba2f29f22fe5258b0"
+  },
+  {
+    "label": "combo_body108_momentum_risk_b_0.019",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.019
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "5dd98414481c77ea24342671bbf3e0fdd772fb839eebdca80351c6e96631a025"
+  },
+  {
+    "label": "combo_body108_momentum_risk_b_0.02",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "77906dbe7a208a594949d874c6583f3d43cdfb9e63a594401de5423030139b50"
+  },
+  {
+    "label": "combo_body108_risk_all_1.18",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.18,
+      "risk_scale.trend": 1.18,
+      "risk_scale.breakout": 1.18,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "5b639483c5ee5fd08de4bd5fa4f2d8cfbb21b009f28af46ef3a6135c04a1b97b"
+  },
+  {
+    "label": "combo_body108_risk_all_1.2",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.2,
+      "risk_scale.trend": 1.2,
+      "risk_scale.breakout": 1.2,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "1e6c4496f24399aec6c006ae361e93b07fa5d74aecdf7beb7ecc3acc2d1ab05a"
+  },
+  {
+    "label": "combo_body108_risk_all_1.22",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.22,
+      "risk_scale.trend": 1.22,
+      "risk_scale.breakout": 1.22,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "3adb530e67b5990e31ee9d155bea462ade94f283b87f08ee9282e176d3172bae"
+  },
+  {
+    "label": "combo_body108_risk_all_1.25",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.25,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "e063c87f5febe0a809eb37b7df4241d281d6f5b6996c91912f5584e17dcbda43"
+  },
+  {
+    "label": "combo_body108_risk_all_1.28",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.28,
+      "risk_scale.trend": 1.28,
+      "risk_scale.breakout": 1.28,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "458597084da456026f7d9ffe5f76bcd430925be03fb789ed7d0832cb7324d9ca"
+  },
+  {
+    "label": "combo_body108_risk_all_1.3",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.3,
+      "risk_scale.trend": 1.3,
+      "risk_scale.breakout": 1.3,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "309444b7fe15c7c5d4726faea695bdde87ec0dee42cb67afc5c69e7fbc453451"
+  },
+  {
+    "label": "combo_body108_risk_momentum_1.2",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.2,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "9f4ac8ea9b48ee6976ecdfdc43e9b4e713592ea6a1fad80d3cadf22c403953db"
+  },
+  {
+    "label": "combo_body108_risk_breakout_1.2",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.2,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "df95c2863e46fb2d5dc93edce5c36b6542356914c1bbd55c2a2b506fd15c7ba3"
+  },
+  {
+    "label": "combo_body108_risk_momentum_1.25",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "b773ded940f1d10603574e6a36fec78cbd5f771f69e0b2b1b3bd097898b9808a"
+  },
+  {
+    "label": "combo_body108_risk_breakout_1.25",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "f7a3fb35dcd96b5a20e8653d37813beef3aebc29183ec4b11881dd7e167fc1f2"
+  },
+  {
+    "label": "combo_body108_risk_momentum_1.3",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.3,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "2142761edca2dde07237d4b356394861ec108dee13a4a5cff38a4bc3b3f6e3a9"
+  },
+  {
+    "label": "combo_body108_risk_breakout_1.3",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.3,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "f983daeccc6a4a0b57cbed28f45f6f6f3753c541618931e486b91e7d134cb7b6"
+  },
+  {
+    "label": "combo_body108_trend_min_score_a_2.2",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.2
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "352e8c3dbd9b818b6617cc598361a68794ff443193d244abcde4a310b7c6f89a"
+  },
+  {
+    "label": "combo_body108_trend_min_score_a_2.255",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.255
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "020a52626f0f607921131de03d9b4a53a47c862a97edf2d4d993f8fd3e799f3e"
+  },
+  {
+    "label": "combo_body108_trend_min_score_a_2.35",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.35
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "4cb83704c6543a04a35024541e35749cc1a49aa0354ebda8e9f9899c4033e39b"
+  },
+  {
+    "label": "combo_body108_trend_min_score_a_2.46",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.46
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "d0085e7c475f430644d818268ca19b86c7dc751d5eba634a858c811f50060d79"
+  },
+  {
+    "label": "combo_body108_trend_min_score_a_2.5",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "286b47c03abccb9940fd418920c60076c103b35dd87df52f0d61ebcb690362ef"
+  },
+  {
+    "label": "combo_body108_trend_min_score_a_2.6",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.6
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "2ee4354cff6c2e3ad621eb27a2392514884cd7045e2d68513509621e95f68c42"
+  },
+  {
+    "label": "combo_body108_trend_min_stop_atr_1.3",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "stops.min_stop_atr": 1.3
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "643d346cd3535c87fe3d2d3cea41dc4ba51bdd65d7237a4cb56ff1bd5e94f8f5"
+  },
+  {
+    "label": "combo_body108_trend_min_stop_atr_1.35",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "stops.min_stop_atr": 1.35
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "465fadb051f9f3ad7049bd2dd7865413038621514736c02051137c3d1320b793"
+  },
+  {
+    "label": "combo_body108_trend_min_stop_atr_1.4",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "stops.min_stop_atr": 1.4
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "26a767ff69cc5b85f726c2814bd7c17397b766252d8476f7fa48853af7279609"
+  },
+  {
+    "label": "combo_body108_trend_tp2_r_1.44",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "exits.tp2_r": 1.44
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "903ea72e180faa2c6236b33141d903828d58be9135a306894a6f805e27d68d1b"
+  },
+  {
+    "label": "combo_body108_trend_tp2_r_1.62",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "exits.tp2_r": 1.62
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "c0fa9e15d99478d7ead622baa4af6816aa9f20523d5877cc02a0499fb28f5d48"
+  },
+  {
+    "label": "combo_body108_trend_tp2_r_1.98",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "exits.tp2_r": 1.98
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "defc7fcd363b3cd62b29826b9aa9b8bc391eb230c3492a9950f60f8697a0f02f"
+  },
+  {
+    "label": "combo_body108_trend_tp2_frac_0.48",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "exits.tp2_frac": 0.48
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "8c2972f4b194919d50288b98c43c2d72d43a0c079e2ae79c0aa4c316d537e738"
+  },
+  {
+    "label": "combo_body108_trend_tp2_frac_0.54",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "exits.tp2_frac": 0.54
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "544f03f550083e14e6935975b8cba2544355e9cf11467fa3ed672788f5c1ba8d"
+  },
+  {
+    "label": "combo_body108_trend_tp2_frac_0.66",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "exits.tp2_frac": 0.66
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "694db38d0d8e71052ba961c3b4f27316f8b40e84602f9240ab78d734c4bf9505"
+  },
+  {
+    "label": "combo_body108_breakout_body_ratio_0.68",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.68
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "1bf4721574d44a7568e9cab58dc248dbb6b05c63030b1a304f50f9265eb99cd4"
+  },
+  {
+    "label": "combo_body108_breakout_body_ratio_0.7",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.7
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "ba4b2628e356d5c1fbddeaa0510724a31fe9c58ec56a9ce602a5ce25b584acd7"
+  },
+  {
+    "label": "combo_body108_breakout_body_ratio_0.715",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "47835c9925a2e24214b63ed39087602093f46ffe5ff3cbd9055cc3d35dbf6018"
+  },
+  {
+    "label": "combo_body108_breakout_body_ratio_0.73",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.73
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "5ceb1305149f0558934247b5352e918a7d39ff50937ef79288e60ddf01cab92e"
+  },
+  {
+    "label": "combo_body108_breakout_body_ratio_0.75",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.75
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "898217946b301131161b70e915ed25a70fcbbc46c356342add24e03c909a3d33"
+  },
+  {
+    "label": "local_breakout_body_ratio_0.68",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "breakout": {
+        "setup.body_ratio_min": 0.68
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass breakout body-ratio winner.",
+    "fingerprint": "7955299fb9e0e0f79ee748cd3f6aadded167465a29b4f891be0c6293aa47f612"
+  },
+  {
+    "label": "local_breakout_body_ratio_0.7",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "breakout": {
+        "setup.body_ratio_min": 0.7
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass breakout body-ratio winner.",
+    "fingerprint": "f834de42d825be19b4220a0cee2461f5112fd1a2ffc51656501dc9317dd3c59d"
+  },
+  {
+    "label": "local_breakout_body_ratio_0.715",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass breakout body-ratio winner.",
+    "fingerprint": "922a488555259a63de55f2b784b9737d9fa479fc864654305a8b9845457c2fde"
+  },
+  {
+    "label": "local_breakout_body_ratio_0.73",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "breakout": {
+        "setup.body_ratio_min": 0.73
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass breakout body-ratio winner.",
+    "fingerprint": "00f36f4d0b6c72a315a14a91b0fadfa7515f74c162a85d8b02398a41ac1e31d1"
+  },
+  {
+    "label": "local_breakout_body_ratio_0.75",
+    "kind": "local",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "breakout": {
+        "setup.body_ratio_min": 0.75
+      }
+    },
+    "strategy_sources": {},
+    "notes": "Local grid around first-pass breakout body-ratio winner.",
+    "fingerprint": "5dc8839dd7956a10af2df189f4e50003126e31ab3f831c53a324dd6dd45d8984"
+  },
+  {
+    "label": "combo_body108_momentum_trail_bars_8",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "trail.trail_activation_bars": 8
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "118be810ecee0a12f16bbed445618fe7f5202d00200ac97609d25ae24f6fe664"
+  },
+  {
+    "label": "combo_body108_breakout_faster_trail",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "trail.trail_buffer_tight": 0.048
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "eb64088668ac21846bb0bd530feebbc96f567e618bd7d3ef3fcc89cfd9210da3"
+  },
+  {
+    "label": "combo_body108_breakout_eth_long_only",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "symbol_filter.eth_direction": "long_only"
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "703f72ee281f1af4b7a5a93952db55d31484677f9895979a228a26660157ffa5"
+  },
+  {
+    "label": "combo_body108_breakout_body0715_eth_long",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715,
+        "symbol_filter.eth_direction": "long_only"
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "882ee75c7f6fa80b806e43c5ba0ff02433cfbf41609086599b10292e840f2789"
+  },
+  {
+    "label": "combo_body108_trend_sol_short_only",
+    "kind": "targeted",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "symbol_filter.sol_direction": "short_only"
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "9f43228e02cd06bd0364165a8fb119c3aa5c09f2312f17ef57fe2f520e046acc"
+  },
+  {
+    "label": "combo_body108_trend_sol_disabled",
+    "kind": "targeted",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "symbol_filter.sol_direction": "disabled"
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "a2ed10231148246a89d5879728e0de7400795b347f3f9f361728b33c699fc8c2"
+  },
+  {
+    "label": "combo_body108_trend_sol_long_only",
+    "kind": "targeted",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "symbol_filter.sol_direction": "long_only"
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "54025871c511efd88e5cd92dab9562f759c36013e47523491f7e73d3f5df0b13"
+  },
+  {
+    "label": "combo_body108_momentum_sol_disabled",
+    "kind": "targeted",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "disabled",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "560c71477ac7b7e734dafe9c00c99441628b111ea79d2e6ea1a4c72aba4153a7"
+  },
+  {
+    "label": "combo_body108_momentum_sol_long_only",
+    "kind": "targeted",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "long_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "360019b91dc8bfc45520dad5c332a99237b118af27026c1607f1c6ea05d8e384"
+  },
+  {
+    "label": "combo_body108_momentum_sol_both",
+    "kind": "targeted",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "both",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "94ef53a84f3ee9405596b6894c34d3805aec234973459e4d937dc156021b5b97"
+  },
+  {
+    "label": "combo_body108_scorea250_momrisk018",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.018
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "3ed2a7c1dc04bf0eec04a0a05865c2f82ec8af18a9fdd8d4d71efdae23ab2b45"
+  },
+  {
+    "label": "combo_body108_scorea250_riskall125",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.25,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "b17583ed7a12739a3afd974a43d4058bcd4ac7d6868320ec3a80edd3585a204d"
+  },
+  {
+    "label": "combo_body108_breakbody0715_momrisk018",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.018
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "393a7a6c7145c99d549f2a21c5844969075f52ed43eb53c153b9080bb7b5d57b"
+  },
+  {
+    "label": "combo_body108_breakbody0715_riskall125",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.25,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "870db0ac3a25428a86e4586b83e2bfd04d73442067bd85c90f8ea757b79232df"
+  },
+  {
+    "label": "combo_body108_scorea250_breakbody0715",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "d039154cb17b135ff04d65260f3e642c77ef706df1839abfe6b0a4249428f70c"
+  },
+  {
+    "label": "combo_body108_scorea250_breakbody0715_momrisk018",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.018
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "d06b6d1fb21fc32a3be084414e5dba08762904d147af2c98cce15ac9c83edf17"
+  },
+  {
+    "label": "combo_body108_scorea250_breakbody0715_riskall125",
+    "kind": "combo",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.25,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "3e97b0db1922bebf9ea56b0480f635798cf9a3c7d7fb4b8c56fa9ce3eedfba10"
+  },
+  {
+    "label": "extended_body1p08_momentum_risk_b_0.0195",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0195
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "136847df7d6957b24c1d775a7dfbfbd875348d8577587cb6e5a70ba36100c8a7"
+  },
+  {
+    "label": "extended_body1p08_momentum_risk_b_0.0205",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0205
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "0eb68e0ddba3e10ed982f45be922691b570a136e126bf705b97a09a9eb875508"
+  },
+  {
+    "label": "extended_body1p08_momentum_risk_b_0.021",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.021
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "76947cd980b7bdea7ce8503a45ea967f1020f8744cc730fed5fb27eb0cec0a4c"
+  },
+  {
+    "label": "extended_body1p08_momentum_risk_b_0.022",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.022
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "b6cf51b83fccd22c69d4e5271863080f6f85574e2bfd0aaca37bf6e87a993e24"
+  },
+  {
+    "label": "extended_body1p08_momentum_risk_b_0.023",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.023
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "2f343163512fb26345f3db184ccd2759c80afdd5821c6e1da3f1463d5b484c18"
+  },
+  {
+    "label": "extended_body1p08_momentum_risk_b_0.024",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.024
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "6f5051182b40b2378950c378c05b2917701d7f71c0bfe5398c7720021b8ccffb"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.0195",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0195
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "f09d9174ed94ef3cbda4fd2a229a5f284ef094437a66f8484c320d0d1453ba54"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.02",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "762d711c687b564340873b810c37ec9dcfe62d20146791853a1d731f1bc2bb09"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.0205",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0205
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "352bbc8ba1b7540d881209857f01e77374f632378ab4e84e0a7fe91d567702a0"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.021",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.021
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "63de5dc57323d3fc5b8f5c840be5d03632628850470642cb43bb653a02726f3b"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.022",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.022
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "2826047588a184487cf3af2f3cb94e7602ef597dae9f2d0bfc53e9bdb871dc02"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.023",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.023
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "f1373803e22165972085e9cdf3cc706725bd71007ea4853706615fca7e3a0df6"
+  },
+  {
+    "label": "extended_body1p1_momentum_risk_b_0.024",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.1
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.024
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "831cc2b957cc72fc066fcef96ae22cad27120dd4529a98ee2df2c781a012abc8"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.0195",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0195
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "008dda45ff4b6dd964658b8ac07f49bc4610c88d86510fbc937b7a9ad7c5c404"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.02",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "e699f622e86da6b5c64a1035520e3af497425985750baf982467a540ad4c13a2"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.0205",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.0205
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "76abf4f7ea18890ccea39d4e7492b70ad67f8fd280c7e48adcd9e2bbe84648bb"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.021",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.021
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "b3289113d468a40add3c53b92bbb5837b231a8a933273fd19773007c7a366c19"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.022",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.022
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "a4753ac241535720132feb65d5a4ab64d162e7b79d633efce90de325d5088fa9"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.023",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.023
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "e32a24f4b1bd0b17932a7e55f2921d92bcd95660f0947fd1167701828c83bbaf"
+  },
+  {
+    "label": "extended_body1p12_momentum_risk_b_0.024",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.12
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.024
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "69437e4af3223e29e882b8bcb49138c6facf3914d0f6e633f7333f4fc3f5cc97"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk_0.019",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.019
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "7e5de0d9c53f8f1da41f0fbcd96946107657a367d30e77d7a82a2b94f2433dbe"
+  },
+  {
+    "label": "extended_body108_breakbody0715_momrisk_0.019",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.019
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "d88dd5b8a358c01f7e61ae001216a8015d16cc05b1179f3b23b0f872fb7ecf02"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk_0.02",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "865191528967f7a817848738ac586259cfdf5542d5d06ec2c4e45d47554c3a9e"
+  },
+  {
+    "label": "extended_body108_breakbody0715_momrisk_0.02",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "ccfabbf3e8d796d340fbdb44bd540c898bdbfd6c4d5eb22884c0283e02a4377c"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk_0.021",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.021
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "9cd943601a7ba20854539d52ed7f154af7777969b10d5f4219463a2d97cde6b5"
+  },
+  {
+    "label": "extended_body108_breakbody0715_momrisk_0.021",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.021
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "4bc4958b06c81466de5586a7a9dd82a758190cb7a78409b48d4d5231bd89b2d9"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk_0.022",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.022
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "7a03d96d21372d6aa79bb638256ae0510b1211f5ea6f00cc078c98fa2bfdf890"
+  },
+  {
+    "label": "extended_body108_breakbody0715_momrisk_0.022",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.022
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "9b1ef26c02f95fa92d075927180051fa083315c0ffd95726405f7b5dedaf6249"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk_0.023",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.023
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "1efe33924bf0391ad4effff3d69cdba6fde17e67a03d4c024bd2714a67ee65bb"
+  },
+  {
+    "label": "extended_body108_breakbody0715_momrisk_0.023",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.15,
+      "risk_scale.trend": 1.15,
+      "risk_scale.breakout": 1.15,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.023
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "4798ce04ece6930e6c05bc855df8851ce36f9a76eb34ce7df4ffbb0baa10713f"
+  },
+  {
+    "label": "extended_body108_risk_all_1.32",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.32,
+      "risk_scale.trend": 1.32,
+      "risk_scale.breakout": 1.32,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "a300e41466f6c0a51b8aa5ef821feeb09e38aaf24aae1a2c60bbd13785eddfcf"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_riskall_1.32",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.32,
+      "risk_scale.trend": 1.32,
+      "risk_scale.breakout": 1.32,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "c03c6d4b7441ac20ed75432702644fad0f5d679f1aef182da59b5f4864c0470d"
+  },
+  {
+    "label": "extended_body108_risk_all_1.35",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.35,
+      "risk_scale.trend": 1.35,
+      "risk_scale.breakout": 1.35,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "ad225da3b8ac0159a3df60422c45e6f8543f17bff32780df6dcdd016cac0875b"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_riskall_1.35",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.35,
+      "risk_scale.trend": 1.35,
+      "risk_scale.breakout": 1.35,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "f561aa0a1bb53c30a42ddc89b691d13e3fbf9d8fe7a770a67bafc2dfc6914e53"
+  },
+  {
+    "label": "extended_body108_risk_all_1.4",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.4,
+      "risk_scale.trend": 1.4,
+      "risk_scale.breakout": 1.4,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "67936ce0b717b155981679f7ed587e46031325ed34d5260b22fb0c8385a6c82f"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.4,
+      "risk_scale.trend": 1.4,
+      "risk_scale.breakout": 1.4,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "95dcefe6afe6d3f462766f6af6f1a035eab3de4ddd0bf7db3ebea3415b0045e5"
+  },
+  {
+    "label": "extended_body108_risk_all_1.45",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.45,
+      "risk_scale.trend": 1.45,
+      "risk_scale.breakout": 1.45,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "3c6b1db41b26d0c60b881ce6c73d9a1e576793a149ac46fdf802ac021929ec74"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_riskall_1.45",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.45,
+      "risk_scale.trend": 1.45,
+      "risk_scale.breakout": 1.45,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "4c5de52ff01a60731b6386c92775c1bdb384dc8ba5758da234a483fa1b3dc20b"
+  },
+  {
+    "label": "extended_body108_momrisk020_riskall_1.2",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.2,
+      "risk_scale.trend": 1.2,
+      "risk_scale.breakout": 1.2,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "185a65a579ce02116a1c0ea0ed387137ac2f2e426816847b49d80dcc723eebe5"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk020_riskall_1.2",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.2,
+      "risk_scale.trend": 1.2,
+      "risk_scale.breakout": 1.2,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "c1cbb2a821fcc9a0ef70ad602dc26d75a4710028bff1c7fd4a1d0b99fa061bf4"
+  },
+  {
+    "label": "extended_body108_momrisk020_riskall_1.25",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.25,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "889aa8c8ca041a38daf2972d9cc95cf640ef239ea3c3c790918a737061bb550e"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk020_riskall_1.25",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.25,
+      "risk_scale.trend": 1.25,
+      "risk_scale.breakout": 1.25,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "cb645d060412a89c0a032d7e606ef76975871de25886453b8600bd35767ccf9b"
+  },
+  {
+    "label": "extended_body108_momrisk020_riskall_1.3",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.3,
+      "risk_scale.trend": 1.3,
+      "risk_scale.breakout": 1.3,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "cf22e76ad465333a601bad89569e3c6a86802b42ad6d1b36c3e1f4ba1aab105b"
+  },
+  {
+    "label": "extended_body108_scorea250_breakbody0715_momrisk020_riskall_1.3",
+    "kind": "extended",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "risk_scale.momentum": 1.3,
+      "risk_scale.trend": 1.3,
+      "risk_scale.breakout": 1.3,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ]
+    },
+    "base_overrides": {
+      "trend": {
+        "setup.orderly_max_body_frac": 1.08,
+        "setup.min_setup_score_a": 2.5
+      },
+      "breakout": {
+        "setup.body_ratio_min": 0.715
+      },
+      "momentum": {
+        "risk.risk_pct_b": 0.02
+      }
+    },
+    "strategy_sources": {},
+    "notes": "",
+    "fingerprint": "17d0322933f4a0f94d519d43ed20ea36c9c864bd5ed9b60d0231aea0801d5772"
+  }
+]

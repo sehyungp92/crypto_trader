@@ -17,7 +17,7 @@ import structlog
 import yaml
 
 from crypto_trader.cli import _detect_next_round, _update_rounds_manifest
-from crypto_trader.backtest.config import BacktestConfig
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.data.store import ParquetStore
 from crypto_trader.optimize.parallel import evaluate_parallel
 from crypto_trader.optimize.phase_runner import PhaseRunner
@@ -425,12 +425,11 @@ def main() -> None:
     start_date = common_start.date()
     end_date = common_end.date()
 
-    bt_config = BacktestConfig(
+    bt_config = build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=list(SYMBOLS),
         start_date=start_date,
         end_date=end_date,
-        initial_equity=10_000.0,
-        warmup_days=60,
     )
     plugin = ReplayTrendRound4Plugin(
         bt_config,

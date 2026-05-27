@@ -20,7 +20,8 @@ log = structlog.get_logger("optimize.parallel")
 
 # ── Worker process globals (set once per worker via _init_worker) ──────
 
-_worker_store: _CachedStore | None = None
+_worker_stores: dict[tuple[str, tuple[str, ...], tuple[str, ...]], _CachedStore] = {}
+_worker_store: _CachedStore | None = None  # compatibility alias for tests/helpers
 
 
 class _CachedStore:
@@ -48,6 +49,18 @@ class _CachedStore:
         return self._funding.get(coin)
 
 
+def _cache_key(
+    data_dir_str: str,
+    symbols: list[str] | tuple[str, ...],
+    timeframes: list[str] | tuple[str, ...],
+) -> tuple[str, tuple[str, ...], tuple[str, ...]]:
+    return (
+        str(Path(data_dir_str).resolve()),
+        tuple(str(symbol).upper() for symbol in symbols),
+        tuple(str(timeframe) for timeframe in timeframes),
+    )
+
+
 def _init_worker(data_dir_str: str, symbols: list[str], timeframes: list[str]) -> None:
     """Called once per worker process.  Pre-loads all data into _CachedStore."""
     global _worker_store
@@ -69,8 +82,11 @@ def _init_worker(data_dir_str: str, symbols: list[str], timeframes: list[str]) -
 
     from crypto_trader.data.store import ParquetStore
 
-    real_store = ParquetStore(base_dir=Path(data_dir_str))
-    _worker_store = _CachedStore(real_store, symbols, timeframes)
+    key = _cache_key(data_dir_str, symbols, timeframes)
+    if key not in _worker_stores:
+        real_store = ParquetStore(base_dir=Path(data_dir_str))
+        _worker_stores[key] = _CachedStore(real_store, symbols, timeframes)
+    _worker_store = _worker_stores[key]
 
 
 def _deserialize_config(config_dict: dict, strategy_type: str):
@@ -102,14 +118,18 @@ def _evaluate_single(args: tuple) -> tuple[int, ScoredCandidate]:
         hard_rejects,
         strategy_type,
         ceilings,
+        cache_key,
     ) = args
 
     try:
+        store = _worker_stores.get(cache_key)
+        if store is None:
+            raise RuntimeError(f"worker cache is not initialized for {cache_key!r}")
         base_config = _deserialize_config(base_config_dict, strategy_type)
         config = apply_mutations(base_config, merged_mutations)
 
         bt_config = BacktestConfig(**bt_config_dict)
-        bt_result = run(config, bt_config, store=_worker_store, strategy_type=strategy_type)
+        bt_result = run(config, bt_config, store=store, strategy_type=strategy_type)
         metrics = metrics_to_dict(bt_result.metrics)
         score, rejected, reason = composite_score(
             metrics, scoring_weights, hard_rejects, ceilings=ceilings,
@@ -149,6 +169,72 @@ def _bt_config_to_dict(bt: BacktestConfig) -> dict:
     }
 
 
+def _worker_exception_candidate(item: tuple, error: Exception) -> tuple[int, ScoredCandidate]:
+    exp_name = item[1]
+    exp_mutations = item[2]
+    return (
+        item[0],
+        ScoredCandidate(
+            experiment=Experiment(name=exp_name, mutations=exp_mutations),
+            score=0.0,
+            metrics={},
+            rejected=True,
+            reject_reason=f"Worker exception: {error}",
+        ),
+    )
+
+
+def _retry_worker_errors(
+    failed_items: list[tuple],
+    *,
+    data_dir: Path,
+    symbols: list[str],
+    timeframes: list[str],
+    phase: int,
+) -> list[tuple[int, ScoredCandidate]]:
+    """Retry infrastructure failures in fresh one-candidate worker pools.
+
+    ``_evaluate_single`` catches ordinary strategy/config exceptions inside the
+    worker. Exceptions reaching ``future.result()`` are therefore executor-level
+    failures such as a broken process pool. Retrying them in isolated workers
+    prevents unrelated pending candidates from being scored as false rejects.
+    """
+    retry_results: list[tuple[int, ScoredCandidate]] = []
+    for retry_idx, item in enumerate(failed_items, start=1):
+        exp_name = item[1]
+        log.info(
+            "experiment.worker_retry",
+            phase=phase,
+            progress=f"{retry_idx}/{len(failed_items)}",
+            name=exp_name,
+            workers=1,
+        )
+        try:
+            with ProcessPoolExecutor(
+                max_workers=1,
+                initializer=_init_worker,
+                initargs=(str(data_dir), symbols, timeframes),
+            ) as retry_pool:
+                future = retry_pool.submit(_evaluate_single, item)
+                idx, sc = future.result()
+        except Exception as e:
+            log.warning("experiment.worker_retry_failed", name=exp_name, error=str(e))
+            retry_results.append(_worker_exception_candidate(item, e))
+            continue
+
+        log.info(
+            "experiment.worker_retry_complete",
+            phase=phase,
+            progress=f"{retry_idx}/{len(failed_items)}",
+            name=sc.experiment.name,
+            score=f"{sc.score:.4f}",
+            rejected=sc.rejected,
+        )
+        retry_results.append((idx, sc))
+
+    return retry_results
+
+
 def evaluate_parallel(
     candidates: list[Experiment],
     current_mutations: dict[str, Any],
@@ -183,6 +269,7 @@ def evaluate_parallel(
         timeframes = ["30m", "4h"]
     else:
         timeframes = ["15m", "1h", "4h"]
+    cache_key = _cache_key(str(data_dir), symbols, timeframes)
 
     # Build work items — base merge computed once (same for all candidates)
     base_merged = merge_mutations(cumulative_mutations, current_mutations)
@@ -200,6 +287,7 @@ def evaluate_parallel(
             hard_rejects,
             strategy_type,
             ceilings,
+            cache_key,
         ))
 
     # Sequential fallback
@@ -207,8 +295,10 @@ def evaluate_parallel(
         log.info("evaluate.sequential", candidates=len(candidates), phase=phase)
         # Initialise worker store on first call (reuses across candidates & rounds)
         global _worker_store
-        if _worker_store is None:
+        if cache_key not in _worker_stores:
             _init_worker(str(data_dir), symbols, timeframes)
+        if cache_key in _worker_stores:
+            _worker_store = _worker_stores[cache_key]
         results = []
         for item in work_items:
             log.info(
@@ -232,6 +322,7 @@ def evaluate_parallel(
     )
 
     results: list[tuple[int, ScoredCandidate]] = []
+    failed_items: list[tuple] = []
     with ProcessPoolExecutor(
         max_workers=max_workers,
         initializer=_init_worker,
@@ -253,18 +344,19 @@ def evaluate_parallel(
                 results.append((idx, sc))
             except Exception as e:
                 exp_name = item[1]
-                exp_mutations = item[2]
                 log.warning("experiment.worker_error", name=exp_name, error=str(e))
-                results.append((
-                    item[0],
-                    ScoredCandidate(
-                        experiment=Experiment(name=exp_name, mutations=exp_mutations),
-                        score=0.0,
-                        metrics={},
-                        rejected=True,
-                        reject_reason=f"Worker exception: {e}",
-                    ),
-                ))
+                failed_items.append(item)
+
+    if failed_items:
+        results.extend(
+            _retry_worker_errors(
+                failed_items,
+                data_dir=Path(data_dir),
+                symbols=list(symbols),
+                timeframes=list(timeframes),
+                phase=phase,
+            )
+        )
 
     results.sort(key=lambda x: x[0])
     return [sc for _, sc in results]

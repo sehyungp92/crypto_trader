@@ -63,6 +63,12 @@ class TestBreakoutConfigDefaults:
         assert cfg.profile.num_bins == 50
         assert cfg.profile.hvn_threshold_pct == 1.2
 
+    def test_reentry_max_wait_bars_default(self):
+        """Re-entry state expires after 12 M30 bars by default."""
+        cfg = BreakoutConfig()
+        assert cfg.reentry.max_wait_bars == 12
+        assert cfg.reentry.risk_scale == 1.0
+
 
 class TestBreakoutConfigSerialization:
     """Test to_dict / from_dict round-trip and partial deserialization."""
@@ -100,6 +106,22 @@ class TestBreakoutConfigSerialization:
         assert cfg.profile.lookback_bars == 96
         assert cfg.profile.num_bins == 100
         assert cfg.risk.risk_pct_b == 0.01
+
+    def test_from_dict_old_reentry_config_uses_max_wait_default(self):
+        """Older configs without max_wait_bars keep loading with the new default."""
+        cfg = BreakoutConfig.from_dict({
+            "symbols": ["BTC"],
+            "reentry": {
+                "enabled": True,
+                "cooldown_bars": 4,
+                "max_loss_r": 1.0,
+                "max_reentries": 2,
+                "min_confluences_override": 0,
+            },
+        })
+        assert cfg.reentry.cooldown_bars == 4
+        assert cfg.reentry.max_wait_bars == 12
+        assert cfg.reentry.risk_scale == 1.0
 
     def test_tuple_fields_serialize(self):
         """Tuple fields (major_symbols) serialize as lists in to_dict."""

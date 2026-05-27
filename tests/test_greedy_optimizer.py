@@ -1,8 +1,10 @@
 """Tests for greedy_optimizer — forward selection with baseline, pruning, structured rounds."""
 
+import json
+
 import pytest
 
-from crypto_trader.optimize.greedy_optimizer import run_greedy, _delta_ratio
+from crypto_trader.optimize.greedy_optimizer import run_greedy, _delta_ratio, _save_checkpoint
 from crypto_trader.optimize.types import Experiment, GreedyRound, ScoredCandidate
 
 
@@ -206,6 +208,35 @@ class TestRunGreedy:
 
         # Checkpoint is cleaned up on success
         assert len(result.accepted_experiments) >= 1
+
+    def test_checkpoint_stores_contract_payload(self, tmp_path):
+        checkpoint_path = tmp_path / "greedy_checkpoint.json"
+        candidate = ScoredCandidate(
+            experiment=Experiment("A", {"a": 1}),
+            score=0.8,
+            metrics={"total_trades": 10.0},
+        )
+        context = json.dumps({
+            "contract_hash": "hash_a",
+            "contract": {"contract_hash": "hash_a", "profile_hash": "profile"},
+        })
+
+        _save_checkpoint(
+            checkpoint_path,
+            [candidate],
+            [],
+            {"a": 1},
+            0.8,
+            1,
+            "identity",
+            [GreedyRound(1, 1, "A", 0.8, 70.0, True)],
+            context,
+        )
+
+        with open(checkpoint_path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+        assert payload["contract_hash"] == "hash_a"
+        assert payload["contract"] == {"contract_hash": "hash_a", "profile_hash": "profile"}
 
     def test_checkpoint_resume(self, tmp_path):
         """Running greedy again with same checkpoint_path resumes correctly."""

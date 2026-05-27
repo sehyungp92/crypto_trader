@@ -9,9 +9,9 @@ services:
     environment:
       POSTGRES_DB: trading
       POSTGRES_USER: trading_admin
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_READER_PASSWORD: ${POSTGRES_READER_PASSWORD}
-      POSTGRES_WRITER_PASSWORD: ${POSTGRES_WRITER_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_READER_PASSWORD: ${POSTGRES_READER_PASSWORD:?POSTGRES_READER_PASSWORD must be set}
+      POSTGRES_WRITER_PASSWORD: ${POSTGRES_WRITER_PASSWORD:?POSTGRES_WRITER_PASSWORD must be set}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./infra/postgres/init-db.sh:/docker-entrypoint-initdb.d/00-init-db.sh
@@ -54,10 +54,13 @@ services:
       - ./config/strategies:/app/config/strategies:ro
       # Output directory for logs/reports
       - trader-output:/app/output
+      # Promoted portfolio round 3 bundle (deployment source of truth)
+      - ./output/portfolio/round_3:/app/output/portfolio/round_3:ro
+      - ./output/portfolio/rounds_manifest.json:/app/output/portfolio/rounds_manifest.json:ro
     environment:
       - TZ=UTC
       - PYTHONUNBUFFERED=1
-      - POSTGRES_DSN=postgresql://trading_writer:${POSTGRES_WRITER_PASSWORD}@postgres:5432/trading
+      - POSTGRES_DSN=postgresql://trading_writer:${POSTGRES_WRITER_PASSWORD:?POSTGRES_WRITER_PASSWORD must be set}@postgres:5432/trading
     logging:
       driver: json-file
       options:
@@ -144,7 +147,7 @@ services:
       DB_PORT: "5432"
       DB_NAME: trading
       DB_USER: trading_reader
-      DB_PASSWORD: ${POSTGRES_READER_PASSWORD}
+      DB_PASSWORD: ${POSTGRES_READER_PASSWORD:?POSTGRES_READER_PASSWORD must be set}
     ports:
       - "3000:3000"
     depends_on:

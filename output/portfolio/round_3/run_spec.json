@@ -1,0 +1,76 @@
+{
+  "round": 3,
+  "strategy_type": "portfolio",
+  "promotion_type": "portfolio_oos_repair_adoption",
+  "created_at": "2026-05-27T16:16:05.177138+00:00",
+  "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+  "source_followup_csv": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_2\\oos_followup_second_phase\\ranked_results.csv",
+  "source_snapshots": {
+    "portfolio": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\portfolio_config.pre_adoption.json",
+    "strategies": {
+      "momentum": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\momentum_round3_optimized_config.pre_adoption.json",
+      "trend": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\trend_round3_optimized_config.pre_adoption.json",
+      "breakout": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\breakout_round3_optimized_config.pre_adoption.json"
+    }
+  },
+  "policy": {
+    "strategy.momentum.symbol_filter.sol_direction": "short_only",
+    "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+    "strategy.momentum.exits.proof_lock_min_bars": 3,
+    "portfolio.symbol_collision": "cap",
+    "portfolio.symbol_exposure_cap_R": 2.5,
+    "portfolio.dd_tiers": [
+      [
+        0.06,
+        0.75
+      ],
+      [
+        0.09,
+        0.5
+      ],
+      [
+        0.12,
+        0.25
+      ],
+      [
+        0.15,
+        0.0
+      ]
+    ],
+    "strategy.trend.setup.orderly_max_body_frac": 1.08,
+    "strategy.trend.setup.min_setup_score_a": 2.5,
+    "strategy.breakout.setup.body_ratio_min": 0.715,
+    "risk_scale.momentum": 1.4,
+    "risk_scale.trend": 1.4,
+    "risk_scale.breakout": 1.4
+  },
+  "windows": {
+    "in_sample": {
+      "start": "2026-02-25",
+      "end": "2026-04-20"
+    },
+    "out_of_sample": {
+      "start": "2026-04-21",
+      "end": "2026-05-23"
+    },
+    "full": {
+      "start": "2026-02-25",
+      "end": "2026-05-23"
+    }
+  },
+  "contract_hash": "2e8da4933cc81c372822413a3b1357b0776f34ea31c6bc6317d2aae2748820b6",
+  "profile_id": "live_parity_v1",
+  "profile_hash": "599bce679e21017b6b824d80ec50ca321eb25a164c37e91a26d61da264672b6f",
+  "required_timeframes": [
+    "15m",
+    "30m",
+    "1h",
+    "4h",
+    "1d"
+  ],
+  "symbols": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ]
+}

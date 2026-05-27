@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime
+from typing import Any
 
 from .config import BreakoutLimitParams
 
@@ -18,6 +20,23 @@ class RiskManager:
         self._trades_today: int = 0
         self._current_day: object | None = None  # date
         self._current_week: int | None = None  # ISO week number
+
+    def snapshot_state(self) -> dict[str, Any]:
+        """Return the mutable session-risk counters."""
+        return {
+            "_daily_pnl": self._daily_pnl,
+            "_weekly_pnl": self._weekly_pnl,
+            "_consecutive_losses": self._consecutive_losses,
+            "_trades_today": self._trades_today,
+            "_current_day": deepcopy(self._current_day),
+            "_current_week": self._current_week,
+        }
+
+    def restore_state(self, snapshot: dict[str, Any]) -> None:
+        """Restore counters captured by :meth:`snapshot_state`."""
+        for name, value in snapshot.items():
+            if hasattr(self, name):
+                setattr(self, name, deepcopy(value))
 
     def is_session_stopped(self, equity: float, current_time: datetime) -> tuple[bool, str]:
         """Return ``(True, reason)`` if any session limit has been breached."""

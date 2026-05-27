@@ -1,0 +1,11 @@
+Portfolio phase-auto round 2
+Output: C:\Users\sehyu\Documents\Other\Projects\crypto_trader\output\portfolio\round_2
+Framework: PhaseRunner + PortfolioRound2PhasedPlugin
+Max workers: 2
+Development window: 2026-02-25 to 2026-04-20
+Holdout window: 2026-04-21 to 2026-05-23 (validation only)
+Portfolio round 2 complete
+Development: trades=45, return=66.65%, PF=6.32, DD=3.85%
+Holdout: trades=39, return=33.74%, PF=2.55, DD=5.42%
+Full: trades=84, return=120.87%, PF=3.66, DD=4.65%
+Immutable score: 0.8464

@@ -151,7 +151,9 @@ class TestHyperliquidBroker:
             qty=0.1,
             stop_price=49000.0,
             tag="protective_stop",
+            ttl_bars=2,
             metadata={"strategy_id": "momentum"},
+            _bars_alive=1,
         )
         broker._orders["local_1"] = tracked
         broker._oid_map["100"] = "local_1"
@@ -164,7 +166,10 @@ class TestHyperliquidBroker:
         assert len(orders) == 1
         assert orders[0].order_id == "local_1"
         assert orders[0].tag == "protective_stop"
+        assert orders[0].ttl_bars == 2
+        assert orders[0]._bars_alive == 1
         assert orders[0].metadata["strategy_id"] == "momentum"
+        assert orders[0].metadata["ttl_bars_alive"] == 1
 
     def test_submit_order_read_only(self):
         broker, info = _make_broker(private_key=None)

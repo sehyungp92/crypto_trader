@@ -14,6 +14,7 @@ from typing import Any
 import pandas as pd
 
 from crypto_trader.backtest.config import BacktestConfig
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.optimize.breakout_plugin import BreakoutPlugin, PHASE_NAMES
 from crypto_trader.optimize.parallel import evaluate_parallel
 from crypto_trader.optimize.types import (
@@ -445,11 +446,11 @@ class BreakoutRound3PreRound1Plugin(BreakoutPlugin):
 def build_backtest_config(data_dir: Path) -> tuple[BacktestConfig, dict[str, str]]:
     """Build a full-span backtest config for the shared breakout data window."""
     start_dt, end_dt = detect_common_window(data_dir)
-    bt_cfg = BacktestConfig(
+    bt_cfg = build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=list(SYMBOLS),
         start_date=start_dt.date(),
         end_date=end_dt.date(),
-        initial_equity=10_000.0,
     )
     metadata = {
         "common_start_utc": start_dt.isoformat(),

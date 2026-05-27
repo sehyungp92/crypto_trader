@@ -1,0 +1,108 @@
+{
+  "description": "Portfolio round 2 phased auto run using the latest optimized momentum, trend, and breakout configs as the starting baseline.",
+  "symbols": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ],
+  "max_workers": 2,
+  "framework": "crypto_trader.optimize.phase_runner.PhaseRunner",
+  "plugin": "crypto_trader.optimize.portfolio_round2_phased.PortfolioRound2PhasedPlugin",
+  "baseline_portfolio_config": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\portfolio_config.json",
+  "development_window": {
+    "start": "2026-02-25",
+    "end": "2026-04-20"
+  },
+  "holdout_window": {
+    "start": "2026-04-21",
+    "end": "2026-05-23",
+    "usage": "validation only; excluded from optimization score"
+  },
+  "full_window": {
+    "start": "2026-02-25",
+    "end": "2026-05-23"
+  },
+  "score_component_limit": 7,
+  "immutable_score_weights": {
+    "return": 0.3,
+    "frequency": 0.2,
+    "edge_quality": 0.18,
+    "capture": 0.1,
+    "drawdown_resilience": 0.1,
+    "rule_efficiency": 0.06,
+    "strategy_balance": 0.06
+  },
+  "hard_rejects": {
+    "total_trades": {
+      "operator": ">=",
+      "threshold": 42.0
+    },
+    "profit_factor": {
+      "operator": ">=",
+      "threshold": 1.55
+    },
+    "expectancy_r": {
+      "operator": ">=",
+      "threshold": 0.2
+    },
+    "max_drawdown_pct": {
+      "operator": "<=",
+      "threshold": 8.5
+    },
+    "exit_efficiency": {
+      "operator": ">=",
+      "threshold": 0.3
+    }
+  },
+  "phase_objectives": {
+    "1": "Remove or harden the weakest SOL and confirmation cohorts without collapsing frequency.",
+    "2": "Reduce giveback and improve exit capture with deployable strategy config knobs.",
+    "3": "Add real trades through guarded strategy-level frequency probes.",
+    "4": "Improve cross-strategy interaction so portfolio rules block crowding rather than good alpha.",
+    "5": "Lean risk aggressively but not recklessly after structure has been chosen."
+  },
+  "contract": {
+    "kind": "portfolio_phased_auto",
+    "profile": "LIVE_PARITY_PROFILE",
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "max_workers": 2,
+    "development_window": {
+      "start": "2026-02-25",
+      "end": "2026-04-20"
+    },
+    "holdout_window": {
+      "start": "2026-04-21",
+      "end": "2026-05-23"
+    },
+    "full_window": {
+      "start": "2026-02-25",
+      "end": "2026-05-23"
+    },
+    "score_components": [
+      "return",
+      "frequency",
+      "edge_quality",
+      "capture",
+      "drawdown_resilience",
+      "rule_efficiency",
+      "strategy_balance"
+    ],
+    "source_hashes": {
+      "momentum": "28071850c4b7aaa1f5daabccbebc22799943573d300014e08eb3d1f3894afbae",
+      "trend": "4c72fdb0098392ca965e85f0c02e5a45d4de5886703ea76703ce0e815c50f624",
+      "breakout": "95a3e4f6c6ecc1c9e96020bf5c6b598035dd4ebd4e019dbb2c2583d1fc5fb8a0",
+      "portfolio": "e5971be50cfb5a171d1aa086cd81d02f4cd345bd2da212cb6281852fd7493110"
+    },
+    "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772"
+  },
+  "notes": [
+    "Strategy mutations are evaluated with real portfolio backtests on the development window.",
+    "Portfolio structural mutations use deployable PortfolioConfig fields only.",
+    "The post-2026-04-20 holdout is reported after each phase but never included in score.",
+    "Scoring has seven components: return, frequency, edge quality, capture, drawdown resilience, rule efficiency, and strategy balance."
+  ]
+}

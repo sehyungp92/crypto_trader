@@ -1,0 +1,14 @@
+{
+  "accepted": [
+    "risk_all_115_dd_guarded"
+  ],
+  "rejected": [],
+  "final_score": 0.8463956119246269,
+  "base_score": 0.8102259776489955,
+  "rounds": 1,
+  "elapsed_seconds": 104.84506797790527,
+  "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772",
+  "final_validation": {
+    "status": "passed"
+  }
+}

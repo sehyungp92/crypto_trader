@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timezone
 
 import structlog
@@ -33,7 +34,7 @@ from .config import BreakoutConfig
 from .confirmation import ConfirmationDetector
 from .context import ContextAnalyzer
 from .entry import EntryGenerator
-from .exits import ExitManager
+from .exits import BreakoutExitState, ExitManager
 from .profile import VolumeProfiler, VolumeProfileResult
 from .risk import RiskManager
 from .setup import BreakoutDetector
@@ -42,6 +43,7 @@ from .stops import StopPlacer
 from .trail import TrailManager
 from crypto_trader.instrumentation.collector import InstrumentationCollector
 from crypto_trader.instrumentation.quality import ProcessQualityScorer
+from crypto_trader.strategy.snapshot import dataclass_from_plain, to_plain
 
 log = structlog.get_logger()
 
@@ -134,6 +136,75 @@ class BreakoutStrategy:
     @property
     def journal(self) -> TradeJournal:
         return self._journal
+
+    def snapshot_state(self) -> dict:
+        return {
+            "position_meta": to_plain(self._position_meta),
+            "exit_states": to_plain(getattr(self._exit_manager, "_states", {})),
+            "trail_stops": to_plain(getattr(self._trail_manager, "_last_stops", {})),
+            "recent_exits": to_plain(self._recent_exits),
+            "reentry_count": to_plain(self._reentry_count),
+            "m30_bar_count": deepcopy(self._m30_bar_count),
+            "m30_indicators": deepcopy(self._m30_indicators),
+            "h4_indicators": deepcopy(self._h4_indicators),
+            "m30_incremental": deepcopy(self._m30_inc),
+            "h4_incremental": deepcopy(self._h4_inc),
+            "profile_bar_count": deepcopy(self._profile_bar_count),
+            "current_profile": deepcopy(self._current_profile),
+            "balance_zones": deepcopy(getattr(self._balance_detector, "_zones", {})),
+            "pending_retests": deepcopy(getattr(self._confirmation_detector, "_pending", {})),
+            "risk_manager": self._risk_manager.snapshot_state(),
+            "blocked_relaxed_body_signals": deepcopy(self._blocked_relaxed_body_signals),
+            "detector_blocked_relaxed_body_signals": deepcopy(
+                getattr(self._breakout_detector, "_blocked_relaxed_body_signals", [])
+            ),
+            "journal": deepcopy(self._journal),
+        }
+
+    def restore_state(self, snapshot: dict) -> None:
+        self._position_meta = {
+            sym: dataclass_from_plain(_PositionMeta, data)
+            for sym, data in snapshot.get("position_meta", {}).items()
+        }
+        self._exit_manager._states = {
+            sym: dataclass_from_plain(BreakoutExitState, data)
+            for sym, data in snapshot.get("exit_states", {}).items()
+        }
+        self._trail_manager._last_stops = dict(snapshot.get("trail_stops", {}))
+        self._recent_exits = dict(snapshot.get("recent_exits", {}))
+        self._reentry_count = {
+            sym: int(count) for sym, count in snapshot.get("reentry_count", {}).items()
+        }
+        if "m30_bar_count" in snapshot:
+            self._m30_bar_count = deepcopy(snapshot["m30_bar_count"])
+        if "m30_indicators" in snapshot:
+            self._m30_indicators = deepcopy(snapshot["m30_indicators"])
+        if "h4_indicators" in snapshot:
+            self._h4_indicators = deepcopy(snapshot["h4_indicators"])
+        if "m30_incremental" in snapshot:
+            self._m30_inc = deepcopy(snapshot["m30_incremental"])
+        if "h4_incremental" in snapshot:
+            self._h4_inc = deepcopy(snapshot["h4_incremental"])
+        if "profile_bar_count" in snapshot:
+            self._profile_bar_count = deepcopy(snapshot["profile_bar_count"])
+        if "current_profile" in snapshot:
+            self._current_profile = deepcopy(snapshot["current_profile"])
+        if "balance_zones" in snapshot:
+            self._balance_detector._zones = deepcopy(snapshot["balance_zones"])
+        if "pending_retests" in snapshot:
+            self._confirmation_detector._pending = deepcopy(snapshot["pending_retests"])
+        if "risk_manager" in snapshot:
+            self._risk_manager.restore_state(snapshot["risk_manager"])
+        if "blocked_relaxed_body_signals" in snapshot:
+            self._blocked_relaxed_body_signals = deepcopy(
+                snapshot["blocked_relaxed_body_signals"]
+            )
+        if "detector_blocked_relaxed_body_signals" in snapshot:
+            self._breakout_detector._blocked_relaxed_body_signals = deepcopy(
+                snapshot["detector_blocked_relaxed_body_signals"]
+            )
+        if "journal" in snapshot:
+            self._journal = deepcopy(snapshot["journal"])
 
     def on_init(self, ctx: StrategyContext) -> None:
         self._ctx = ctx
@@ -337,16 +408,9 @@ class BreakoutStrategy:
         self._manage_positions(bar, sym, ctx, m30_bars, m30_ind)
 
         entry_window_open = self._entry_window_open(bar.timestamp, ctx)
-        self._collector.record_gate(sym, "entry_window", entry_window_open,
-            "before_measurement_start" if not entry_window_open else "")
-        if not entry_window_open:
-            self._confirmation_detector.clear_pending(sym)
-            self._collector.end_bar(sym)
-            return
 
         # --- Check pending retest (Model 2) ---
-        pos = ctx.broker.get_position(sym)
-        if pos is None and self._confirmation_detector.has_pending(sym):
+        if self._confirmation_detector.has_pending(sym):
             pending_setup = self._confirmation_detector.get_pending_setup(sym)
             confirmation = self._confirmation_detector.check_retest(
                 sym=sym,
@@ -370,49 +434,13 @@ class BreakoutStrategy:
                     setup_confluences=list(pending_setup.confluences),
                     setup_room_r=pending_setup.room_r,
                     funding_rate=0.0)
-                self._execute_entry(
+                self._try_execute_confirmed_entry(
                     bar, sym, ctx, pending_setup, confirmation, m30_ind,
+                    entry_window_open=entry_window_open,
                     retest_bar=bar,
                 )
                 self._collector.end_bar(sym)
                 return
-
-        # --- New setup (if flat, no pending retest) ---
-        has_pos = pos is not None
-        self._collector.record_gate(sym, "position_check", not has_pos,
-            "position_exists" if has_pos else "")
-        if has_pos:
-            self._collector.end_bar(sym)
-            return
-
-        # Re-entry evaluation
-        is_reentry = False
-        recent = self._recent_exits.get(sym, {})
-        if recent and self._cfg.reentry.enabled:
-            bars_since = self._m30_bar_count[sym] - recent.get("bar_idx", 0)
-            loss_r = abs(recent.get("loss_r", 0))
-            count = self._reentry_count.get(sym, 0)
-
-            if (bars_since >= self._cfg.reentry.cooldown_bars
-                    and loss_r <= self._cfg.reentry.max_loss_r
-                    and count < self._cfg.reentry.max_reentries):
-                is_reentry = True
-            else:
-                self._collector.record_gate(sym, "reentry_eval", False, "cooldown_or_max_reached")
-                self._collector.end_bar(sym)
-                return  # Still in cooldown or max reentries reached
-        elif recent:
-            self._collector.record_gate(sym, "reentry_eval", False, "reentry_disabled")
-            self._collector.end_bar(sym)
-            return  # Re-entry disabled, skip if recently stopped
-
-        # Risk check
-        equity = ctx.broker.get_equity()
-        stopped, stop_reason = self._risk_manager.is_session_stopped(equity, bar.timestamp)
-        self._collector.record_gate(sym, "risk_check", not stopped, stop_reason)
-        if stopped:
-            self._collector.end_bar(sym)
-            return
 
         # H4 context bias
         h4_ind = self._h4_indicators.get(sym)
@@ -502,7 +530,8 @@ class BreakoutStrategy:
             self._collector.end_bar(sym)
             return
 
-        # Model 1: immediate entry (consume zone on entry)
+        # Model 1: immediate entry signal. Zone lifecycle remains market-derived;
+        # execution state must not mutate the active signal inventory.
         if self._cfg.confirmation.enable_model1:
             confirmation = self._confirmation_detector.check_breakout_close(
                 bar=bar, setup=setup, m30_ind=m30_ind,
@@ -511,31 +540,125 @@ class BreakoutStrategy:
             self._collector.record_gate(sym, "model1_confirmation", model1_ok,
                 "model1_not_confirmed" if not model1_ok else "")
             if model1_ok:
-                signal_strength = (setup.room_r or 1.0) * (1.0 if setup.grade == SetupGrade.A else 0.7)
                 self._collector.record_signal_factor(sym, "setup_room_r", setup.room_r or 0.0)
                 self._collector.record_signal_factor(sym, "confluences", len(setup.confluences) / 8.0)
 
-                entered = self._execute_entry(
+                self._try_execute_confirmed_entry(
                     bar, sym, ctx, setup, confirmation, m30_ind,
+                    entry_window_open=entry_window_open,
                     retest_bar=None,
                 )
-                if entered:
-                    self._balance_detector.consume_zone(sym, setup.balance_zone)
-                if is_reentry and entered:
-                    self._reentry_count[sym] = self._reentry_count.get(sym, 0) + 1
                 self._collector.end_bar(sym)
                 return
 
-        # Model 2: register for retest monitoring (consume zone after registration)
+        # Model 2: register for retest monitoring without retiring the source zone.
         if self._cfg.confirmation.enable_model2:
             self._confirmation_detector.register_breakout(
                 sym=sym,
                 setup=setup,
                 bar_idx=self._m30_bar_count[sym],
             )
-            self._balance_detector.consume_zone(sym, setup.balance_zone)
 
         self._collector.end_bar(sym)
+
+    def _try_execute_confirmed_entry(
+        self,
+        bar: Bar,
+        sym: str,
+        ctx: StrategyContext,
+        setup,
+        confirmation,
+        m30_ind: IndicatorSnapshot,
+        entry_window_open: bool,
+        retest_bar: Bar | None,
+    ) -> bool:
+        """Submit a confirmed signal only if execution-state gates allow it."""
+        self._collector.record_gate(sym, "entry_window", entry_window_open,
+            "before_measurement_start" if not entry_window_open else "")
+        if not entry_window_open:
+            return False
+
+        pos = ctx.broker.get_position(sym)
+        has_pos = pos is not None
+        self._collector.record_gate(sym, "position_check", not has_pos,
+            "position_exists" if has_pos else "")
+        if has_pos:
+            return False
+
+        is_reentry, reentry_block_reason = self._evaluate_reentry_for_execution(
+            sym,
+            setup.direction,
+        )
+        self._collector.record_gate(sym, "reentry_eval", reentry_block_reason == "",
+            reentry_block_reason)
+        if reentry_block_reason:
+            return False
+
+        equity = ctx.broker.get_equity()
+        stopped, stop_reason = self._risk_manager.is_session_stopped(equity, bar.timestamp)
+        self._collector.record_gate(sym, "risk_check", not stopped, stop_reason)
+        if stopped:
+            return False
+
+        execution_setup = setup
+        if is_reentry and self._cfg.reentry.risk_scale != 1.0:
+            execution_setup = replace(
+                setup,
+                risk_scale=setup.risk_scale * self._cfg.reentry.risk_scale,
+            )
+
+        entered = self._execute_entry(
+            bar, sym, ctx, execution_setup, confirmation, m30_ind,
+            retest_bar=retest_bar,
+        )
+        if is_reentry and entered:
+            self._reentry_count[sym] = self._reentry_count.get(sym, 0) + 1
+        return entered
+
+    def _evaluate_reentry_for_execution(
+        self,
+        sym: str,
+        setup_direction: Side,
+    ) -> tuple[bool, str]:
+        """Return (is_reentry, block_reason) for execution-only reentry gates."""
+        recent = self._recent_exits.get(sym) or {}
+        if not recent:
+            return False, ""
+
+        bars_since = self._m30_bar_count[sym] - recent.get("bar_idx", 0)
+        max_wait = self._cfg.reentry.max_wait_bars
+        if max_wait > 0 and bars_since > max_wait:
+            self._clear_reentry_state(sym)
+            return False, ""
+
+        recent_side = recent.get("side")
+        recent_side_value = getattr(recent_side, "value", recent_side)
+        if recent_side_value != setup_direction.value:
+            self._clear_reentry_state(sym)
+            return False, ""
+
+        if not self._cfg.reentry.enabled:
+            self._clear_reentry_state(sym)
+            return False, ""
+
+        loss_r = abs(recent.get("loss_r", 0))
+        if loss_r > self._cfg.reentry.max_loss_r:
+            self._clear_reentry_state(sym)
+            return False, ""
+
+        if bars_since < self._cfg.reentry.cooldown_bars:
+            return False, "reentry_cooldown"
+
+        count = self._reentry_count.get(sym, 0)
+        if count >= self._cfg.reentry.max_reentries:
+            self._clear_reentry_state(sym)
+            return False, ""
+
+        return True, ""
+
+    def _clear_reentry_state(self, sym: str) -> None:
+        self._recent_exits[sym] = {}
+        self._reentry_count[sym] = 0
 
     # ─── Entry execution ────────────────────────────────────────────────
 
@@ -948,7 +1071,6 @@ class BreakoutStrategy:
         # Clean up exit/trail state
         exit_state = self._exit_manager.remove(sym)
         self._trail_manager.remove(sym)
-        self._confirmation_detector.clear_pending(sym)
 
         # Enrich trade
         if meta is not None:

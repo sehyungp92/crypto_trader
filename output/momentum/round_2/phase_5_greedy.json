@@ -1,20 +1,28 @@
 {
-  "accepted": [],
-  "rejected": [
-    "sol_long_only",
-    "risk_a_0225",
-    "risk_a_025",
-    "risk_b_014",
-    "risk_b_015",
-    "corr_risk_018",
-    "corr_risk_022",
-    "gross_risk_045",
-    "gross_risk_050",
-    "daily_loss_020",
-    "max_consecutive_losses_3"
+  "accepted": [
+    "room_b_110"
   ],
-  "final_score": 0.783712110691766,
-  "base_score": 0.783712110691766,
-  "rounds": 1,
-  "elapsed_seconds": 0.0
+  "rejected": [
+    "min_b_conf_0",
+    "bias_h1_1",
+    "bias_h4_1",
+    "h1_adx_8",
+    "adx_chop_8",
+    "rsi_pullback_45",
+    "fib_high_0786",
+    "reentry_cooldown_2",
+    "reentry_max_3",
+    "guarded_reentry_2",
+    "daily_max_6",
+    "max_positions_4",
+    "frequency_stack_quality"
+  ],
+  "final_score": 0.7368219196866888,
+  "base_score": 0.7310443925566587,
+  "rounds": 2,
+  "elapsed_seconds": 170.00478553771973,
+  "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258",
+  "final_validation": {
+    "status": "passed"
+  }
 }

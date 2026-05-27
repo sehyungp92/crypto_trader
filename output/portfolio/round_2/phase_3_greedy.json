@@ -1,0 +1,12 @@
+{
+  "accepted": [],
+  "rejected": [],
+  "final_score": 0.805274937032392,
+  "base_score": 0.805274937032392,
+  "rounds": 1,
+  "elapsed_seconds": 74.64431881904602,
+  "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772",
+  "final_validation": {
+    "status": "passed"
+  }
+}

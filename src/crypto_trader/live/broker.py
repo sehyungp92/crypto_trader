@@ -49,6 +49,7 @@ class HyperliquidBroker:
         max_slippage_pct: float = 0.005,
         lot_sizes: dict[str, float] | None = None,
         tick_sizes: dict[str, float] | None = None,
+        rate_limit_per_sec: float = 5.0,
     ) -> None:
         from hyperliquid.info import Info
         from hyperliquid.utils import constants
@@ -74,10 +75,11 @@ class HyperliquidBroker:
         self._orders: dict[str, Order] = {}  # local_id -> Order
         self._oid_map: dict[str, str] = {}   # exchange_oid -> local_id
         self._local_to_oid: dict[str, str] = {}  # local_id -> exchange_oid
+        self._next_local_order_seq = 1
 
         # Rate limiting
         self._last_request_time = 0.0
-        self._rate_limit_interval = 0.2  # 5 req/sec default
+        self._rate_limit_interval = 1.0 / rate_limit_per_sec if rate_limit_per_sec > 0 else 0.2
 
         log.info(
             "broker.init",
@@ -87,6 +89,8 @@ class HyperliquidBroker:
 
     def submit_order(self, order: Order) -> str:
         """Submit an order to Hyperliquid. Returns local order_id."""
+        self._ensure_local_order_id(order)
+
         if self._exchange is None:
             log.warning("broker.read_only", msg="Cannot submit orders without private key")
             order.status = OrderStatus.REJECTED
@@ -214,20 +218,33 @@ class HyperliquidBroker:
                 tracked_order = self._orders.get(local_id)
 
                 side = Side.LONG if raw.get("side", "") == "B" else Side.SHORT
+                metadata = (
+                    dict(tracked_order.metadata)
+                    if tracked_order is not None
+                    else {}
+                )
+                bars_alive = tracked_order._bars_alive if tracked_order is not None else 0
+                if tracked_order is not None and tracked_order.ttl_bars is not None:
+                    metadata.setdefault("ttl_bars_alive", bars_alive)
+
                 order = Order(
                     order_id=local_id,
                     symbol=coin,
                     side=side,
-                    order_type=OrderType.LIMIT,
+                    order_type=tracked_order.order_type if tracked_order is not None else OrderType.LIMIT,
                     qty=float(raw.get("sz", "0")),
-                    limit_price=float(raw.get("limitPx", "0")),
+                    limit_price=(
+                        tracked_order.limit_price
+                        if tracked_order is not None
+                        else float(raw.get("limitPx", "0"))
+                    ),
+                    stop_price=tracked_order.stop_price if tracked_order is not None else None,
                     status=OrderStatus.WORKING,
                     tag=tracked_order.tag if tracked_order is not None else "",
-                    metadata=(
-                        dict(tracked_order.metadata)
-                        if tracked_order is not None
-                        else {}
-                    ),
+                    time_in_force=tracked_order.time_in_force if tracked_order is not None else "GTC",
+                    ttl_bars=tracked_order.ttl_bars if tracked_order is not None else None,
+                    metadata=metadata,
+                    _bars_alive=bars_alive,
                 )
                 orders.append(order)
 
@@ -265,6 +282,13 @@ class HyperliquidBroker:
                 )
                 oid = str(raw.get("oid", ""))
                 local_id = self._oid_map.get(oid, oid)
+                exchange_fill_id = str(
+                    raw.get("hash")
+                    or raw.get("tid")
+                    or raw.get("fillId")
+                    or raw.get("id")
+                    or ""
+                )
                 tag = ""
                 if local_id in self._orders:
                     tag = self._orders[local_id].tag
@@ -278,6 +302,9 @@ class HyperliquidBroker:
                     commission=float(raw.get("fee", "0")),
                     timestamp=fill_ts,
                     tag=tag,
+                    exchange_order_id=oid,
+                    exchange_fill_id=exchange_fill_id,
+                    raw=dict(raw),
                 ))
 
         except Exception:
@@ -287,7 +314,8 @@ class HyperliquidBroker:
 
     def get_order_owner(self, order_id: str) -> str | None:
         """Get the strategy_id that submitted an order."""
-        order = self._orders.get(order_id)
+        local_id = self._oid_map.get(str(order_id), order_id)
+        order = self._orders.get(local_id)
         if order:
             return order.metadata.get("strategy_id")
         return None
@@ -295,6 +323,18 @@ class HyperliquidBroker:
     # -----------------------------------------------------------------------
     # Private helpers
     # -----------------------------------------------------------------------
+
+    def _ensure_local_order_id(self, order: Order) -> None:
+        """Guarantee a non-empty local/client order id before any live action."""
+        if order.order_id:
+            local_id = order.order_id
+        else:
+            strategy_id = str(order.metadata.get("strategy_id") or "unknown")
+            local_id = f"hl_{strategy_id}_{order.symbol}_{self._next_local_order_seq:06d}"
+            self._next_local_order_seq += 1
+            order.order_id = local_id
+
+        order.metadata["client_order_id"] = str(order.metadata.get("client_order_id") or local_id)
 
     def _submit_market(self, symbol: str, is_buy: bool, sz: float, order: Order) -> dict:
         """Submit a market order (IOC limit at slippage-adjusted price)."""

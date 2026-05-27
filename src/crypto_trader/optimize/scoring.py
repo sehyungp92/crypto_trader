@@ -34,6 +34,12 @@ def normalize_capture(metrics: dict[str, float]) -> float:
     return max(min(eff, 1.0), 0.0)
 
 
+def normalize_expectancy(metrics: dict[str, float]) -> float:
+    """Average R per trade. 0.6R/trade = 1.0, negative = 0.0."""
+    expectancy = metrics.get("expectancy_r", 0.0)
+    return min(max(expectancy / 0.6, 0.0), 1.0)
+
+
 def normalize_hold(metrics: dict[str, float]) -> float:
     """Gaussian centered at 12 M15 bars (~3 hours). Penalizes too short/long."""
     bars = metrics.get("avg_bars_held", 0.0)
@@ -78,6 +84,7 @@ NORMALIZERS: dict[str, Any] = {
     "risk": normalize_risk,
     "edge": normalize_edge,
     "capture": normalize_capture,
+    "expectancy": normalize_expectancy,
     "hold": normalize_hold,
     "entry_quality": normalize_entry_quality,
     "exit_efficiency": normalize_exit_efficiency,
@@ -130,6 +137,13 @@ def _normalize_with_ceiling(
         return min(max(metrics.get("sharpe_ratio", 0.0) / ceiling, 0.0), 1.0)
     if dimension == "risk":
         return max(1.0 - metrics.get("max_drawdown_pct", 50.0) / ceiling, 0.0)
+    if dimension == "expectancy":
+        return min(max(metrics.get("expectancy_r", 0.0) / ceiling, 0.0), 1.0)
+    if dimension == "capture":
+        return min(max(metrics.get("exit_efficiency", 0.0) / ceiling, 0.0), 1.0)
+    if dimension == "entry_quality":
+        mae = abs(metrics.get("avg_mae_r", 0.0))
+        return max(min(1.0 - mae / ceiling, 1.0), 0.0)
     # Fallback to default normalizer
     normalizer = NORMALIZERS.get(dimension)
     return normalizer(metrics) if normalizer else 0.0

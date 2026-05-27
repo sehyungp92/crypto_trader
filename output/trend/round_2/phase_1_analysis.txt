@@ -4,30 +4,28 @@ Reason: Gate passed.
 Scoring assessment: EFFECTIVE
 
 Accepted: 1 experiments
-Final score: 0.7686
-Base score: 0.6389
+Final score: 0.6662
+Base score: 0.6605
 Rounds: 2
 
-Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
-Weaknesses: total_trades
+Strengths: total_trades, win_rate, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio
 
 Goal Progress:
-  net_return_pct: 20.94 / 18.00 (116%)
-  total_trades: 19.00 / 36.00 (53%)
-  profit_factor: 10.29 / 1.80 (200%)
-  max_drawdown_pct: 3.62 / 10.00 (200%)
-  sharpe_ratio: 4.89 / 3.50 (140%)
-  calmar_ratio: 5.78 / 2.80 (200%)
-  exit_efficiency: 0.63 / 0.55 (114%)
+  total_trades: 43.00 / 30.00 (143%)
+  win_rate: 55.81 / 45.00 (124%)
+  profit_factor: 4.27 / 1.50 (200%)
+  max_drawdown_pct: 4.98 / 25.00 (200%)
+  sharpe_ratio: 6.38 / 1.50 (200%)
+  calmar_ratio: 10.28 / 2.00 (200%)
 
 Extra Analysis:
   confirmation_breakdown:
-    none: {'n': 17, 'avg_r': 0.6231360131801007}
-    hammer: {'n': 2, 'avg_r': -0.013268470078775775}
+    none: {'n': 43, 'avg_r': 0.4588055597010898}
   confluence_ladder:
-    2: {'n': 10, 'avg_r': 0.7344161251357061}
-    3: {'n': 9, 'avg_r': 0.35806822583856657}
+    2: {'n': 17, 'avg_r': 0.7391667258379759}
+    3: {'n': 25, 'avg_r': 0.24735313822678454}
+    5: {'n': 1, 'avg_r': 0.9789762722316546}
   per_asset_edge:
-    ETH: {'n': 11, 'avg_r': 0.4981243540478451}
-    BTC: {'n': 4, 'avg_r': 0.7024485418887925}
-    SOL: {'n': 4, 'avg_r': 0.5694033054556737}
+    ETH: {'n': 14, 'avg_r': 0.6545569008439877}
+    BTC: {'n': 14, 'avg_r': 0.359513972243892}
+    SOL: {'n': 15, 'avg_r': 0.36877645626110284}

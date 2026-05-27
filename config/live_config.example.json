@@ -4,21 +4,33 @@
   "is_testnet": true,
   "poll_interval_sec": 15.0,
   "fill_poll_interval_sec": 30.0,
+  "fill_query_overlap_sec": 300.0,
   "equity_snapshot_interval_sec": 300.0,
   "health_check_interval_sec": 60.0,
+  "health_report_interval_sec": 300.0,
+  "funnel_report_interval_sec": 3600.0,
   "rate_limit_per_sec": 5.0,
   "max_slippage_pct": 0.005,
-  "symbols": ["BTC", "ETH", "SOL"],
+  "reconciliation_policy": "block",
+  "allow_manual_flatten": false,
+  "strict_live_parity": false,
+  "symbols": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ],
   "data_dir": "data",
   "state_dir": "data/live_state",
+  "asset_meta_path": null,
   "bot_id": "paper_bot_01",
   "relay_url": "",
   "relay_secret": "",
   "strategy_configs": {
-    "momentum": "config/strategies/momentum.json",
-    "trend": "config/strategies/trend.json",
-    "breakout": "config/strategies/breakout.json"
+    "momentum": "output/portfolio/round_3/recommended_strategy_configs/momentum.json",
+    "trend": "output/portfolio/round_3/recommended_strategy_configs/trend.json",
+    "breakout": "output/portfolio/round_3/recommended_strategy_configs/breakout.json"
   },
-  "portfolio_config_path": "config/portfolio_config.json",
-  "postgres_dsn": "postgresql://trading_writer:changeme_writer@postgres:5432/trading"
+  "portfolio_config_path": "output/portfolio/round_3/recommended_portfolio_config.json",
+  "deployment_manifest_path": "output/portfolio/round_3/deployment_manifest.json",
+  "postgres_dsn": ""
 }

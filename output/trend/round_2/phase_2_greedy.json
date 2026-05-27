@@ -1,17 +1,19 @@
 {
   "accepted": [],
   "rejected": [
-    "entry_break",
+    "confirm_b_pending_2",
+    "confirm_b_pending_3",
+    "confirm_all_pending_2",
     "entry_hybrid_grade",
-    "confirm_b_only",
-    "confirm_all",
-    "break_ttl_1",
-    "hybrid_confirm_bundle",
-    "structure_only_confirmations",
-    "conservative_quality_bundle"
+    "entry_break",
+    "confirm_entry_bundle"
   ],
-  "final_score": 0.7423294648114378,
-  "base_score": 0.7423294648114378,
+  "final_score": 0.6662078817385871,
+  "base_score": 0.6662078817385871,
   "rounds": 1,
-  "elapsed_seconds": 26.116169929504395
+  "elapsed_seconds": 135.44166946411133,
+  "contract_hash": "abea552891debbe69fd2aed965722c3c6c84488d13570d8df19b549d17d0712a",
+  "final_validation": {
+    "status": "passed"
+  }
 }

@@ -1,0 +1,905 @@
+{
+  "portfolio_config": {
+    "initial_equity": 25000.0,
+    "strategies": [
+      {
+        "strategy_id": "momentum",
+        "enabled": true,
+        "base_risk_pct": 0.0133,
+        "max_concurrent": 3,
+        "daily_stop_R": 3.0,
+        "priority": 2
+      },
+      {
+        "strategy_id": "trend",
+        "enabled": true,
+        "base_risk_pct": 0.0168,
+        "max_concurrent": 5,
+        "daily_stop_R": 4.0,
+        "priority": 0
+      },
+      {
+        "strategy_id": "breakout",
+        "enabled": true,
+        "base_risk_pct": 0.0147,
+        "max_concurrent": 3,
+        "daily_stop_R": 3.0,
+        "priority": 1
+      }
+    ],
+    "heat_cap_R": 7.5,
+    "directional_cap_R": 5.0,
+    "portfolio_daily_stop_R": 5.0,
+    "max_total_positions": 10,
+    "dd_tiers": [
+      [
+        0.06,
+        0.75
+      ],
+      [
+        0.09,
+        0.5
+      ],
+      [
+        0.12,
+        0.25
+      ],
+      [
+        0.15,
+        0.0
+      ]
+    ],
+    "symbol_collision": "cap",
+    "symbol_exposure_cap_R": 2.5,
+    "terminal_accounting_mode": "terminal_mark",
+    "priority_headroom_R": 0.0,
+    "priority_reserve_threshold": 0
+  },
+  "strategy_configs": {
+    "momentum": {
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "indicators": {
+        "ema_fast": 20,
+        "ema_mid": 50,
+        "ema_slow": 200,
+        "adx_period": 14,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "volume_ma_period": 20,
+        "atr_avg_period": 20
+      },
+      "bias": {
+        "min_4h_conditions": 2,
+        "min_1h_conditions": 2,
+        "h4_ema_slope_lookback": 2,
+        "h4_structure_lookback": 20,
+        "h1_adx_threshold": 10.0
+      },
+      "setup": {
+        "min_confluences_a": 2,
+        "min_confluences_b": 1,
+        "min_room_a": 2.0,
+        "min_room_b": 0.0,
+        "fib_low": 0.382,
+        "fib_high": 0.618,
+        "use_vwap": false,
+        "reject_mid_nowhere": true,
+        "reject_parabolic_extension": false,
+        "reject_impulsive_breakdown": true,
+        "reject_extended_reaction": true,
+        "impulse_lookback": 20,
+        "swing_lookback": 10,
+        "use_rsi_pullback_filter": true,
+        "rsi_pullback_threshold": 40.0
+      },
+      "confirmation": {
+        "enable_engulfing": true,
+        "enable_hammer": true,
+        "enable_inside_bar": true,
+        "enable_micro_shift": true,
+        "enable_base_break": true,
+        "require_volume_confirm": true,
+        "enforce_volume_on_trigger": false,
+        "enforce_volume_on_weak_confirmations": true,
+        "volume_threshold_mult": 1.1,
+        "require_zone_proximity": false,
+        "zone_proximity_atr": 0.5,
+        "hammer_wick_ratio": 2.0,
+        "micro_shift_min_bars": 3,
+        "base_break_min_bars": 2,
+        "base_break_max_bars": 4,
+        "min_confluences_for_weak": 2,
+        "weak_confirmations": [
+          "micro_structure_shift",
+          "shooting_star"
+        ]
+      },
+      "entry": {
+        "entry_on_close": true,
+        "entry_on_break": false,
+        "max_bars_after_confirmation": 3,
+        "mode": "legacy"
+      },
+      "stops": {
+        "atr_buffer_mult": 0.3,
+        "alt_atr_buffer_mult": 0.5,
+        "atr_buffer_min": 0.15,
+        "atr_buffer_max": 0.6,
+        "min_stop_atr_mult": 2.0,
+        "swing_lookback": 10,
+        "major_symbols": [
+          "BTC",
+          "ETH"
+        ]
+      },
+      "exits": {
+        "tp1_r": 1.2,
+        "tp1_frac": 0.16,
+        "tp2_r": 2.5,
+        "tp2_frac": 0.2,
+        "be_acceptance_bars": 2,
+        "proof_lock_enabled": true,
+        "proof_lock_trigger_r": 0.55,
+        "proof_lock_stop_r": 0.0,
+        "proof_lock_min_bars": 3,
+        "followthrough_exit_enabled": true,
+        "followthrough_peak_r": 0.35,
+        "followthrough_bars": 4,
+        "followthrough_floor_r": 0.0,
+        "followthrough_scope": "inflection",
+        "mfe_retrace_exit_enabled": true,
+        "mfe_retrace_trigger_r": 1.25,
+        "mfe_retrace_giveback_r": 0.75,
+        "mfe_retrace_min_r": 0.5,
+        "mfe_retrace_min_bars": 5,
+        "mfe_retrace_scope": "inflection",
+        "soft_time_stop_bars": 12,
+        "soft_time_stop_min_r": 0.5,
+        "hard_time_stop_bars": 20,
+        "hard_time_stop_min_r": 1.0,
+        "enable_structure_break_exit": true,
+        "enable_reversal_candle_exit": true,
+        "enable_counter_volume_exit": true,
+        "enable_h1_thesis_exit": true,
+        "enable_disorderly_exit": true,
+        "enable_funding_exit": true,
+        "structure_break_body_atr_mult": 1.5,
+        "reversal_body_atr_mult": 1.0,
+        "reversal_volume_mult": 1.5,
+        "be_buffer_r": 0.2,
+        "quick_exit_enabled": true,
+        "quick_exit_bars": 6,
+        "quick_exit_max_mfe_r": 0.15,
+        "quick_exit_max_r": -0.3
+      },
+      "trail": {
+        "trail_mode": "components",
+        "trail_behind_structure": false,
+        "trail_behind_ema": true,
+        "trail_ema_period": 25,
+        "trail_chandelier_lookback": 20,
+        "trail_chandelier_atr_mult": 2.5,
+        "trail_atr_buffer": 0.5,
+        "trail_use_tightest": true,
+        "trail_activation_bars": 6,
+        "trail_activation_r": 0.35,
+        "trail_warmup_bars": 5,
+        "trail_warmup_buffer_mult": 1.0,
+        "trail_r_adaptive": true,
+        "trail_r_basis": "current",
+        "trail_buffer_wide": 1.5,
+        "trail_buffer_tight": 0.3,
+        "trail_r_ceiling": 1.5,
+        "runner_trail_enabled": true,
+        "runner_trail_scope": "all",
+        "runner_trigger_r": 1.5,
+        "runner_trail_r_basis": "mfe",
+        "runner_trail_buffer_wide": 1.25,
+        "runner_trail_buffer_tight": 0.25,
+        "runner_trail_r_ceiling": 1.25,
+        "trail_mfe_floor_enabled": false,
+        "trail_mfe_floor_threshold": 0.8,
+        "trail_mfe_floor_buffer": 0.5
+      },
+      "risk": {
+        "risk_pct_a": 0.0266,
+        "risk_pct_b": 0.021,
+        "max_leverage_major": 10.0,
+        "min_leverage": 1.5,
+        "max_leverage_alt": 8.0,
+        "min_liquidation_buffer_atr": 3.0,
+        "max_correlated_risk": 0.028,
+        "max_gross_risk": 0.056,
+        "max_concurrent_positions": 3,
+        "major_symbols": [
+          "BTC",
+          "ETH"
+        ]
+      },
+      "session": {
+        "london_start": 8,
+        "london_end": 16,
+        "ny_start": 13,
+        "ny_end": 21,
+        "overlap_start": 13,
+        "overlap_end": 16,
+        "reduced_window_require_a": false
+      },
+      "filters": {
+        "atr_expansion_mult": 2.5,
+        "atr_compression_mult": 0.3,
+        "adx_chop_threshold": 10.0,
+        "funding_extreme_threshold": 0.01,
+        "funding_moderate_threshold": 0.005
+      },
+      "daily_limits": {
+        "max_consecutive_losses": 2,
+        "max_daily_loss_pct": 0.015,
+        "max_trades_per_day": 5
+      },
+      "funding_hold": {
+        "avoid_adverse_funding": true,
+        "funding_exit_threshold": 0.01
+      },
+      "symbol_filter": {
+        "btc_direction": "long_only",
+        "eth_direction": "long_only",
+        "sol_direction": "short_only"
+      },
+      "reentry": {
+        "enabled": true,
+        "cooldown_bars": 3,
+        "max_loss_r": 1.5,
+        "max_reentries": 2,
+        "min_confluences_override": 0
+      }
+    },
+    "trend": {
+      "h1_indicators": {
+        "ema_fast": 30,
+        "ema_mid": 50,
+        "ema_slow": 200,
+        "adx_period": 14,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "volume_ma_period": 20,
+        "atr_avg_period": 20
+      },
+      "d1_indicators": {
+        "ema_fast": 21,
+        "ema_mid": 50,
+        "ema_slow": 50,
+        "adx_period": 14,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "volume_ma_period": 20,
+        "atr_avg_period": 20
+      },
+      "m15_indicators": {
+        "ema_fast": 20,
+        "ema_mid": 50,
+        "ema_slow": 200,
+        "adx_period": 14,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "volume_ma_period": 20,
+        "atr_avg_period": 20
+      },
+      "regime": {
+        "a_min_adx": 12.0,
+        "b_min_adx": 8.0,
+        "b_adx_rising_required": true,
+        "require_ema_cross": false,
+        "require_structure": false,
+        "structure_lookback": 10,
+        "no_trade_max_adx": 10.0,
+        "h1_regime_enabled": true,
+        "h1_min_adx": 20.0
+      },
+      "setup": {
+        "impulse_min_bars": 3,
+        "impulse_min_atr_move": 0.8,
+        "impulse_lookback": 30,
+        "pullback_max_retrace": 0.75,
+        "pullback_max_bars": 6,
+        "pullback_rsi_low": 30.0,
+        "pullback_rsi_high": 65.0,
+        "min_confluences": 0,
+        "require_orderly_pullback": true,
+        "strict_orderly_pullback": true,
+        "orderly_min_countertrend_bars": 2,
+        "orderly_max_body_frac": 1.08,
+        "orderly_max_countertrend_volume_ratio": 1.1,
+        "min_room_r": 1.5,
+        "min_room_r_a": 2.0,
+        "require_completed_impulse": true,
+        "use_weighted_confluence": true,
+        "min_setup_score_b": 1.35,
+        "min_setup_score_a": 2.5,
+        "weekly_room_filter_enabled": true,
+        "min_weekly_room_r": 0.0
+      },
+      "confirmation": {
+        "enable_engulfing": true,
+        "enable_hammer": true,
+        "enable_ema_reclaim": true,
+        "enable_structure_break": true,
+        "require_confirmation": false,
+        "require_confirmation_for_b": false,
+        "require_volume_confirm": true,
+        "enforce_volume_on_trigger": true,
+        "volume_threshold_mult": 1.05,
+        "hammer_wick_ratio": 2.0,
+        "max_bars_after_setup": 3
+      },
+      "entry": {
+        "entry_on_close": true,
+        "entry_on_break": false,
+        "max_bars_after_confirmation": 2,
+        "mode": "confirm_preferred"
+      },
+      "stops": {
+        "atr_mult": 1.0,
+        "use_swing": true,
+        "use_farther": true,
+        "min_stop_atr": 1.5,
+        "swing_lookback": 10,
+        "buffer_pct": 0.001
+      },
+      "exits": {
+        "tp1_r": 1.2,
+        "tp1_frac": 0.25,
+        "tp2_r": 1.8,
+        "tp2_frac": 0.6,
+        "runner_frac": 0.25,
+        "time_stop_bars": 12,
+        "time_stop_min_progress_r": 0.2,
+        "time_stop_action": "reduce",
+        "be_after_tp1": true,
+        "be_buffer_r": 0.2,
+        "be_min_bars_above": 4,
+        "ema_failsafe_enabled": true,
+        "ema_failsafe_period": 20,
+        "ema_failsafe_min_expansion_r": 1.0,
+        "quick_exit_enabled": true,
+        "quick_exit_bars": 12,
+        "quick_exit_max_mfe_r": 0.15,
+        "quick_exit_max_r": -0.2,
+        "scratch_exit_enabled": true,
+        "scratch_peak_r": 0.3,
+        "scratch_floor_r": 0.0,
+        "scratch_min_bars": 2,
+        "mfe_lock_exit_enabled": false,
+        "mfe_lock_trigger_r": 1.0,
+        "mfe_lock_floor_r": 0.2,
+        "mfe_lock_min_bars": 2
+      },
+      "trail": {
+        "trail_r_adaptive": true,
+        "trail_use_mfe_for_adaptive": false,
+        "trail_buffer_wide": 1.2,
+        "trail_buffer_tight": 0.2,
+        "trail_r_ceiling": 1.5,
+        "trail_activation_r": 0.5,
+        "trail_activation_bars": 4,
+        "structure_trail_enabled": false,
+        "structure_swing_lookback": 5,
+        "ema_trail_period": 20
+      },
+      "risk": {
+        "risk_pct_a": 0.0168,
+        "risk_pct_b": 0.028,
+        "max_risk_pct": 0.03,
+        "max_leverage_major": 15.0,
+        "max_leverage_alt": 12.0,
+        "min_leverage": 0.1,
+        "major_symbols": [
+          "BTC",
+          "ETH"
+        ]
+      },
+      "limits": {
+        "max_concurrent_positions": 5,
+        "max_daily_loss_pct": 0.04,
+        "max_consecutive_losses": 6,
+        "max_trades_per_day": 10,
+        "max_correlated_risk_pct": 0.07
+      },
+      "filters": {
+        "funding_filter_enabled": false,
+        "funding_extreme_threshold": 0.001,
+        "funding_reduce_risk_mult": 0.5,
+        "relative_strength_filter_enabled": false,
+        "relative_strength_lookback": 24,
+        "relative_strength_min_delta": 0.0
+      },
+      "reentry": {
+        "enabled": true,
+        "cooldown_bars": 1,
+        "max_loss_r": 0.5,
+        "max_reentries": 1,
+        "min_confluences_override": 2,
+        "max_wait_bars": 6,
+        "require_same_direction": true,
+        "only_after_scratch_exit": true,
+        "risk_scale": 0.75
+      },
+      "symbol_filter": {
+        "btc_direction": "long_only",
+        "eth_direction": "both",
+        "sol_direction": "both"
+      },
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ]
+    },
+    "breakout": {
+      "m30_indicators": {
+        "ema_fast": 20,
+        "ema_mid": 50,
+        "ema_slow": 100,
+        "adx_period": 14,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "volume_ma_period": 20,
+        "atr_avg_period": 20
+      },
+      "h4_indicators": {
+        "ema_fast": 20,
+        "ema_mid": 50,
+        "ema_slow": 50,
+        "adx_period": 14,
+        "atr_period": 14,
+        "rsi_period": 14,
+        "volume_ma_period": 20,
+        "atr_avg_period": 20
+      },
+      "profile": {
+        "lookback_bars": 38,
+        "num_bins": 50,
+        "value_area_pct": 0.7,
+        "hvn_threshold_pct": 1.5,
+        "lvn_threshold_pct": 0.5,
+        "recalc_interval_bars": 4,
+        "min_bars": 20
+      },
+      "balance": {
+        "min_bars_in_zone": 7,
+        "zone_width_atr": 1.2,
+        "min_touches": 2,
+        "max_zone_age_bars": 36,
+        "require_volume_contraction": true,
+        "contraction_threshold": 0.8,
+        "dedup_atr_frac": 0.35
+      },
+      "context": {
+        "h4_adx_threshold": 12.0,
+        "allow_countertrend": true,
+        "require_ema_alignment": false,
+        "strong_min_adx": 20.0
+      },
+      "setup": {
+        "min_breakout_atr": 0.2,
+        "max_breakout_atr": 2.0,
+        "require_volume_surge": false,
+        "volume_surge_mult": 1.3,
+        "min_lvn_runway_atr": 0.3,
+        "min_confluences_a_plus": 4,
+        "min_confluences_a": 2,
+        "min_confluences_b": 0,
+        "min_room_r_a": 1.8,
+        "min_room_r_b": 1.2,
+        "body_ratio_min": 0.715,
+        "relaxed_body_enabled": true,
+        "relaxed_body_min": 0.4,
+        "relaxed_body_min_confluences": 5,
+        "relaxed_body_min_room_r": 1.4,
+        "relaxed_body_require_volume_surge": true,
+        "relaxed_body_risk_scale": 0.5
+      },
+      "confirmation": {
+        "enable_model1": true,
+        "enable_model2": true,
+        "retest_max_bars": 3,
+        "retest_zone_atr": 0.5,
+        "retest_require_rejection": false,
+        "retest_require_volume_decline": false,
+        "volume_decline_threshold": 0.8,
+        "model1_require_volume": true,
+        "model1_min_volume_mult": 1.2,
+        "model1_require_direction_close": true
+      },
+      "entry": {
+        "model1_entry_on_close": true,
+        "model2_entry_on_close": true,
+        "model2_entry_on_break": false,
+        "max_bars_after_signal": 3
+      },
+      "stops": {
+        "use_balance_edge": true,
+        "use_retest_extreme": true,
+        "use_atr_stop": true,
+        "atr_mult": 1.0,
+        "use_farther": true,
+        "min_stop_atr": 0.8,
+        "buffer_pct": 0.001
+      },
+      "exits": {
+        "tp1_r": 1.0,
+        "tp1_frac": 0.1,
+        "tp2_r": 2.0,
+        "tp2_frac": 0.4,
+        "runner_frac": 0.3,
+        "time_stop_bars": 16,
+        "time_stop_min_progress_r": 0.3,
+        "time_stop_action": "close",
+        "be_after_tp1": true,
+        "be_buffer_r": 0.3,
+        "be_min_bars_above": 2,
+        "invalidation_exit": true,
+        "invalidation_depth_atr": 0.8,
+        "invalidation_min_bars": 3,
+        "early_lock_enabled": false,
+        "early_lock_mfe_r": 0.35,
+        "early_lock_stop_r": 0.1,
+        "quick_exit_enabled": false,
+        "quick_exit_bars": 4,
+        "quick_exit_max_mfe_r": 0.15,
+        "quick_exit_max_r": -0.3
+      },
+      "trail": {
+        "trail_r_adaptive": true,
+        "trail_buffer_wide": 1.5,
+        "trail_buffer_tight": 0.06,
+        "trail_r_ceiling": 2.0,
+        "trail_activation_r": 0.5,
+        "trail_activation_bars": 6,
+        "structure_trail_enabled": true,
+        "structure_swing_lookback": 5,
+        "ema_trail_period": 20
+      },
+      "risk": {
+        "risk_pct_a_plus": 0.011025,
+        "risk_pct_a": 0.011025,
+        "risk_pct_b": 0.032,
+        "max_risk_pct": 0.033,
+        "max_leverage_major": 10.0,
+        "max_leverage_alt": 8.0,
+        "min_leverage": 0.1,
+        "major_symbols": [
+          "BTC",
+          "ETH"
+        ]
+      },
+      "limits": {
+        "max_concurrent_positions": 3,
+        "max_daily_loss_pct": 0.015,
+        "max_consecutive_losses": 2,
+        "max_trades_per_day": 4,
+        "max_correlated_risk_pct": 0.018375,
+        "max_weekly_loss_pct": 0.05
+      },
+      "filters": {
+        "session_filter_enabled": false,
+        "session_avoid_hours": [],
+        "funding_filter_enabled": false,
+        "funding_extreme_threshold": 0.001,
+        "oi_filter_enabled": false
+      },
+      "reentry": {
+        "enabled": true,
+        "cooldown_bars": 3,
+        "max_wait_bars": 12,
+        "max_loss_r": 1.5,
+        "max_reentries": 1,
+        "min_confluences_override": 0,
+        "risk_scale": 1.0
+      },
+      "symbol_filter": {
+        "btc_direction": "both",
+        "eth_direction": "both",
+        "sol_direction": "both",
+        "btc_relaxed_body_direction": "both",
+        "eth_relaxed_body_direction": "long_only",
+        "sol_relaxed_body_direction": "both"
+      },
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ]
+    }
+  },
+  "metadata": {
+    "generated_at": "2026-05-27T16:16:04.706158+00:00",
+    "round": 3,
+    "promotion_type": "portfolio_oos_repair_adoption",
+    "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+    "source_followup_csv": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_2\\oos_followup_second_phase\\ranked_results.csv",
+    "source_snapshots": {
+      "portfolio": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\portfolio_config.pre_adoption.json",
+      "strategies": {
+        "momentum": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\momentum_round3_optimized_config.pre_adoption.json",
+        "trend": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\trend_round3_optimized_config.pre_adoption.json",
+        "breakout": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\source_pre_adoption\\breakout_round3_optimized_config.pre_adoption.json"
+      }
+    },
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ],
+      "strategy.trend.setup.orderly_max_body_frac": 1.08,
+      "strategy.trend.setup.min_setup_score_a": 2.5,
+      "strategy.breakout.setup.body_ratio_min": 0.715,
+      "risk_scale.momentum": 1.4,
+      "risk_scale.trend": 1.4,
+      "risk_scale.breakout": 1.4
+    },
+    "contract": {
+      "kind": "portfolio_round3_adoption",
+      "schema_version": "portfolio_adoption_v1",
+      "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+      "profile_id": "live_parity_v1",
+      "profile_hash": "599bce679e21017b6b824d80ec50ca321eb25a164c37e91a26d61da264672b6f",
+      "economic_profile": {
+        "profile_id": "live_parity_v1",
+        "symbols": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "initial_equity": 10000.0,
+        "taker_fee_bps": 4.5,
+        "maker_fee_bps": 1.0,
+        "slippage_bps": 2.0,
+        "spread_bps": 1.0,
+        "train_pct": 0.7,
+        "apply_funding": true,
+        "warmup_days": 60,
+        "terminal_accounting_mode": "terminal_mark"
+      },
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "required_timeframes": [
+        "15m",
+        "30m",
+        "1h",
+        "4h",
+        "1d"
+      ],
+      "data_window": {
+        "start_date": "2026-02-25",
+        "end_date": "2026-05-23"
+      },
+      "data_fingerprint": {
+        "method": "file_stat_v1",
+        "files": [
+          {
+            "path": "candles\\BTC\\15m.parquet",
+            "exists": true,
+            "size": 322891,
+            "mtime_ns": 1779793221491701800
+          },
+          {
+            "path": "candles\\BTC\\30m.parquet",
+            "exists": true,
+            "size": 268114,
+            "mtime_ns": 1779793222041558700
+          },
+          {
+            "path": "candles\\BTC\\1h.parquet",
+            "exists": true,
+            "size": 243765,
+            "mtime_ns": 1779793222636560300
+          },
+          {
+            "path": "candles\\BTC\\4h.parquet",
+            "exists": true,
+            "size": 221729,
+            "mtime_ns": 1779793223227583100
+          },
+          {
+            "path": "candles\\BTC\\1d.parquet",
+            "exists": true,
+            "size": 55073,
+            "mtime_ns": 1779793223861797000
+          },
+          {
+            "path": "funding\\BTC.parquet",
+            "exists": true,
+            "size": 343358,
+            "mtime_ns": 1779793224966974300
+          },
+          {
+            "path": "candles\\ETH\\15m.parquet",
+            "exists": true,
+            "size": 253967,
+            "mtime_ns": 1779793228776242500
+          },
+          {
+            "path": "candles\\ETH\\30m.parquet",
+            "exists": true,
+            "size": 231767,
+            "mtime_ns": 1779793229411305800
+          },
+          {
+            "path": "candles\\ETH\\1h.parquet",
+            "exists": true,
+            "size": 220143,
+            "mtime_ns": 1779793230015881800
+          },
+          {
+            "path": "candles\\ETH\\4h.parquet",
+            "exists": true,
+            "size": 203414,
+            "mtime_ns": 1779793230617998300
+          },
+          {
+            "path": "candles\\ETH\\1d.parquet",
+            "exists": true,
+            "size": 51640,
+            "mtime_ns": 1779793231246644500
+          },
+          {
+            "path": "funding\\ETH.parquet",
+            "exists": true,
+            "size": 352629,
+            "mtime_ns": 1779793232278627000
+          },
+          {
+            "path": "candles\\SOL\\15m.parquet",
+            "exists": true,
+            "size": 306739,
+            "mtime_ns": 1779793235892072100
+          },
+          {
+            "path": "candles\\SOL\\30m.parquet",
+            "exists": true,
+            "size": 252636,
+            "mtime_ns": 1779793236473089900
+          },
+          {
+            "path": "candles\\SOL\\1h.parquet",
+            "exists": true,
+            "size": 222164,
+            "mtime_ns": 1779793237057393900
+          },
+          {
+            "path": "candles\\SOL\\4h.parquet",
+            "exists": true,
+            "size": 198801,
+            "mtime_ns": 1779793237616029500
+          },
+          {
+            "path": "candles\\SOL\\1d.parquet",
+            "exists": true,
+            "size": 53500,
+            "mtime_ns": 1779793238208142700
+          },
+          {
+            "path": "funding\\SOL.parquet",
+            "exists": true,
+            "size": 368248,
+            "mtime_ns": 1779793239241906900
+          }
+        ],
+        "hash": "bdabd185dc85d97fd8b29bd157a00fa0c545b6e50cd9ee6fbf06c9fcacbae6b8"
+      },
+      "strategy_config_hashes": {
+        "momentum": "23e2ac0a463e02cc1c7358eff30d4b801397a7d4329804edb7e5c3effcbeab9d",
+        "trend": "bd080036447f692b87982e63a95c132cb514bc36fd59a6a629b446373294e931",
+        "breakout": "423992e9019877752e5d79151c71dd42fe21b232776e2fbff05f9257760b8e5c"
+      },
+      "portfolio_config_hash": "7faa6556e49d45ef4b8f1de45c80e11288e59d6f3591ac24f7e5f50ac79d6924",
+      "terminal_accounting_mode": "terminal_mark",
+      "policy": {
+        "strategy.momentum.symbol_filter.sol_direction": "short_only",
+        "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+        "strategy.momentum.exits.proof_lock_min_bars": 3,
+        "portfolio.symbol_collision": "cap",
+        "portfolio.symbol_exposure_cap_R": 2.5,
+        "portfolio.dd_tiers": [
+          [
+            0.06,
+            0.75
+          ],
+          [
+            0.09,
+            0.5
+          ],
+          [
+            0.12,
+            0.25
+          ],
+          [
+            0.15,
+            0.0
+          ]
+        ],
+        "strategy.trend.setup.orderly_max_body_frac": 1.08,
+        "strategy.trend.setup.min_setup_score_a": 2.5,
+        "strategy.breakout.setup.body_ratio_min": 0.715,
+        "risk_scale.momentum": 1.4,
+        "risk_scale.trend": 1.4,
+        "risk_scale.breakout": 1.4
+      },
+      "contract_hash": "2e8da4933cc81c372822413a3b1357b0776f34ea31c6bc6317d2aae2748820b6"
+    },
+    "contract_hash": "2e8da4933cc81c372822413a3b1357b0776f34ea31c6bc6317d2aae2748820b6",
+    "profile_hash": "599bce679e21017b6b824d80ec50ca321eb25a164c37e91a26d61da264672b6f",
+    "strategy_config_hashes": {
+      "momentum": "23e2ac0a463e02cc1c7358eff30d4b801397a7d4329804edb7e5c3effcbeab9d",
+      "trend": "bd080036447f692b87982e63a95c132cb514bc36fd59a6a629b446373294e931",
+      "breakout": "423992e9019877752e5d79151c71dd42fe21b232776e2fbff05f9257760b8e5c"
+    },
+    "portfolio_config_hash": "7faa6556e49d45ef4b8f1de45c80e11288e59d6f3591ac24f7e5f50ac79d6924",
+    "parity_alignment": {
+      "profile_id": "live_parity_v1",
+      "terminal_accounting_mode": "terminal_mark",
+      "followup_reconstruction": {
+        "status": "matched",
+        "source_csv": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_2\\oos_followup_second_phase\\ranked_results.csv",
+        "expected": {
+          "dev_return_pct": 73.78624361928698,
+          "dev_trades": 46.0,
+          "dev_pf": 6.01578975255237,
+          "dev_dd": 3.901403566703282,
+          "oos_return_pct": 48.242251586993405,
+          "oos_trades": 42.0,
+          "oos_pf": 2.7496577180615804,
+          "oos_dd": 5.366676749628214
+        },
+        "actual": {
+          "dev_return_pct": 73.78624361928698,
+          "dev_trades": 46.0,
+          "dev_pf": 6.01578975255237,
+          "dev_dd": 3.901403566703282,
+          "oos_return_pct": 48.242251586993405,
+          "oos_trades": 42.0,
+          "oos_pf": 2.7496577180615804,
+          "oos_dd": 5.366676749628214
+        },
+        "deltas": {
+          "dev_return_pct": 0.0,
+          "dev_trades": 0.0,
+          "dev_pf": 0.0,
+          "dev_dd": 0.0,
+          "oos_return_pct": 0.0,
+          "oos_trades": 0.0,
+          "oos_pf": 0.0,
+          "oos_dd": 0.0
+        },
+        "max_abs_delta": 0.0
+      }
+    }
+  }
+}

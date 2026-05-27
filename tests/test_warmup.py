@@ -211,18 +211,20 @@ class TestRound1MutationsBaked:
 
 class TestTrendPluginRound2Updates:
     def test_trend_plugin_hard_rejects_updated(self):
-        """Hard rejects tightened for round 3 (baseline has 35 trades)."""
+        """Hard rejects block non-edge candidates for the current round."""
         from crypto_trader.optimize.trend_plugin import HARD_REJECTS
-        assert HARD_REJECTS["total_trades"] == (">=", 8)
-        assert HARD_REJECTS["profit_factor"] == (">=", 0.8)
-        assert HARD_REJECTS["max_drawdown_pct"] == ("<=", 50.0)
+        assert HARD_REJECTS["total_trades"] == (">=", 30)
+        assert HARD_REJECTS["profit_factor"] == (">=", 1.5)
+        assert HARD_REJECTS["max_drawdown_pct"] == ("<=", 12.0)
+        assert HARD_REJECTS["expectancy_r"] == (">=", 0.10)
 
     def test_trend_plugin_scoring_weights_balanced(self):
-        """Scoring returns-dominant for M15 (was 0.30, now 0.35)."""
+        """Trend optimizer uses the immutable seven-component score."""
         from crypto_trader.optimize.trend_plugin import SCORING_WEIGHTS
-        assert SCORING_WEIGHTS["coverage"] == 0.20
-        assert SCORING_WEIGHTS["returns"] == 0.35
-        assert SCORING_WEIGHTS["capture"] == 0.20
+        assert len(SCORING_WEIGHTS) == 7
+        assert SCORING_WEIGHTS["coverage"] == 0.17
+        assert SCORING_WEIGHTS["returns"] == 0.22
+        assert SCORING_WEIGHTS["expectancy"] == 0.14
         assert abs(sum(SCORING_WEIGHTS.values()) - 1.0) < 0.01
 
     def test_trend_plugin_warmup_enforced(self):
@@ -252,17 +254,18 @@ class TestTrendPluginRound2Updates:
         assert plugin.backtest_config.warmup_days == 90
 
     def test_phase_gate_criteria_tightened(self):
-        """Phase gate criteria permissive for H1-entry pipeline."""
+        """Phase gate criteria match the current aggressive-but-controlled stance."""
         from crypto_trader.optimize.trend_plugin import PHASE_GATE_CRITERIA
 
-        # Phase 3: trades >= 3, PF >= 0.7
+        # Phase 3: trades >= 30, PF >= 1.5, exit efficiency guarded.
         p3 = {gc.metric: gc.threshold for gc in PHASE_GATE_CRITERIA[3]}
-        assert p3["total_trades"] == 3
-        assert p3["profit_factor"] == 0.7
+        assert p3["total_trades"] == 30
+        assert p3["profit_factor"] == 1.5
+        assert p3["exit_efficiency"] == 0.45
 
-        # Phase 5: DD <= 35%
+        # Phase 5: DD <= 12%
         p5 = {gc.metric: gc.threshold for gc in PHASE_GATE_CRITERIA[5]}
-        assert p5["max_drawdown_pct"] == 35
+        assert p5["max_drawdown_pct"] == 12
 
     def test_phase_candidates_count(self):
         """Phase candidate counts are in expected range."""
@@ -270,11 +273,11 @@ class TestTrendPluginRound2Updates:
             _phase1_candidates, _phase2_candidates, _phase3_candidates,
             _phase4_candidates, _phase5_candidates, _phase6_candidates,
         )
-        assert len(_phase1_candidates()) >= 15
-        assert len(_phase2_candidates()) >= 14
-        assert len(_phase3_candidates()) >= 16
-        assert len(_phase4_candidates()) >= 15
-        assert len(_phase5_candidates()) >= 10
+        assert len(_phase1_candidates()) >= 9
+        assert len(_phase2_candidates()) >= 9
+        assert len(_phase3_candidates()) >= 9
+        assert len(_phase4_candidates()) >= 8
+        assert len(_phase5_candidates()) >= 8
         # Phase 6 depends on cumulative mutations
         assert len(_phase6_candidates({})) >= 6
 
@@ -577,5 +580,5 @@ class TestMeasurementBoundaryEntryGating:
         strategy._handle_m30(bar, "BTC", ctx)
 
         assert strategy._m30_indicators["BTC"] is not None
-        strategy._confirmation_detector.clear_pending.assert_called_once_with("BTC")
+        strategy._confirmation_detector.clear_pending.assert_not_called()
         ctx.broker.submit_order.assert_not_called()

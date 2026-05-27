@@ -38,6 +38,7 @@ class TestPortfolioConfig:
         assert cfg.max_total_positions == 9
         assert cfg.symbol_collision == "cap"
         assert cfg.symbol_exposure_cap_R == 3.0
+        assert cfg.terminal_accounting_mode == "terminal_mark"
         assert len(cfg.dd_tiers) == 4
 
     def test_get_strategy_found(self):
@@ -61,15 +62,21 @@ class TestPortfolioConfig:
             cfg.heat_cap_R = 5.0  # type: ignore[misc]
 
     def test_to_dict_roundtrip(self):
-        cfg = self._make_config(heat_cap_R=4.0, symbol_collision="block")
+        cfg = self._make_config(
+            heat_cap_R=4.0,
+            symbol_collision="block",
+            terminal_accounting_mode="force_close",
+        )
         d = cfg.to_dict()
         assert d["heat_cap_R"] == 4.0
         assert d["symbol_collision"] == "block"
+        assert d["terminal_accounting_mode"] == "force_close"
         assert len(d["strategies"]) == 3
 
         cfg2 = PortfolioConfig.from_dict(d)
         assert cfg2.heat_cap_R == 4.0
         assert cfg2.symbol_collision == "block"
+        assert cfg2.terminal_accounting_mode == "force_close"
         assert len(cfg2.strategies) == 3
         assert cfg2.strategies[0].strategy_id == "momentum"
 

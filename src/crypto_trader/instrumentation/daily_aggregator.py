@@ -17,6 +17,27 @@ from crypto_trader.instrumentation.types import (
 )
 
 
+def _has_explicit_economics(event: InstrumentedTradeEvent) -> bool:
+    return any((
+        event.price_pnl_gross != 0.0,
+        event.total_fees != 0.0,
+        event.realized_pnl_net != 0.0,
+        event.funding_paid != 0.0,
+    ))
+
+
+def _event_net_pnl(event: InstrumentedTradeEvent) -> float:
+    if _has_explicit_economics(event):
+        return event.realized_pnl_net
+    return event.pnl
+
+
+def _event_gross_price_pnl(event: InstrumentedTradeEvent) -> float:
+    if _has_explicit_economics(event):
+        return event.price_pnl_gross
+    return event.pnl + event.commission
+
+
 class DailyAggregator:
     """Accumulates trade/missed events during the day, computes DailySnapshot.
 
@@ -69,10 +90,10 @@ class DailyAggregator:
             for event in self._today_missed
         }.values())
 
-        win_count = sum(1 for t in trades if t.pnl > 0)
-        loss_count = sum(1 for t in trades if t.pnl <= 0)
-        gross_pnl = sum(t.pnl + t.commission for t in trades)
-        net_pnl = sum(t.pnl for t in trades)
+        win_count = sum(1 for t in trades if _event_net_pnl(t) > 0)
+        loss_count = sum(1 for t in trades if _event_net_pnl(t) <= 0)
+        gross_pnl = sum(_event_gross_price_pnl(t) for t in trades)
+        net_pnl = sum(_event_net_pnl(t) for t in trades)
 
         # Max drawdown from equity history
         max_dd = 0.0
@@ -105,7 +126,7 @@ class DailyAggregator:
         for t in trades:
             sid = t.metadata.strategy_id
             per_strat[sid]["trades"] += 1
-            per_strat[sid]["pnl"] += t.pnl
+            per_strat[sid]["pnl"] += _event_net_pnl(t)
 
         # Rolling metrics placeholder (need 30d equity history for proper calc)
         sharpe_30d = self._rolling_sharpe(30)

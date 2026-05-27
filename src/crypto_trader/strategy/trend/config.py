@@ -112,11 +112,16 @@ class TrendExitParams:
     scratch_peak_r: float = 0.25
     scratch_floor_r: float = 0.0
     scratch_min_bars: int = 4
+    mfe_lock_exit_enabled: bool = False
+    mfe_lock_trigger_r: float = 1.0
+    mfe_lock_floor_r: float = 0.2
+    mfe_lock_min_bars: int = 2
 
 
 @dataclass
 class TrendTrailParams:
     trail_r_adaptive: bool = True
+    trail_use_mfe_for_adaptive: bool = False
     trail_buffer_wide: float = 1.2
     trail_buffer_tight: float = 0.1
     trail_r_ceiling: float = 1.5

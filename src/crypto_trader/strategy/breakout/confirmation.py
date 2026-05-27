@@ -75,8 +75,16 @@ class ConfirmationDetector:
     ) -> None:
         """Register a breakout for Model 2 retest monitoring.
 
-        Replaces any existing pending retest for *sym*.
+        Keeps an existing same-zone pending retest so repeated closes outside a
+        zone do not reset the deterministic retest expiry window.
         """
+        existing = self._pending.get(sym)
+        if (
+            existing is not None
+            and existing.setup.balance_zone == setup.balance_zone
+            and existing.setup.direction == setup.direction
+        ):
+            return
         self._pending[sym] = _PendingRetest(
             setup=setup,
             breakout_bar_idx=bar_idx,

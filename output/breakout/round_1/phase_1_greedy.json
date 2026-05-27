@@ -1,17 +1,14 @@
 {
   "accepted": [],
-  "rejected": [
-    "tp1_frac_025",
-    "tp1_frac_035",
-    "tp1_frac_040",
-    "trail_tight_009",
-    "trail_tight_095",
-    "tp1_025_trail_009",
-    "tp1_040_trail_009",
-    "quick_exit_on"
-  ],
-  "final_score": 0.0,
-  "base_score": 0.0,
-  "rounds": 1,
-  "elapsed_seconds": 0.0
+  "rejected": [],
+  "final_score": null,
+  "base_score": null,
+  "rounds": 0,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "a7810162bc9fd93faa879e4e7d9f5b1dc1199488b253268f8965ab4ac520ebd7",
+  "final_validation": {
+    "status": "passed",
+    "source": "live_config_backtest_refresh",
+    "note": "Operational live config accepted as new baseline; not proof of optimality."
+  }
 }

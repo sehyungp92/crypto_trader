@@ -7,7 +7,7 @@ from crypto_trader.core.models import Bar, SetupGrade, Side, TimeFrame
 from crypto_trader.strategy.momentum.indicators import IndicatorSnapshot
 from crypto_trader.strategy.trend.config import TrendSetupParams
 from crypto_trader.strategy.trend.regime import RegimeResult
-from crypto_trader.strategy.trend.setup import SetupDetector, TrendSetupResult
+from crypto_trader.strategy.trend.setup import ImpulseLeg, SetupDetector, TrendSetupResult
 
 
 def _make_h1_bar(close, high=None, low=None, volume=100.0, idx=0):
@@ -135,6 +135,25 @@ class TestSetupDetector:
         bars = _make_impulse_bars_long()
         ind = _make_ind(atr=200.0, rsi=45.0)
         result = det.detect(bars, ind, None, _regime(), None, None)
+        assert result is None
+
+    def test_pullback_max_bars_rejected(self, monkeypatch):
+        """Setups with stale pullbacks should be rejected."""
+        det = SetupDetector(TrendSetupParams(
+            pullback_max_bars=1,
+            pullback_max_retrace=0.95,
+            min_confluences=0,
+            min_room_r=0.1,
+        ))
+        bars = [_make_h1_bar(50000 - i * 10, idx=i) for i in range(5)]
+        monkeypatch.setattr(
+            det,
+            "_find_impulse",
+            lambda _bars, _direction, _atr: ImpulseLeg(0, 1, 49800, 50200, 2.0),
+        )
+
+        result = det.detect(bars, _make_ind(atr=200.0), None, _regime(), None, None)
+
         assert result is None
 
     def test_min_confluences_override(self):

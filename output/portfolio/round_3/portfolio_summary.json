@@ -1,0 +1,536 @@
+{
+  "round": 3,
+  "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+  "promotion_type": "portfolio_oos_repair_adoption",
+  "created_at": "2026-05-27T16:16:05.161136+00:00",
+  "windows": {
+    "in_sample": {
+      "start": "2026-02-25",
+      "end": "2026-04-20"
+    },
+    "out_of_sample": {
+      "start": "2026-04-21",
+      "end": "2026-05-23"
+    },
+    "full": {
+      "start": "2026-02-25",
+      "end": "2026-05-23"
+    }
+  },
+  "policy": {
+    "strategy.momentum.symbol_filter.sol_direction": "short_only",
+    "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+    "strategy.momentum.exits.proof_lock_min_bars": 3,
+    "portfolio.symbol_collision": "cap",
+    "portfolio.symbol_exposure_cap_R": 2.5,
+    "portfolio.dd_tiers": [
+      [
+        0.06,
+        0.75
+      ],
+      [
+        0.09,
+        0.5
+      ],
+      [
+        0.12,
+        0.25
+      ],
+      [
+        0.15,
+        0.0
+      ]
+    ],
+    "strategy.trend.setup.orderly_max_body_frac": 1.08,
+    "strategy.trend.setup.min_setup_score_a": 2.5,
+    "strategy.breakout.setup.body_ratio_min": 0.715,
+    "risk_scale.momentum": 1.4,
+    "risk_scale.trend": 1.4,
+    "risk_scale.breakout": 1.4
+  },
+  "metrics": {
+    "in_sample": {
+      "net_profit": 18446.560904821745,
+      "net_return_pct": 73.78624361928698,
+      "realized_pnl_net": 18446.560904821778,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0,
+      "total_trades": 46.0,
+      "win_rate": 60.86956521739131,
+      "avg_winner_r": 0.9871587959737206,
+      "avg_loser_r": -0.23345794069389314,
+      "expectancy_r": 0.5095261598863935,
+      "profit_factor": 6.01578975255237,
+      "max_drawdown_pct": 3.901403566703282,
+      "max_drawdown_duration": 8422.0,
+      "sharpe_ratio": 9.116937469227642,
+      "sortino_ratio": 60.617133945058676,
+      "calmar_ratio": 18.912743159671884,
+      "avg_bars_held": 12.478260869565217,
+      "avg_mae_r": -0.3209583366339786,
+      "avg_mfe_r": 1.2461565312402378,
+      "exit_efficiency": 0.5016298044946584,
+      "a_setup_win_rate": 0.0,
+      "b_setup_win_rate": 62.22222222222222,
+      "long_win_rate": 53.125,
+      "short_win_rate": 78.57142857142857,
+      "total_fees": 3853.3140561154164,
+      "funding_cost_total": 51.25347159543447,
+      "edge_ratio": 3.882611507490945,
+      "payoff_ratio": 3.867293412355094,
+      "recovery_factor": 18.912743159671884,
+      "max_consecutive_losses": 3.0,
+      "rule_checks": 48.0,
+      "approved_entries": 48.0,
+      "blocked_entries": 0.0,
+      "rule_approval_rate": 100.0,
+      "strategy_balance": 0.9563153638943855,
+      "score_components": {
+        "return": 0.983816581590493,
+        "frequency": 0.7931034482758621,
+        "edge_quality": 0.8857156959318362,
+        "capture": 0.912054189990288,
+        "drawdown_resilience": 0.5410113450937315,
+        "rule_efficiency": 1.0,
+        "strategy_balance": 0.9563153638943855
+      },
+      "immutable_score": 0.8758799647421159,
+      "rejected": false,
+      "reject_reason": ""
+    },
+    "out_of_sample": {
+      "net_profit": 12060.56289674835,
+      "net_return_pct": 48.242251586993405,
+      "realized_pnl_net": 12060.562896748357,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0,
+      "total_trades": 42.0,
+      "win_rate": 50.0,
+      "avg_winner_r": 1.1997225362233959,
+      "avg_loser_r": -0.4815698158664505,
+      "expectancy_r": 0.35907636017847266,
+      "profit_factor": 2.7496577180615804,
+      "max_drawdown_pct": 5.366676749628214,
+      "max_drawdown_duration": 5174.0,
+      "sharpe_ratio": 6.611962321162376,
+      "sortino_ratio": 23.112218878851113,
+      "calmar_ratio": 8.989222537082277,
+      "avg_bars_held": 11.880952380952381,
+      "avg_mae_r": -0.3385036811096967,
+      "avg_mfe_r": 1.4288238353061238,
+      "exit_efficiency": 0.4319271963269779,
+      "a_setup_win_rate": 25.0,
+      "b_setup_win_rate": 52.63157894736842,
+      "long_win_rate": 57.692307692307686,
+      "short_win_rate": 37.5,
+      "total_fees": 3920.0383768225024,
+      "funding_cost_total": 23.893167558144796,
+      "edge_ratio": 4.220999401312549,
+      "payoff_ratio": 2.7496577180615804,
+      "recovery_factor": 8.989222537082277,
+      "max_consecutive_losses": 4.0,
+      "rule_checks": 43.0,
+      "approved_entries": 43.0,
+      "blocked_entries": 0.0,
+      "rule_approval_rate": 100.0,
+      "strategy_balance": 0.7834693208236179,
+      "score_components": {
+        "return": 0.643230021159912,
+        "frequency": 0.7241379310344828,
+        "edge_quality": 0.48602375234055095,
+        "capture": 0.7853221751399597,
+        "drawdown_resilience": 0.3686262647496219,
+        "rule_efficiency": 1.0,
+        "strategy_balance": 0.7834693208236179
+      },
+      "immutable_score": 0.6476838712145445,
+      "rejected": false,
+      "reject_reason": ""
+    },
+    "full": {
+      "net_profit": 37423.88862631085,
+      "net_return_pct": 149.69555450524342,
+      "realized_pnl_net": 37423.888626310894,
+      "terminal_mark_pnl_net": 0.0,
+      "terminal_mark_count": 0,
+      "total_trades": 89.0,
+      "win_rate": 56.17977528089888,
+      "avg_winner_r": 1.0513069947168514,
+      "avg_loser_r": -0.3670566427098855,
+      "expectancy_r": 0.4297768614624386,
+      "profit_factor": 3.3793128713775697,
+      "max_drawdown_pct": 5.366676749628207,
+      "max_drawdown_duration": 8422.0,
+      "sharpe_ratio": 7.9844514485818605,
+      "sortino_ratio": 28.23131182339345,
+      "calmar_ratio": 27.89352917811084,
+      "avg_bars_held": 12.123595505617978,
+      "avg_mae_r": -0.32949307835288844,
+      "avg_mfe_r": 1.3173509628030047,
+      "exit_efficiency": 0.4716810165412491,
+      "a_setup_win_rate": 20.0,
+      "b_setup_win_rate": 58.333333333333336,
+      "long_win_rate": 55.172413793103445,
+      "short_win_rate": 58.06451612903226,
+      "total_fees": 10664.14542938621,
+      "funding_cost_total": 105.42940172338001,
+      "edge_ratio": 3.9981142225759183,
+      "payoff_ratio": 2.6358640396745048,
+      "recovery_factor": 27.89352917811084,
+      "max_consecutive_losses": 4.0,
+      "rule_checks": 92.0,
+      "approved_entries": 92.0,
+      "blocked_entries": 0.0,
+      "rule_approval_rate": 100.0,
+      "strategy_balance": 0.9303082027294456,
+      "score_components": {
+        "return": 1.0,
+        "frequency": 1.0,
+        "edge_quality": 0.615021636691879,
+        "capture": 0.8576018482568165,
+        "drawdown_resilience": 0.3686262647496228,
+        "rule_efficiency": 1.0,
+        "strategy_balance": 0.9303082027294456
+      },
+      "immutable_score": 0.8491451980689488,
+      "rejected": false,
+      "reject_reason": ""
+    },
+    "per_strategy_full": {
+      "momentum": {
+        "net_profit": 14640.87030321922,
+        "net_return_pct": 58.56348121287688,
+        "realized_pnl_net": 14640.87030321922,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 43.0,
+        "win_rate": 53.48837209302325,
+        "avg_winner_r": 1.19722962976067,
+        "avg_loser_r": -0.5228842024604006,
+        "expectancy_r": 0.39717668454156735,
+        "profit_factor": 2.2343378833961562,
+        "max_drawdown_pct": 10.845712105275366,
+        "max_drawdown_duration": 10148.0,
+        "sharpe_ratio": 3.783178107973171,
+        "sortino_ratio": 7.231081449056162,
+        "calmar_ratio": 5.399689816991504,
+        "avg_bars_held": 9.232558139534884,
+        "avg_mae_r": -0.29931348555161774,
+        "avg_mfe_r": 1.4492011820532305,
+        "exit_efficiency": 0.4244467699383948,
+        "a_setup_win_rate": 33.33333333333333,
+        "b_setup_win_rate": 55.00000000000001,
+        "long_win_rate": 58.06451612903226,
+        "short_win_rate": 41.66666666666667,
+        "total_fees": 6556.653916821688,
+        "funding_cost_total": 71.3800471583413,
+        "edge_ratio": 4.841750378812485,
+        "payoff_ratio": 1.9429025073010053,
+        "recovery_factor": 5.399689816991504,
+        "max_consecutive_losses": 2.0
+      },
+      "trend": {
+        "net_profit": 13531.657385808365,
+        "net_return_pct": 54.12662954323346,
+        "realized_pnl_net": 13531.657385808394,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 34.0,
+        "win_rate": 47.05882352941176,
+        "avg_winner_r": 0.9431909824298904,
+        "avg_loser_r": -0.1941893727853342,
+        "expectancy_r": 0.34104844143359503,
+        "profit_factor": 4.669018728782308,
+        "max_drawdown_pct": 8.151224180410921,
+        "max_drawdown_duration": 5654.0,
+        "sharpe_ratio": 4.395938919094045,
+        "sortino_ratio": 12.88615903564675,
+        "calmar_ratio": 6.640306823275816,
+        "avg_bars_held": 17.91176470588235,
+        "avg_mae_r": -0.37040315510465727,
+        "avg_mfe_r": 1.1098221694520078,
+        "exit_efficiency": 0.5076958449242419,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 50.0,
+        "long_win_rate": 42.857142857142854,
+        "short_win_rate": 53.84615384615385,
+        "total_fees": 3199.936912076559,
+        "funding_cost_total": 37.83257893992946,
+        "edge_ratio": 2.9962546327080504,
+        "payoff_ratio": 5.252646069880096,
+        "recovery_factor": 6.640306823275816,
+        "max_consecutive_losses": 4.0
+      },
+      "breakout": {
+        "net_profit": 9251.360937283265,
+        "net_return_pct": 37.00544374913306,
+        "realized_pnl_net": 9251.36093728328,
+        "terminal_mark_pnl_net": 0.0,
+        "terminal_mark_count": 0.0,
+        "total_trades": 12.0,
+        "win_rate": 91.66666666666666,
+        "avg_winner_r": 0.9034556847699008,
+        "avg_loser_r": -0.36211630634150604,
+        "expectancy_r": 0.7979913521772835,
+        "profit_factor": 52.55026054815287,
+        "max_drawdown_pct": 2.108684378195525,
+        "max_drawdown_duration": 5674.0,
+        "sharpe_ratio": 5.40089640423063,
+        "sortino_ratio": 0.0,
+        "calmar_ratio": 17.549067149062825,
+        "avg_bars_held": 6.083333333333333,
+        "avg_mae_r": -0.32172473509409666,
+        "avg_mfe_r": 1.4328859249841868,
+        "exit_efficiency": 0.518058327244682,
+        "a_setup_win_rate": 0.0,
+        "b_setup_win_rate": 91.66666666666666,
+        "long_win_rate": 83.33333333333334,
+        "short_win_rate": 100.0,
+        "total_fees": 907.5546004879631,
+        "funding_cost_total": -3.783224374890757,
+        "edge_ratio": 4.453763632955056,
+        "payoff_ratio": 4.777296413468442,
+        "recovery_factor": 17.549067149062825,
+        "max_consecutive_losses": 1.0
+      }
+    }
+  },
+  "followup_reconstruction": {
+    "status": "matched",
+    "source_csv": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_2\\oos_followup_second_phase\\ranked_results.csv",
+    "expected": {
+      "dev_return_pct": 73.78624361928698,
+      "dev_trades": 46.0,
+      "dev_pf": 6.01578975255237,
+      "dev_dd": 3.901403566703282,
+      "oos_return_pct": 48.242251586993405,
+      "oos_trades": 42.0,
+      "oos_pf": 2.7496577180615804,
+      "oos_dd": 5.366676749628214
+    },
+    "actual": {
+      "dev_return_pct": 73.78624361928698,
+      "dev_trades": 46.0,
+      "dev_pf": 6.01578975255237,
+      "dev_dd": 3.901403566703282,
+      "oos_return_pct": 48.242251586993405,
+      "oos_trades": 42.0,
+      "oos_pf": 2.7496577180615804,
+      "oos_dd": 5.366676749628214
+    },
+    "deltas": {
+      "dev_return_pct": 0.0,
+      "dev_trades": 0.0,
+      "dev_pf": 0.0,
+      "dev_dd": 0.0,
+      "oos_return_pct": 0.0,
+      "oos_trades": 0.0,
+      "oos_pf": 0.0,
+      "oos_dd": 0.0
+    },
+    "max_abs_delta": 0.0
+  },
+  "contract": {
+    "kind": "portfolio_round3_adoption",
+    "schema_version": "portfolio_adoption_v1",
+    "source_candidate": "extended_body108_scorea250_breakbody0715_riskall_1.4",
+    "profile_id": "live_parity_v1",
+    "profile_hash": "599bce679e21017b6b824d80ec50ca321eb25a164c37e91a26d61da264672b6f",
+    "economic_profile": {
+      "profile_id": "live_parity_v1",
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "initial_equity": 10000.0,
+      "taker_fee_bps": 4.5,
+      "maker_fee_bps": 1.0,
+      "slippage_bps": 2.0,
+      "spread_bps": 1.0,
+      "train_pct": 0.7,
+      "apply_funding": true,
+      "warmup_days": 60,
+      "terminal_accounting_mode": "terminal_mark"
+    },
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "required_timeframes": [
+      "15m",
+      "30m",
+      "1h",
+      "4h",
+      "1d"
+    ],
+    "data_window": {
+      "start_date": "2026-02-25",
+      "end_date": "2026-05-23"
+    },
+    "data_fingerprint": {
+      "method": "file_stat_v1",
+      "files": [
+        {
+          "path": "candles\\BTC\\15m.parquet",
+          "exists": true,
+          "size": 322891,
+          "mtime_ns": 1779793221491701800
+        },
+        {
+          "path": "candles\\BTC\\30m.parquet",
+          "exists": true,
+          "size": 268114,
+          "mtime_ns": 1779793222041558700
+        },
+        {
+          "path": "candles\\BTC\\1h.parquet",
+          "exists": true,
+          "size": 243765,
+          "mtime_ns": 1779793222636560300
+        },
+        {
+          "path": "candles\\BTC\\4h.parquet",
+          "exists": true,
+          "size": 221729,
+          "mtime_ns": 1779793223227583100
+        },
+        {
+          "path": "candles\\BTC\\1d.parquet",
+          "exists": true,
+          "size": 55073,
+          "mtime_ns": 1779793223861797000
+        },
+        {
+          "path": "funding\\BTC.parquet",
+          "exists": true,
+          "size": 343358,
+          "mtime_ns": 1779793224966974300
+        },
+        {
+          "path": "candles\\ETH\\15m.parquet",
+          "exists": true,
+          "size": 253967,
+          "mtime_ns": 1779793228776242500
+        },
+        {
+          "path": "candles\\ETH\\30m.parquet",
+          "exists": true,
+          "size": 231767,
+          "mtime_ns": 1779793229411305800
+        },
+        {
+          "path": "candles\\ETH\\1h.parquet",
+          "exists": true,
+          "size": 220143,
+          "mtime_ns": 1779793230015881800
+        },
+        {
+          "path": "candles\\ETH\\4h.parquet",
+          "exists": true,
+          "size": 203414,
+          "mtime_ns": 1779793230617998300
+        },
+        {
+          "path": "candles\\ETH\\1d.parquet",
+          "exists": true,
+          "size": 51640,
+          "mtime_ns": 1779793231246644500
+        },
+        {
+          "path": "funding\\ETH.parquet",
+          "exists": true,
+          "size": 352629,
+          "mtime_ns": 1779793232278627000
+        },
+        {
+          "path": "candles\\SOL\\15m.parquet",
+          "exists": true,
+          "size": 306739,
+          "mtime_ns": 1779793235892072100
+        },
+        {
+          "path": "candles\\SOL\\30m.parquet",
+          "exists": true,
+          "size": 252636,
+          "mtime_ns": 1779793236473089900
+        },
+        {
+          "path": "candles\\SOL\\1h.parquet",
+          "exists": true,
+          "size": 222164,
+          "mtime_ns": 1779793237057393900
+        },
+        {
+          "path": "candles\\SOL\\4h.parquet",
+          "exists": true,
+          "size": 198801,
+          "mtime_ns": 1779793237616029500
+        },
+        {
+          "path": "candles\\SOL\\1d.parquet",
+          "exists": true,
+          "size": 53500,
+          "mtime_ns": 1779793238208142700
+        },
+        {
+          "path": "funding\\SOL.parquet",
+          "exists": true,
+          "size": 368248,
+          "mtime_ns": 1779793239241906900
+        }
+      ],
+      "hash": "bdabd185dc85d97fd8b29bd157a00fa0c545b6e50cd9ee6fbf06c9fcacbae6b8"
+    },
+    "strategy_config_hashes": {
+      "momentum": "23e2ac0a463e02cc1c7358eff30d4b801397a7d4329804edb7e5c3effcbeab9d",
+      "trend": "bd080036447f692b87982e63a95c132cb514bc36fd59a6a629b446373294e931",
+      "breakout": "423992e9019877752e5d79151c71dd42fe21b232776e2fbff05f9257760b8e5c"
+    },
+    "portfolio_config_hash": "7faa6556e49d45ef4b8f1de45c80e11288e59d6f3591ac24f7e5f50ac79d6924",
+    "terminal_accounting_mode": "terminal_mark",
+    "policy": {
+      "strategy.momentum.symbol_filter.sol_direction": "short_only",
+      "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+      "strategy.momentum.exits.proof_lock_min_bars": 3,
+      "portfolio.symbol_collision": "cap",
+      "portfolio.symbol_exposure_cap_R": 2.5,
+      "portfolio.dd_tiers": [
+        [
+          0.06,
+          0.75
+        ],
+        [
+          0.09,
+          0.5
+        ],
+        [
+          0.12,
+          0.25
+        ],
+        [
+          0.15,
+          0.0
+        ]
+      ],
+      "strategy.trend.setup.orderly_max_body_frac": 1.08,
+      "strategy.trend.setup.min_setup_score_a": 2.5,
+      "strategy.breakout.setup.body_ratio_min": 0.715,
+      "risk_scale.momentum": 1.4,
+      "risk_scale.trend": 1.4,
+      "risk_scale.breakout": 1.4
+    },
+    "contract_hash": "2e8da4933cc81c372822413a3b1357b0776f34ea31c6bc6317d2aae2748820b6"
+  },
+  "artifacts": {
+    "optimized_config": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\optimized_config.json",
+    "recommended_portfolio_config": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_portfolio_config.json",
+    "recommended_strategy_configs": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\recommended_strategy_configs",
+    "round_final_diagnostics": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\round_final_diagnostics.txt",
+    "round_evaluation": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\round_evaluation.txt",
+    "portfolio_trades": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\portfolio_trades.jsonl",
+    "portfolio_equity_curve": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\portfolio_equity_curve.csv",
+    "rule_events": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\portfolio\\round_3\\rule_events.jsonl"
+  }
+}

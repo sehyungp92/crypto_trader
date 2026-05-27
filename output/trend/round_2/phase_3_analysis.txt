@@ -4,28 +4,26 @@ Reason: Gate passed.
 Scoring assessment: EFFECTIVE
 
 Accepted: 1 experiments
-Final score: 0.7434
-Base score: 0.7396
+Final score: 0.6701
+Base score: 0.6662
 Rounds: 2
 
-Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
-Weaknesses: total_trades
-Diagnostic Gaps: Stop-outs dominate (14/19). [D1] Trail/TP may be mis-calibrated.
+Strengths: total_trades, win_rate, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio
+Diagnostic Gaps: Stop-outs dominate (32/42). [D1] Trail/TP may be mis-calibrated.
 
 Goal Progress:
-  net_return_pct: 21.35 / 18.00 (119%)
-  total_trades: 19.00 / 36.00 (53%)
-  profit_factor: 12.55 / 1.80 (200%)
-  max_drawdown_pct: 3.46 / 10.00 (200%)
-  sharpe_ratio: 4.99 / 3.50 (142%)
-  calmar_ratio: 6.17 / 2.80 (200%)
-  exit_efficiency: 0.63 / 0.55 (114%)
+  total_trades: 42.00 / 30.00 (140%)
+  win_rate: 57.14 / 45.00 (127%)
+  profit_factor: 4.30 / 1.50 (200%)
+  max_drawdown_pct: 4.98 / 25.00 (200%)
+  sharpe_ratio: 6.37 / 1.50 (200%)
+  calmar_ratio: 10.31 / 2.00 (200%)
 
 Extra Analysis:
-  avg_mfe_r: 1.1635
-  capture_pct: 0.6272
-  giveback_pct: 0.3728
+  avg_mfe_r: 1.1879
+  capture_pct: 0.5917
+  giveback_pct: 0.4083
   exit_reasons:
-    protective_stop: 14
-    scratch_exit: 5
-  avg_bars_held: 17.8947
+    protective_stop: 32
+    scratch_exit: 10
+  avg_bars_held: 19.6429

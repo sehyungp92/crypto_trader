@@ -12,6 +12,7 @@ from crypto_trader.optimize.scoring import (
     normalize_coverage,
     normalize_edge,
     normalize_entry_quality,
+    normalize_expectancy,
     normalize_exit_efficiency,
     normalize_hold,
     normalize_risk,
@@ -57,6 +58,10 @@ class TestNormalizers:
     def test_capture_clipped(self):
         assert normalize_capture({"exit_efficiency": 1.5}) == 1.0
         assert normalize_capture({"exit_efficiency": -0.5}) == 0.0
+
+    def test_expectancy(self):
+        assert normalize_expectancy({"expectancy_r": 0.3}) == pytest.approx(0.5)
+        assert normalize_expectancy({"expectancy_r": -0.1}) == 0.0
 
     def test_hold_optimal(self):
         result = normalize_hold({"avg_bars_held": 12})

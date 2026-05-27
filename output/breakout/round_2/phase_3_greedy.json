@@ -1,17 +1,24 @@
 {
   "accepted": [],
   "rejected": [
+    "model2_off",
     "retest_rejection_on",
     "retest_volume_decline_on",
+    "retest_zone_030",
     "retest_zone_035",
+    "retest_bars_2",
     "retest_bars_4",
     "strict_retest_stack",
     "model2_break_entry",
     "strict_break_entry",
     "entry_ttl_2"
   ],
-  "final_score": 0.8272094930945119,
-  "base_score": 0.8272094930945119,
+  "final_score": 0.7383535837871253,
+  "base_score": 0.7383535837871253,
   "rounds": 1,
-  "elapsed_seconds": 0.0
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4",
+  "final_validation": {
+    "status": "passed"
+  }
 }

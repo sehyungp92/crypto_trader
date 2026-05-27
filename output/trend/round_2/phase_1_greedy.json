@@ -1,10 +1,14 @@
 {
   "accepted": [
-    "weighted_score_loose"
+    "weekly_room_0_80"
   ],
   "rejected": [],
-  "final_score": 0.7686226520905459,
-  "base_score": 0.6388658723338355,
+  "final_score": 0.6662078817385871,
+  "base_score": 0.6605212763306125,
   "rounds": 2,
-  "elapsed_seconds": 45.0091028213501
+  "elapsed_seconds": 168.35445594787598,
+  "contract_hash": "abea552891debbe69fd2aed965722c3c6c84488d13570d8df19b549d17d0712a",
+  "final_validation": {
+    "status": "passed"
+  }
 }

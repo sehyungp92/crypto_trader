@@ -64,9 +64,30 @@ class TestSaveOptimizedConfig:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
         assert "strategy" in data
+        assert "metadata" in data
         # Round-trip: from_dict should produce a valid config
         restored = MomentumConfig.from_dict(data["strategy"])
         assert restored.trail.trail_r_ceiling == 1.35
+
+    def test_metadata_contains_contract_when_supplied(self, tmp_path: Path) -> None:
+        plugin = MagicMock()
+        plugin.base_config = MomentumConfig()
+        contract = {
+            "contract_hash": "abc",
+            "profile_hash": "profile",
+            "strategy_config_hash": "strategy",
+            "portfolio_config_hash": "portfolio",
+            "data_window": {"start_date": "2026-01-01", "end_date": "2026-04-01"},
+        }
+
+        runner = PhaseRunner(plugin, tmp_path, contract=contract)
+        path = runner._save_optimized_config(PhaseState())
+
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        assert data["metadata"]["contract_hash"] == "abc"
+        assert data["metadata"]["profile_hash"] == "profile"
+        assert data["metadata"]["contract"] == contract
 
     def test_no_base_config(self, tmp_path: Path) -> None:
         """Returns None when plugin has no base_config."""
@@ -143,6 +164,60 @@ class TestUpdateRoundsManifest:
             data = json.load(f)
         entry = data["rounds"][0]
         assert "total_trades" not in entry
+
+    def test_expanded_manifest_fields(self, tmp_path: Path) -> None:
+        metrics = {
+            "total_trades": 20,
+            "expectancy_r": 0.25,
+            "exit_efficiency": 0.6,
+            "realized_pnl_net": 123.0,
+            "terminal_mark_pnl_net": 45.0,
+            "net_profit": 168.0,
+            "total_fees": 12.0,
+            "funding_cost_total": -3.0,
+            "terminal_mark_count": 2,
+        }
+        contract = {
+            "contract_hash": "contract",
+            "profile_hash": "profile",
+            "strategy_config_hash": "strategy",
+            "portfolio_config_hash": "portfolio",
+            "data_window": {"start_date": "2026-01-01", "end_date": "2026-04-01"},
+            "symbols": ["BTC", "ETH", "SOL"],
+            "required_timeframes": ["15m", "1h", "4h"],
+        }
+
+        _update_rounds_manifest(
+            tmp_path,
+            1,
+            {"risk.risk_pct_a": 0.01},
+            metrics,
+            contract=contract,
+            phase_result={"final_score": 0.77},
+            gate_result={"passed": False, "failure_reasons": ["too few trades"]},
+        )
+
+        with open(tmp_path / "rounds_manifest.json", encoding="utf-8") as f:
+            data = json.load(f)
+        entry = data["rounds"][0]
+        assert data["schema_version"] >= 3
+        assert entry["score"] == 0.77
+        assert entry["gate_status"] == "failed"
+        assert entry["reject_reason"] == "too few trades"
+        assert entry["expectancy_r"] == 0.25
+        assert entry["exit_efficiency"] == 0.6
+        assert entry["realized_pnl_net"] == 123.0
+        assert entry["terminal_mark_pnl_net"] == 45.0
+        assert entry["net_profit"] == 168.0
+        assert entry["total_fees"] == 12.0
+        assert entry["funding_cost_total"] == -3.0
+        assert entry["terminal_mark_count"] == 2
+        assert entry["contract_hash"] == "contract"
+        assert entry["profile_hash"] == "profile"
+        assert entry["strategy_config_hash"] == "strategy"
+        assert entry["portfolio_config_hash"] == "portfolio"
+        assert entry["data_window"] == contract["data_window"]
+        assert entry["metrics"]["expectancy_r"] == 0.25
 
 
 # ---------------------------------------------------------------------------

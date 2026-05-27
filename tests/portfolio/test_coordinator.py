@@ -5,6 +5,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from crypto_trader.broker.sim_broker import SimBroker
+from crypto_trader.broker.sim_execution_adapter import SimExecutionAdapter
+from crypto_trader.core.execution_gateway import ExecutionGateway
 from crypto_trader.core.models import Fill, Order, OrderStatus, OrderType, Position, Side
 from crypto_trader.portfolio.config import PortfolioConfig, StrategyAllocation
 from crypto_trader.portfolio.coordinator import BrokerProxy, StrategyCoordinator
@@ -197,6 +200,77 @@ class TestBrokerProxy:
         assert visible[0].order_id == "trend_stop_BTC_abc"
         assert visible[0].metadata["broker_order_id"] == "broker_1"
         assert order.order_id == "broker_1"
+
+    def test_submit_registers_exchange_oid_when_broker_exposes_mapping(self):
+        broker, manager, state = _make_components()
+        coord = StrategyCoordinator(broker, manager)
+        proxy = coord.get_proxy("momentum")
+
+        def submit(order):
+            order.order_id = "local_1"
+            broker._local_to_oid = {"local_1": "999"}
+            return "local_1"
+
+        broker.submit_order.side_effect = submit
+
+        order = Order(
+            order_id="",
+            symbol="BTC",
+            side=Side.LONG,
+            order_type=OrderType.MARKET,
+            qty=0.1,
+            tag="entry",
+            metadata={"risk_R": 0.4},
+        )
+
+        assert proxy.submit_order(order) == "local_1"
+        fill = Fill(
+            order_id="999",
+            symbol="BTC",
+            side=Side.LONG,
+            qty=0.1,
+            fill_price=50000.0,
+            commission=1.75,
+            timestamp=datetime(2026, 4, 20, tzinfo=timezone.utc),
+            tag="entry",
+        )
+
+        assert coord.on_fill(fill) == "momentum"
+        assert state.total_heat_R() == pytest.approx(0.4)
+
+    def test_submit_registers_gateway_exchange_id_for_fill_routing(self):
+        _, manager, state = _make_components()
+        sim_broker = SimBroker(initial_equity=10_000.0)
+        gateway = ExecutionGateway(
+            adapter=SimExecutionAdapter(sim_broker),
+            broker=sim_broker,
+        )
+        coord = StrategyCoordinator(gateway, manager)
+        proxy = coord.get_proxy("momentum")
+
+        assert proxy.submit_order(Order(
+            order_id="strategy_entry_1",
+            symbol="BTC",
+            side=Side.LONG,
+            order_type=OrderType.MARKET,
+            qty=0.1,
+            tag="entry",
+            metadata={"risk_R": 0.4},
+        )) == "strategy_entry_1"
+
+        fill = Fill(
+            order_id="1",
+            symbol="BTC",
+            side=Side.LONG,
+            qty=0.1,
+            fill_price=50000.0,
+            commission=1.75,
+            timestamp=datetime(2026, 4, 20, tzinfo=timezone.utc),
+            tag="entry",
+        )
+
+        assert coord.on_fill(fill) == "momentum"
+        assert state.total_heat_R() == pytest.approx(0.4)
 
     def test_cancel_all_cancels_only_strategy_owned_orders(self):
         broker, manager, _ = _make_components()

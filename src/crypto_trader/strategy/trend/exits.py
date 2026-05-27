@@ -153,6 +153,23 @@ class ExitManager:
             full_close_requested = True
 
         if (not full_close_requested
+                and cfg.mfe_lock_exit_enabled
+                and state.bars_since_entry >= cfg.mfe_lock_min_bars
+                and state.peak_r >= cfg.mfe_lock_trigger_r
+                and state.current_r <= cfg.mfe_lock_floor_r
+                and state.remaining_qty > 0):
+            reverse_side = Side.SHORT if direction == Side.LONG else Side.LONG
+            orders.append(Order(
+                order_id=self._gen_id(sym, "mfe_lock_exit"),
+                symbol=sym,
+                side=reverse_side,
+                order_type=OrderType.MARKET,
+                qty=state.remaining_qty,
+                tag="mfe_lock_exit",
+            ))
+            full_close_requested = True
+
+        if (not full_close_requested
                 and state.bars_since_entry >= cfg.time_stop_bars
                 and state.current_r < cfg.time_stop_min_progress_r
                 and not state.tp1_hit):

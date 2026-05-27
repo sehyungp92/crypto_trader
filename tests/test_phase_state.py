@@ -112,6 +112,34 @@ class TestPhaseState:
         assert loaded.scoring_retries[1] == 1
         assert loaded.phase_gate_results[1] == {"passed": True}
 
+    def test_contract_roundtrip_and_validation(self, tmp_path):
+        state = PhaseState()
+        contract = {"contract_hash": "abc", "profile_hash": "profile"}
+        state.ensure_contract(contract)
+        state.mark_phase_invalid(1, reason="final_validation_failed", error="boom")
+
+        path = tmp_path / "state.json"
+        state.save(path)
+
+        loaded = PhaseState.load(path)
+        assert loaded.contract_hash == "abc"
+        assert loaded.contract == contract
+        assert loaded.invalid_phases[1]["reason"] == "final_validation_failed"
+        loaded.ensure_contract(contract)
+
+    def test_contract_mismatch_raises_in_strict_mode(self):
+        state = PhaseState(contract_hash="old", contract={"contract_hash": "old"})
+
+        with pytest.raises(RuntimeError, match="contract mismatch"):
+            state.ensure_contract({"contract_hash": "new"}, strict=True)
+
+    def test_legacy_completed_state_is_stale_in_strict_mode(self):
+        state = PhaseState()
+        state.advance_phase(1, {"a": 1}, {"m": 1.0})
+
+        with pytest.raises(RuntimeError, match="contract mismatch"):
+            state.ensure_contract({"contract_hash": "new"}, strict=True)
+
     def test_save_load_int_keys(self, tmp_path):
         """Phase metrics keys should survive JSON round-trip as ints."""
         state = PhaseState()

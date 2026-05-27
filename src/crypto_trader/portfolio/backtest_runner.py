@@ -20,10 +20,17 @@ from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.backtest.metrics import PerformanceMetrics, compute_metrics
 from crypto_trader.backtest.runner import _create_strategy
 from crypto_trader.broker.sim_broker import SimBroker
+from crypto_trader.broker.sim_execution_adapter import SimExecutionAdapter
 from crypto_trader.core.clock import SimClock
 from crypto_trader.core.engine import MultiTimeFrameBars, StrategyContext
-from crypto_trader.core.events import EventBus, FillEvent, PositionClosedEvent
-from crypto_trader.core.models import Bar, TimeFrame, Trade
+from crypto_trader.core.events import EventBus
+from crypto_trader.core.execution_gateway import ExecutionGateway
+from crypto_trader.core.models import Bar, TerminalMark, TimeFrame, Trade
+from crypto_trader.core.runtime_types import MarketEvent
+from crypto_trader.core.strategy_runtime import (
+    StrategyRuntimeCallbacks,
+    StrategySlotRuntime,
+)
 from crypto_trader.data.historical_feed import HistoricalFeed, _TF_PRIORITY
 from crypto_trader.data.store import ParquetStore
 from crypto_trader.exchange.funding import FundingHelper
@@ -70,6 +77,7 @@ class PortfolioBacktestResult:
     config: BacktestConfig | None = None
     portfolio_config: PortfolioConfig | None = None
     execution_mode: str = "shared_capital"
+    terminal_marks: dict[str, list[TerminalMark]] = field(default_factory=dict)
 
 
 @dataclass
@@ -85,6 +93,7 @@ class _StrategySlot:
     primary_tf: TimeFrame
     feed_tfs: list[TimeFrame]
     feed: HistoricalFeed | None = None
+    runtime: StrategySlotRuntime | None = None
 
 
 def run_portfolio_backtest(
@@ -93,7 +102,9 @@ def run_portfolio_backtest(
     backtest_config: BacktestConfig,
     data_dir: Path = Path("data"),
     meta_path: Path | None = None,
+    store: Any | None = None,
     execution_mode: str = "shared_capital",
+    terminal_accounting_mode: str | None = None,
 ) -> PortfolioBacktestResult:
     """Run a multi-strategy portfolio backtest.
 
@@ -117,10 +128,17 @@ def run_portfolio_backtest(
             f"Unsupported portfolio execution_mode={execution_mode!r}; "
             "only 'shared_capital' is official"
         )
+    accounting_mode = terminal_accounting_mode or portfolio_config.terminal_accounting_mode
+    if accounting_mode not in {"terminal_mark", "force_close"}:
+        raise ValueError(
+            f"Unsupported terminal_accounting_mode={accounting_mode!r}; "
+            "expected 'terminal_mark' or 'force_close'"
+        )
 
     symbols = backtest_config.symbols or ["BTC", "ETH", "SOL"]
 
-    store = ParquetStore(base_dir=data_dir)
+    if store is None:
+        store = ParquetStore(base_dir=data_dir)
 
     # Load asset meta
     asset_meta = None
@@ -188,12 +206,17 @@ def run_portfolio_backtest(
             funding_helpers=funding_helpers if funding_helpers else None,
         )
 
-        proxy = coordinator.get_proxy(strategy_id, use_manager_equity=True)
-        # Point proxy at this strategy's broker (not the coordinator's dummy)
-        proxy._broker = strategy_broker
-
         events = EventBus()
         bars = MultiTimeFrameBars()
+        execution_gateway = ExecutionGateway(
+            adapter=SimExecutionAdapter(strategy_broker),
+            broker=strategy_broker,
+            events=events,
+        )
+
+        proxy = coordinator.get_proxy(strategy_id, use_manager_equity=True)
+        # Point proxy at this strategy's gateway (not the coordinator's dummy)
+        proxy._broker = execution_gateway
 
         ctx = StrategyContext(
             broker=proxy,
@@ -245,9 +268,36 @@ def run_portfolio_backtest(
 
     manager.check_entry = _logging_check  # type: ignore[method-assign]
 
-    # Set module-level reference for equity calculation in _process_slot_primary
+    # Set module-level reference for shared-capital equity callbacks.
     global _all_slots_ref
     _all_slots_ref = slots
+
+    for slot in slots:
+        def _on_trade_closed(trade: Trade, strategy_id: str = slot.strategy_id) -> None:
+            pnl_R = trade.r_multiple if trade.r_multiple is not None else 0.0
+            coordinator.on_trade_closed(strategy_id, trade.symbol, pnl_R)
+
+        def _before_strategy_bar(_bar: Bar) -> None:
+            total_equity = _portfolio_equity_from_slots(
+                _all_slots_ref,
+                manager.config.initial_equity,
+            )
+            manager.update_equity(total_equity)
+
+        slot.runtime = StrategySlotRuntime(
+            strategy=slot.strategy,
+            ctx=slot.ctx,
+            broker=slot.broker,
+            bars=slot.bars,
+            events=slot.ctx.events,
+            primary_timeframe=slot.primary_tf,
+            strategy_id=slot.strategy_id,
+            callbacks=StrategyRuntimeCallbacks(
+                on_fill=coordinator.on_fill,
+                on_trade_closed=_on_trade_closed,
+                before_strategy_bar=_before_strategy_bar,
+            ),
+        )
 
     # Init strategies
     for slot in slots:
@@ -272,17 +322,17 @@ def run_portfolio_backtest(
     # Each strategy sees exactly the same bars as in individual mode
     slot_map = {s.strategy_id: s for s in slots}
     feed_iters: dict[str, object] = {}
-    _bar_store: dict[int, Bar] = {}
+    _bar_store: dict[int, Bar | MarketEvent] = {}
     _heap: list[tuple] = []
     _seq = 0
 
     for slot in slots:
-        it = iter(slot.feed)
+        it = slot.feed.iter_market_events()
         feed_iters[slot.strategy_id] = it
         try:
             bar = next(it)
             _bar_store[_seq] = bar
-            heapq.heappush(_heap, (bar.timestamp, _TF_PRIORITY.get(bar.timeframe, 99), _seq, slot.strategy_id))
+            heapq.heappush(_heap, (*_market_sort_key(bar), _seq, slot.strategy_id))
             _seq += 1
         except StopIteration:
             pass
@@ -292,38 +342,42 @@ def run_portfolio_backtest(
         bar = _bar_store.pop(seq_id)
         slot = slot_map[sid]
 
+        event_time = bar.available_at if isinstance(bar, MarketEvent) else (
+            bar.timestamp + timedelta(minutes=bar.timeframe.minutes)
+        )
         if hasattr(clock, "advance"):
-            clock.advance(bar.timestamp)
+            clock.advance(event_time)
 
-        today = bar.timestamp.date()
+        today = event_time.date()
         manager.maybe_reset_daily(today)
 
-        if bar.timeframe == slot.primary_tf:
-            _process_slot_primary(bar, slot, coordinator, manager, clock)
-        else:
-            _process_slot_higher_tf(bar, slot)
+        assert slot.runtime is not None
+        slot.runtime.process_bar(bar, advance_clock=False)
 
         # Push next bar from this feed
         it = feed_iters[sid]
         try:
             next_bar = next(it)
             _bar_store[_seq] = next_bar
-            heapq.heappush(_heap, (next_bar.timestamp, _TF_PRIORITY.get(next_bar.timeframe, 99), _seq, sid))
+            heapq.heappush(_heap, (*_market_sort_key(next_bar), _seq, sid))
             _seq += 1
         except StopIteration:
             pass
 
-    # Force-close open positions per strategy
+    terminal_marks: dict[str, list[TerminalMark]] = {}
     for slot in slots:
-        _close_slot_positions(slot, coordinator, manager)
+        assert slot.runtime is not None
+        if accounting_mode == "force_close":
+            slot.runtime.close_open_positions()
+        else:
+            marks = slot.runtime.mark_open_positions()
+            if marks:
+                terminal_marks[slot.strategy_id] = marks
 
     # Trim warmup and collect results
     per_strategy_trades: dict[str, list[Trade]] = {}
     per_strategy_metrics: dict[str, PerformanceMetrics | None] = {}
     all_trades: list[Trade] = []
-
-    # Build combined equity curve from all brokers
-    combined_equity: list[tuple[datetime, float]] = []
 
     for slot in slots:
         broker = slot.broker
@@ -358,15 +412,7 @@ def run_portfolio_backtest(
         sm = compute_metrics(broker)
         per_strategy_metrics[slot.strategy_id] = sm
 
-        # Accumulate equity history for combined curve
-        eq_curve = broker._liquidation_equity_history or broker._equity_history
-        combined_equity.extend(eq_curve)
-
     all_trades.sort(key=lambda t: t.entry_time)
-
-    # Sort combined equity by timestamp and compute portfolio-level equity
-    # (sum of per-strategy equity deltas from initial)
-    combined_equity.sort(key=lambda x: x[0])
 
     # Shutdown strategies
     for slot in slots:
@@ -375,6 +421,9 @@ def run_portfolio_backtest(
     # Build a synthetic broker for combined metrics
     combined_broker = SimBroker(initial_equity=portfolio_config.initial_equity)
     combined_broker._closed_trades = all_trades
+    combined_broker._terminal_marks = [
+        mark for marks in terminal_marks.values() for mark in marks
+    ]
     combined_broker._initial_equity = portfolio_config.initial_equity
 
     # Build combined equity: sum equity deltas across all strategies
@@ -392,6 +441,7 @@ def run_portfolio_backtest(
         config=backtest_config,
         portfolio_config=portfolio_config,
         execution_mode=execution_mode,
+        terminal_marks=terminal_marks,
     )
 
 
@@ -441,112 +491,13 @@ def _build_combined_equity(
         combined_broker._initial_equity = combined_history[0][1]
 
 
-def _process_slot_primary(
-    bar: Bar,
-    slot: _StrategySlot,
-    coordinator: StrategyCoordinator,
-    manager: PortfolioManager,
-    clock: Any,
-) -> None:
-    """Process a primary-TF bar for one strategy: fills first, then dispatch."""
-    broker = slot.broker
-    closed_before = len(broker._closed_trades)
-
-    # Process fills
-    fills = broker.process_bar(bar)
-    for fill in fills:
-        coordinator.on_fill(fill)
-        slot.strategy.on_fill(fill, slot.ctx)
-        slot.ctx.events.emit(FillEvent(timestamp=fill.timestamp, fill=fill))
-
-    # Recheck entry-bar stops
-    if fills:
-        check_fn = getattr(broker, 'check_entry_bar_stops', None)
-        if check_fn is not None:
-            recheck_fills = check_fn(bar)
-            for fill in recheck_fills:
-                coordinator.on_fill(fill)
-                slot.strategy.on_fill(fill, slot.ctx)
-                slot.ctx.events.emit(FillEvent(timestamp=fill.timestamp, fill=fill))
-            if recheck_fills:
-                refresh_fn = getattr(broker, "refresh_current_bar_equity", None)
-                if refresh_fn is not None:
-                    refresh_fn(bar.timestamp)
-
-    # Emit PositionClosedEvents + update portfolio state
-    for trade in broker._closed_trades[closed_before:]:
-        pnl_R = trade.r_multiple if trade.r_multiple is not None else 0.0
-        coordinator.on_trade_closed(slot.strategy_id, trade.symbol, pnl_R)
-        slot.ctx.events.emit(PositionClosedEvent(
-            timestamp=trade.exit_time, trade=trade,
-        ))
-
-    # Activate deferred orders
-    activate_fn = getattr(broker, 'activate_deferred', None)
-    if activate_fn is not None:
-        activate_fn()
-
-    # Update portfolio equity from one shared-capital ledger, not the sum of
-    # independent account balances.
-    total_equity = _portfolio_equity_from_slots(
-        _all_slots_ref,
-        manager.config.initial_equity,
+def _market_sort_key(bar: Bar | MarketEvent) -> tuple[datetime, int]:
+    if isinstance(bar, MarketEvent):
+        return bar.available_at, _TF_PRIORITY.get(bar.timeframe, 99)
+    return (
+        bar.timestamp + timedelta(minutes=bar.timeframe.minutes),
+        _TF_PRIORITY.get(bar.timeframe, 99),
     )
-    manager.update_equity(total_equity)
-
-    # Dispatch bar to strategy
-    slot.bars.append(bar)
-    slot.strategy.on_bar(bar, slot.ctx)
-
-
-def _process_slot_higher_tf(
-    bar: Bar,
-    slot: _StrategySlot,
-) -> None:
-    """Process a higher-TF bar for one strategy: defer orders, dispatch."""
-    broker = slot.broker
-    start_fn = getattr(broker, 'start_deferring', None)
-    stop_fn = getattr(broker, 'stop_deferring', None)
-
-    slot.bars.append(bar)
-
-    if start_fn is not None:
-        start_fn()
-
-    slot.strategy.on_bar(bar, slot.ctx)
-
-    if stop_fn is not None:
-        stop_fn()
-
-
-def _close_slot_positions(
-    slot: _StrategySlot,
-    coordinator: StrategyCoordinator,
-    manager: PortfolioManager,
-) -> None:
-    """Force-close open positions for one strategy at backtest end."""
-    broker = slot.broker
-    close_fn = getattr(broker, "close_open_positions", None)
-    if close_fn is None:
-        return
-
-    closed_before = len(broker._closed_trades)
-    fills = close_fn()
-
-    for fill in fills:
-        coordinator.on_fill(fill)
-        slot.strategy.on_fill(fill, slot.ctx)
-        slot.ctx.events.emit(FillEvent(timestamp=fill.timestamp, fill=fill))
-
-    for trade in broker._closed_trades[closed_before:]:
-        pnl_R = trade.r_multiple if trade.r_multiple is not None else 0.0
-        coordinator.on_trade_closed(slot.strategy_id, trade.symbol, pnl_R)
-        slot.ctx.events.emit(PositionClosedEvent(
-            timestamp=trade.exit_time, trade=trade,
-        ))
-
-    # Final equity snapshot
-    broker._equity = broker._cash
 
 
 # Module-level reference to all slots (set during run_portfolio_backtest)

@@ -33,6 +33,14 @@ class SimClock:
     def is_backtest(self) -> bool:
         return True
 
+    def snapshot_state(self) -> dict[str, datetime]:
+        """Return the current simulated timestamp."""
+        return {"current_time": self._current_time}
+
+    def restore_state(self, snapshot: dict[str, datetime]) -> None:
+        """Restore a timestamp captured by :meth:`snapshot_state`."""
+        self._current_time = snapshot["current_time"]
+
 
 class WallClock:
     """Real wall-clock time source."""

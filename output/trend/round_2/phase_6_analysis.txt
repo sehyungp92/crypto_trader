@@ -4,25 +4,24 @@ Reason: Gate passed.
 Scoring assessment: EFFECTIVE
 
 Accepted: 1 experiments
-Final score: 0.8832
-Base score: 0.7366
+Final score: 0.6970
+Base score: 0.6839
 Rounds: 2
 
-Strengths: net_return_pct, total_trades, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
+Strengths: total_trades, win_rate, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio
 
 Goal Progress:
-  net_return_pct: 33.19 / 18.00 (184%)
-  total_trades: 43.00 / 36.00 (119%)
-  profit_factor: 3.28 / 1.80 (182%)
-  max_drawdown_pct: 5.75 / 10.00 (174%)
-  sharpe_ratio: 5.75 / 3.50 (164%)
-  calmar_ratio: 5.78 / 2.80 (200%)
-  exit_efficiency: 0.57 / 0.55 (103%)
+  total_trades: 44.00 / 30.00 (147%)
+  win_rate: 56.82 / 45.00 (126%)
+  profit_factor: 4.39 / 1.50 (200%)
+  max_drawdown_pct: 5.31 / 25.00 (200%)
+  sharpe_ratio: 6.65 / 1.50 (200%)
+  calmar_ratio: 11.42 / 2.00 (200%)
 
 Extra Analysis:
-  top_trade_pct: 11.0032
+  top_trade_pct: 9.8190
   direction_breakdown:
-    long: {'n': 30, 'avg_r': 0.3184197419203359}
-    short: {'n': 13, 'avg_r': 0.5534478959706415}
-  r_skew: 0.0636
-  r_mean: 0.3895
+    long: {'n': 31, 'avg_r': 0.35956511691033366}
+    short: {'n': 13, 'avg_r': 0.7180122716471729}
+  r_skew: 0.2245
+  r_mean: 0.4655

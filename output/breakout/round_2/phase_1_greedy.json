@@ -1,18 +1,27 @@
 {
-  "accepted": [
-    "branch_full_bundle_tp1_020"
-  ],
+  "accepted": [],
   "rejected": [
-    "trail_tight_009",
-    "tp1_frac_025",
-    "tp1_frac_020",
-    "zone_age_30",
-    "relaxed_selective",
-    "branch_core_bundle",
-    "branch_full_bundle"
+    "body_ratio_070",
+    "body_ratio_075",
+    "min_conf_b_1",
+    "min_conf_b_2",
+    "model1_vol_125",
+    "model1_vol_135",
+    "min_breakout_atr_025",
+    "min_breakout_atr_030",
+    "room_r_b_14",
+    "room_r_b_16",
+    "no_countertrend",
+    "h4_adx_15",
+    "quality_stack_light",
+    "quality_stack_strict"
   ],
-  "final_score": 0.7790527075305504,
-  "base_score": 0.5753537791635919,
-  "rounds": 2,
-  "elapsed_seconds": 0.0
+  "final_score": 0.6766774497145975,
+  "base_score": 0.6766774497145975,
+  "rounds": 1,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4",
+  "final_validation": {
+    "status": "passed"
+  }
 }

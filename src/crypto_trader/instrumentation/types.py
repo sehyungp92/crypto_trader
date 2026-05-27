@@ -8,6 +8,8 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Any
 
+from crypto_trader.instrumentation.strategy_ids import assistant_strategy_id
+
 
 # ---------------------------------------------------------------------------
 # Root cause taxonomy (21 values matching reference)
@@ -136,6 +138,7 @@ class EventMetadata:
             "event_id": self.event_id,
             "bot_id": self.bot_id,
             "strategy_id": self.strategy_id,
+            "assistant_strategy_id": assistant_strategy_id(self.strategy_id),
             "exchange_timestamp": self.exchange_timestamp.isoformat(),
             "trace_id": self.trace_id,
         }
@@ -161,6 +164,9 @@ class InstrumentedTradeEvent:
     exit_price: float = 0.0
     position_size: float = 0.0
     pnl: float = 0.0
+    price_pnl_gross: float = 0.0
+    total_fees: float = 0.0
+    realized_pnl_net: float = 0.0
     pnl_pct: float = 0.0
     r_multiple: float | None = None
     commission: float = 0.0
@@ -206,6 +212,9 @@ class InstrumentedTradeEvent:
             "exit_price": self.exit_price,
             "position_size": self.position_size,
             "pnl": self.pnl,
+            "price_pnl_gross": self.price_pnl_gross,
+            "total_fees": self.total_fees,
+            "realized_pnl_net": self.realized_pnl_net,
             "pnl_pct": self.pnl_pct,
             "r_multiple": self.r_multiple,
             "commission": self.commission,
@@ -220,6 +229,11 @@ class InstrumentedTradeEvent:
             "filter_decisions": [fd.to_dict() for fd in self.filter_decisions],
             "passed_filters": self.passed_filters,
             "active_filters": self.active_filters,
+            "bias_direction": (
+                self.market_context.bias_direction
+                if self.market_context is not None
+                else None
+            ),
             "market_context": self.market_context.to_dict() if self.market_context else None,
             "mfe_r": self.mfe_r,
             "mae_r": self.mae_r,
@@ -366,7 +380,9 @@ class PipelineFunnelSnapshot:
     assessment: str = "normal"
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        payload = asdict(self)
+        payload["assistant_strategy_id"] = assistant_strategy_id(self.strategy_id)
+        return payload
 
 
 # ---------------------------------------------------------------------------

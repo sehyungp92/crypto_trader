@@ -45,6 +45,7 @@ class PortfolioConfig:
     # Symbol collision — critical since all 3 strategies trade BTC/ETH/SOL
     symbol_collision: str = "cap"  # "allow" | "block" | "cap"
     symbol_exposure_cap_R: float = 3.0
+    terminal_accounting_mode: str = "terminal_mark"  # "terminal_mark" | "force_close"
 
     # Priority reservation
     priority_headroom_R: float = 0.0
@@ -83,6 +84,7 @@ class PortfolioConfig:
             "dd_tiers": [list(t) for t in self.dd_tiers],
             "symbol_collision": self.symbol_collision,
             "symbol_exposure_cap_R": self.symbol_exposure_cap_R,
+            "terminal_accounting_mode": self.terminal_accounting_mode,
             "priority_headroom_R": self.priority_headroom_R,
             "priority_reserve_threshold": self.priority_reserve_threshold,
         }
@@ -106,6 +108,7 @@ class PortfolioConfig:
             dd_tiers=dd_tiers,
             symbol_collision=d.get("symbol_collision", cls.symbol_collision),
             symbol_exposure_cap_R=d.get("symbol_exposure_cap_R", cls.symbol_exposure_cap_R),
+            terminal_accounting_mode=d.get("terminal_accounting_mode", cls.terminal_accounting_mode),
             priority_headroom_R=d.get("priority_headroom_R", cls.priority_headroom_R),
             priority_reserve_threshold=d.get("priority_reserve_threshold", cls.priority_reserve_threshold),
         )

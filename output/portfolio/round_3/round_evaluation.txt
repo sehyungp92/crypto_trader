@@ -1,0 +1,471 @@
+Portfolio Round 3 OOS Repair Adoption
+=======================================
+
+Selected candidate: extended_body108_scorea250_breakbody0715_riskall_1.4
+
+Validation windows:
+- In sample: 2026-02-25 to 2026-04-20
+- Out of sample: 2026-04-21 to 2026-05-23
+- Full promoted round: 2026-02-25 to 2026-05-23
+
+Backtest results:
+- IS: return 73.7862%, trades 46, win rate 60.87%, PF 6.0158, expectancy 0.5095R, DD 3.9014%
+- OOS: return 48.2423%, trades 42, win rate 50.00%, PF 2.7497, expectancy 0.3591R, DD 5.3667%
+- Full: return 149.6956%, trades 89, win rate 56.18%, PF 3.3793, expectancy 0.4298R, DD 5.3667%
+
+Adopted policy:
+{
+  "portfolio.dd_tiers": [
+    [
+      0.06,
+      0.75
+    ],
+    [
+      0.09,
+      0.5
+    ],
+    [
+      0.12,
+      0.25
+    ],
+    [
+      0.15,
+      0.0
+    ]
+  ],
+  "portfolio.symbol_collision": "cap",
+  "portfolio.symbol_exposure_cap_R": 2.5,
+  "risk_scale.breakout": 1.4,
+  "risk_scale.momentum": 1.4,
+  "risk_scale.trend": 1.4,
+  "strategy.breakout.setup.body_ratio_min": 0.715,
+  "strategy.momentum.exits.proof_lock_min_bars": 3,
+  "strategy.momentum.exits.proof_lock_trigger_r": 0.55,
+  "strategy.momentum.symbol_filter.sol_direction": "short_only",
+  "strategy.trend.setup.min_setup_score_a": 2.5,
+  "strategy.trend.setup.orderly_max_body_frac": 1.08
+}
+
+OOS group attribution:
+{
+  "breakout|BTC|SHORT|model1_close": {
+    "avg_r": 1.0142359750149015,
+    "net_profit": 2097.2850674860197,
+    "trades": 2,
+    "win_rate": 100.0
+  },
+  "breakout|BTC|SHORT|model2_retest": {
+    "avg_r": 0.15494895428608316,
+    "net_profit": 107.40867636335368,
+    "trades": 1,
+    "win_rate": 100.0
+  },
+  "breakout|ETH|LONG|model1_close": {
+    "avg_r": 0.9321600541562403,
+    "net_profit": 3642.2361980457144,
+    "trades": 4,
+    "win_rate": 75.0
+  },
+  "breakout|ETH|SHORT|model1_close": {
+    "avg_r": 0.5314622157041408,
+    "net_profit": 429.719579759677,
+    "trades": 1,
+    "win_rate": 100.0
+  },
+  "breakout|SOL|LONG|model1_close": {
+    "avg_r": 0.2899299588754911,
+    "net_profit": 952.167696740661,
+    "trades": 2,
+    "win_rate": 100.0
+  },
+  "breakout|SOL|SHORT|model1_close": {
+    "avg_r": 1.2762564858657162,
+    "net_profit": 2022.5437188878532,
+    "trades": 2,
+    "win_rate": 100.0
+  },
+  "momentum|BTC|LONG|hammer": {
+    "avg_r": 1.3286433439826877,
+    "net_profit": 4944.731664561882,
+    "trades": 4,
+    "win_rate": 100.0
+  },
+  "momentum|BTC|LONG|inside_bar_break": {
+    "avg_r": 0.008101756122942814,
+    "net_profit": -305.13661580557505,
+    "trades": 10,
+    "win_rate": 50.0
+  },
+  "momentum|BTC|LONG|micro_structure_shift": {
+    "avg_r": 0.4823648026400044,
+    "net_profit": 1353.7886108232083,
+    "trades": 3,
+    "win_rate": 33.33333333333333
+  },
+  "momentum|ETH|LONG|hammer": {
+    "avg_r": 0.6504518321672447,
+    "net_profit": 727.7421116901328,
+    "trades": 1,
+    "win_rate": 100.0
+  },
+  "momentum|ETH|LONG|inside_bar_break": {
+    "avg_r": 0.8009189436812187,
+    "net_profit": 7202.447246472877,
+    "trades": 9,
+    "win_rate": 55.55555555555556
+  },
+  "momentum|ETH|LONG|micro_structure_shift": {
+    "avg_r": 0.5826617267213665,
+    "net_profit": 2116.41263872395,
+    "trades": 4,
+    "win_rate": 50.0
+  },
+  "momentum|SOL|SHORT|bearish_engulfing": {
+    "avg_r": -0.650266443277119,
+    "net_profit": -950.7883994353133,
+    "trades": 1,
+    "win_rate": 0.0
+  },
+  "momentum|SOL|SHORT|inside_bar_break": {
+    "avg_r": 0.19350324056600515,
+    "net_profit": 558.4905426620703,
+    "trades": 8,
+    "win_rate": 37.5
+  },
+  "momentum|SOL|SHORT|micro_structure_shift": {
+    "avg_r": -0.2837388744091325,
+    "net_profit": -1006.8174964740124,
+    "trades": 3,
+    "win_rate": 66.66666666666666
+  },
+  "trend|BTC|LONG|none": {
+    "avg_r": 0.4040467002072066,
+    "net_profit": 3485.481786980399,
+    "trades": 9,
+    "win_rate": 66.66666666666666
+  },
+  "trend|ETH|LONG|none": {
+    "avg_r": 0.05185047773689595,
+    "net_profit": 274.3786714383942,
+    "trades": 7,
+    "win_rate": 42.857142857142854
+  },
+  "trend|ETH|SHORT|none": {
+    "avg_r": 0.6500478187352713,
+    "net_profit": 5417.234405601424,
+    "trades": 7,
+    "win_rate": 57.14285714285714
+  },
+  "trend|SOL|LONG|none": {
+    "avg_r": -0.18520750507735517,
+    "net_profit": -1056.6504868352754,
+    "trades": 5,
+    "win_rate": 0.0
+  },
+  "trend|SOL|SHORT|none": {
+    "avg_r": 0.6619960261598296,
+    "net_profit": 5411.213008623452,
+    "trades": 6,
+    "win_rate": 50.0
+  }
+}
+
+Worst full-period trades:
+[
+  {
+    "bars_held": 1,
+    "commission": 200.528388293183,
+    "confirmation_type": "inside_bar_break",
+    "direction": "SHORT",
+    "entry_method": "close",
+    "entry_price": 83.2371855,
+    "entry_time": "2026-05-23T14:15:00+00:00",
+    "exit_price": 83.77081676872771,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-05-23T14:30:00+00:00",
+    "funding_paid": 10.949045983328721,
+    "mae_r": -0.5336137148263199,
+    "mfe_r": 0.0,
+    "net_pnl": -1635.3375927673574,
+    "pnl": -1434.8092044741743,
+    "qty": 2668.2472372460684,
+    "r_multiple": -1.1857448337411358,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "SOL",
+    "trade_id": "43"
+  },
+  {
+    "bars_held": 0,
+    "commission": 228.35889062453276,
+    "confirmation_type": "inside_bar_break",
+    "direction": "SHORT",
+    "entry_method": "close",
+    "entry_price": 86.78129925,
+    "entry_time": "2026-05-17T05:00:00+00:00",
+    "exit_price": 87.25696505376739,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-05-17T05:00:00+00:00",
+    "funding_paid": 2.2450598772046653,
+    "mae_r": 0.0,
+    "mfe_r": 0.0,
+    "net_pnl": -1617.5596766000733,
+    "pnl": -1389.2007859755406,
+    "qty": 2915.819710211081,
+    "r_multiple": -1.2106750537138864,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "SOL",
+    "trade_id": "37"
+  },
+  {
+    "bars_held": 6,
+    "commission": 211.89900663219032,
+    "confirmation_type": "micro_structure_shift",
+    "direction": "SHORT",
+    "entry_method": "close",
+    "entry_price": 83.3211645,
+    "entry_time": "2026-05-01T01:15:00+00:00",
+    "exit_price": 83.71207206605928,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-05-01T02:45:00+00:00",
+    "funding_paid": -3.1311852679187924,
+    "mae_r": -0.9750566937813868,
+    "mfe_r": 0.024492975793628698,
+    "net_pnl": -1310.7830268525015,
+    "pnl": -1098.8840202203112,
+    "qty": 2819.119661964033,
+    "r_multiple": -1.242653582721877,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "SOL",
+    "trade_id": "29"
+  },
+  {
+    "bars_held": 2,
+    "commission": 171.76113913043093,
+    "confirmation_type": "inside_bar_break",
+    "direction": "LONG",
+    "entry_method": "close",
+    "entry_price": 78231.553,
+    "entry_time": "2026-04-22T23:45:00+00:00",
+    "exit_price": 77800.53585573703,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-04-23T00:15:00+00:00",
+    "funding_paid": -2.287614176404135,
+    "mae_r": -0.8943302208392986,
+    "mfe_r": 0.2826956085589761,
+    "net_pnl": -1223.8434764779818,
+    "pnl": -1052.082337347551,
+    "qty": 2.446236688164496,
+    "r_multiple": -1.2042163963136412,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "BTC",
+    "trade_id": "23"
+  },
+  {
+    "bars_held": 4,
+    "commission": 170.15356576075956,
+    "confirmation_type": "inside_bar_break",
+    "direction": "LONG",
+    "entry_method": "close",
+    "entry_price": 75832.9535,
+    "entry_time": "2026-04-18T17:30:00+00:00",
+    "exit_price": 75423.94069312344,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-04-18T18:30:00+00:00",
+    "funding_paid": -2.4581260290103106,
+    "mae_r": -0.7487554715208898,
+    "mfe_r": 0.055966237060698296,
+    "net_pnl": -1190.1647207096064,
+    "pnl": -1020.0111549488469,
+    "qty": 2.499846615527694,
+    "r_multiple": -1.2085932527759082,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "BTC",
+    "trade_id": "21"
+  },
+  {
+    "bars_held": 3,
+    "commission": 138.52524806159224,
+    "confirmation_type": "inside_bar_break",
+    "direction": "LONG",
+    "entry_method": "close",
+    "entry_price": 2313.8783250000006,
+    "entry_time": "2026-04-29T12:45:00+00:00",
+    "exit_price": 2298.336198038542,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-04-29T13:30:00+00:00",
+    "funding_paid": 2.1206016615741268,
+    "mae_r": -0.6284374671492633,
+    "mfe_r": 0.20034486932531215,
+    "net_pnl": -1177.9768960791375,
+    "pnl": -1039.4516480175453,
+    "qty": 66.74318443854906,
+    "r_multiple": -1.1702006159378382,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "ETH",
+    "trade_id": "26"
+  },
+  {
+    "bars_held": 6,
+    "commission": 276.88699791229044,
+    "confirmation_type": "inside_bar_break",
+    "direction": "LONG",
+    "entry_method": "close",
+    "entry_price": 77344.33125,
+    "entry_time": "2026-05-21T10:45:00+00:00",
+    "exit_price": 77141.70975000001,
+    "exit_reason": "quick_exit",
+    "exit_time": "2026-05-21T12:15:00+00:00",
+    "funding_paid": 10.352705756035945,
+    "mae_r": -0.6630292644050868,
+    "mfe_r": 0.00464240457335765,
+    "net_pnl": -1094.263482276021,
+    "pnl": -817.3764843637305,
+    "qty": 3.982912862690875,
+    "r_multiple": -0.7643157477755621,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "BTC",
+    "trade_id": "42"
+  },
+  {
+    "bars_held": 6,
+    "commission": 234.12043700786637,
+    "confirmation_type": "bearish_engulfing",
+    "direction": "SHORT",
+    "entry_method": "close",
+    "entry_price": 84.82578825,
+    "entry_time": "2026-05-20T07:15:00+00:00",
+    "exit_price": 85.0610088,
+    "exit_reason": "trailing_stop",
+    "exit_time": "2026-05-20T08:45:00+00:00",
+    "funding_paid": -3.6801872488400003,
+    "mae_r": -0.6434465473013097,
+    "mfe_r": 0.35352233984389053,
+    "net_pnl": -950.7883994353133,
+    "pnl": -716.6679624274469,
+    "qty": 3062.4371453782646,
+    "r_multiple": -0.650266443277119,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "SOL",
+    "trade_id": "40"
+  },
+  {
+    "bars_held": 4,
+    "commission": 123.90160892483732,
+    "confirmation_type": "none",
+    "direction": "LONG",
+    "entry_method": "aggressive",
+    "entry_price": 2313.7783,
+    "entry_time": "2026-05-03T01:00:00+00:00",
+    "exit_price": 2301.8370420968276,
+    "exit_reason": "protective_stop",
+    "exit_time": "2026-05-03T02:00:00+00:00",
+    "funding_paid": 3.45061555920466,
+    "mae_r": -0.809389861448557,
+    "mfe_r": 0.0,
+    "net_pnl": -839.688238996097,
+    "pnl": -715.7866300712597,
+    "qty": 59.653348105212324,
+    "r_multiple": -0.9925752345922004,
+    "setup_grade": "A",
+    "signal_variant": null,
+    "strategy_id": "trend",
+    "symbol": "ETH",
+    "trade_id": "23"
+  },
+  {
+    "bars_held": 19,
+    "commission": 106.32812629723577,
+    "confirmation_type": "none",
+    "direction": "LONG",
+    "entry_method": "aggressive",
+    "entry_price": 88.6521575,
+    "entry_time": "2026-05-07T14:00:00+00:00",
+    "exit_price": 88.40051153320313,
+    "exit_reason": "scratch_exit",
+    "exit_time": "2026-05-07T18:45:00+00:00",
+    "funding_paid": 3.7288249918650695,
+    "mae_r": -0.7654372725387618,
+    "mfe_r": 0.30668584268760535,
+    "net_pnl": -445.88977670232464,
+    "pnl": -339.56165040508887,
+    "qty": 1334.5448356989032,
+    "r_multiple": -0.29458147381849636,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "trend",
+    "symbol": "SOL",
+    "trade_id": "27"
+  },
+  {
+    "bars_held": 6,
+    "commission": 138.78191533044128,
+    "confirmation_type": "micro_structure_shift",
+    "direction": "LONG",
+    "entry_method": "close",
+    "entry_price": 77733.42850000001,
+    "entry_time": "2026-04-24T03:30:00+00:00",
+    "exit_price": 77607.31589681235,
+    "exit_reason": "trailing_stop",
+    "exit_time": "2026-04-24T05:00:00+00:00",
+    "funding_paid": 3.8427810430323674,
+    "mae_r": -0.5295972840140855,
+    "mfe_r": 0.1928693218501253,
+    "net_pnl": -393.0011429773224,
+    "pnl": -254.21922764688114,
+    "qty": 1.9853404043311518,
+    "r_multiple": -0.3994786590777789,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "BTC",
+    "trade_id": "24"
+  },
+  {
+    "bars_held": 4,
+    "commission": 229.3252840231278,
+    "confirmation_type": "inside_bar_break",
+    "direction": "LONG",
+    "entry_method": "close",
+    "entry_price": 72605.14675,
+    "entry_time": "2026-04-11T13:30:00+00:00",
+    "exit_price": 72590.62572065,
+    "exit_reason": "proof_lock_stop",
+    "exit_time": "2026-04-11T14:30:00+00:00",
+    "funding_paid": 6.370783856805898,
+    "mae_r": -0.2240325819131812,
+    "mfe_r": 0.5500517754388872,
+    "net_pnl": -286.66233873437585,
+    "pnl": -57.33705471124806,
+    "qty": 3.509824932241954,
+    "r_multiple": -0.32589053444317495,
+    "setup_grade": "B",
+    "signal_variant": null,
+    "strategy_id": "momentum",
+    "symbol": "BTC",
+    "trade_id": "12"
+  }
+]
+
+Parity contract:
+- profile_id: live_parity_v1
+- terminal_accounting_mode: terminal_mark
+- contract_hash: 2e8da4933cc81c372822413a3b1357b0776f34ea31c6bc6317d2aae2748820b6
+- portfolio_config_hash: 7faa6556e49d45ef4b8f1de45c80e11288e59d6f3591ac24f7e5f50ac79d6924
+- strategy_config_hashes: {"breakout": "423992e9019877752e5d79151c71dd42fe21b232776e2fbff05f9257760b8e5c", "momentum": "23e2ac0a463e02cc1c7358eff30d4b801397a7d4329804edb7e5c3effcbeab9d", "trend": "bd080036447f692b87982e63a95c132cb514bc36fd59a6a629b446373294e931"}
+- followup_reconstruction: matched

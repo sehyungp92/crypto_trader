@@ -187,9 +187,11 @@ class BreakoutReentryParams:
     """Re-entry after stop-out."""
     enabled: bool = True
     cooldown_bars: int = 3
+    max_wait_bars: int = 12
     max_loss_r: float = 1.5
     max_reentries: int = 1
     min_confluences_override: int = 0
+    risk_scale: float = 1.0
 
 
 @dataclass

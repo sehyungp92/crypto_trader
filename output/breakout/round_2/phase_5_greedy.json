@@ -1,16 +1,29 @@
 {
   "accepted": [
-    "lookback_38",
-    "zone_age_36"
+    "hvn_threshold_14",
+    "zone_age_42"
   ],
   "rejected": [
-    "zone_age_32",
-    "lookback_38_zone_32",
+    "lookback_32",
+    "lookback_40",
+    "lookback_46",
+    "hvn_threshold_12",
+    "lvn_threshold_04",
+    "lvn_threshold_06",
+    "min_bars_zone_5",
+    "min_bars_zone_8",
+    "zone_age_30",
+    "zone_age_48",
     "reentry_cooldown_2",
-    "reentry_max_2"
+    "guarded_reentry_2",
+    "max_trades_per_day_5"
   ],
-  "final_score": 0.88309067922354,
-  "base_score": 0.8308811486158278,
+  "final_score": 0.7719799448636403,
+  "base_score": 0.7547205753980846,
   "rounds": 3,
-  "elapsed_seconds": 0.0
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4",
+  "final_validation": {
+    "status": "passed"
+  }
 }

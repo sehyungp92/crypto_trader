@@ -25,7 +25,7 @@ from crypto_trader.strategy.momentum.bias import BiasDetector, BiasResult
 from crypto_trader.strategy.momentum.config import MomentumConfig
 from crypto_trader.strategy.momentum.confirmation import ConfirmationDetector
 from crypto_trader.strategy.momentum.entry import EntrySignal
-from crypto_trader.strategy.momentum.exits import ExitManager
+from crypto_trader.strategy.momentum.exits import ExitManager, PositionExitState
 from crypto_trader.strategy.momentum.filters import EnvironmentFilter
 from crypto_trader.strategy.momentum.indicators import (
     IncrementalIndicators,
@@ -38,6 +38,7 @@ from crypto_trader.strategy.momentum.setup import SetupDetector
 from crypto_trader.strategy.momentum.sizing import PositionSizer
 from crypto_trader.strategy.momentum.stops import StopPlacer
 from crypto_trader.strategy.momentum.trail import TrailManager
+from crypto_trader.strategy.snapshot import dataclass_from_plain, to_plain
 from crypto_trader.instrumentation.collector import InstrumentationCollector
 from crypto_trader.instrumentation.quality import ProcessQualityScorer
 
@@ -119,6 +120,30 @@ class MomentumStrategy:
     @property
     def journal(self) -> TradeJournal:
         return self._journal
+
+    def snapshot_state(self) -> dict:
+        return {
+            "position_meta": to_plain(self._position_meta),
+            "exit_states": to_plain(getattr(self._exit_manager, "_states", {})),
+            "trail_stops": to_plain(getattr(self._trail_manager, "_current_stops", {})),
+            "recent_exits": to_plain(self._recent_exits),
+            "reentry_count": to_plain(self._reentry_count),
+        }
+
+    def restore_state(self, snapshot: dict) -> None:
+        self._position_meta = {
+            sym: dataclass_from_plain(_PositionMeta, data)
+            for sym, data in snapshot.get("position_meta", {}).items()
+        }
+        self._exit_manager._states = {
+            sym: dataclass_from_plain(PositionExitState, data)
+            for sym, data in snapshot.get("exit_states", {}).items()
+        }
+        self._trail_manager._current_stops = dict(snapshot.get("trail_stops", {}))
+        self._recent_exits = dict(snapshot.get("recent_exits", {}))
+        self._reentry_count = {
+            sym: int(count) for sym, count in snapshot.get("reentry_count", {}).items()
+        }
 
     def on_init(self, ctx: StrategyContext) -> None:
         self._ctx = ctx

@@ -8,6 +8,8 @@ from typing import Any
 import structlog
 
 from crypto_trader.core.models import Bar, TimeFrame
+from crypto_trader.core.market_time import candle_open_from_ms
+from crypto_trader.core.runtime_types import MarketEvent, TimestampPolicy
 
 log = structlog.get_logger()
 
@@ -83,9 +85,7 @@ class BarAssembler:
 
             # Second-to-last candle is most recently completed
             completed = candles[-2]
-            candle_ts = datetime.fromtimestamp(
-                completed["T"] / 1000, tz=timezone.utc
-            )
+            candle_ts = _candle_open_time(completed, tf)
 
             key = (symbol, tf)
             last = self._last_emitted.get(key)
@@ -153,6 +153,17 @@ class LiveFeed:
         """Poll for new bars."""
         return self._assembler.poll_all()
 
+    def poll_market_events(self) -> list[MarketEvent]:
+        """Poll and return normalized completed-bar events."""
+        return [
+            MarketEvent.from_bar(
+                bar,
+                source="live",
+                timestamp_policy=TimestampPolicy.OPEN_TIME,
+            )
+            for bar in self.poll()
+        ]
+
     def load_warmup_bars(self, info: Any, warmup_counts: dict[TimeFrame, int]) -> list[Bar]:
         """Load historical bars for strategy warmup.
 
@@ -191,7 +202,7 @@ class LiveFeed:
 
                     for c in completed:
                         bar = Bar(
-                            timestamp=datetime.fromtimestamp(c["T"] / 1000, tz=timezone.utc),
+                            timestamp=_candle_open_time(c, tf),
                             symbol=symbol,
                             open=float(c["o"]),
                             high=float(c["h"]),
@@ -204,9 +215,7 @@ class LiveFeed:
 
                     # Set last emitted to most recent completed bar
                     if completed:
-                        last_ts = datetime.fromtimestamp(
-                            completed[-1]["T"] / 1000, tz=timezone.utc
-                        )
+                        last_ts = _candle_open_time(completed[-1], tf)
                         self._assembler.set_last_emitted(symbol, tf, last_ts)
 
                 except Exception:
@@ -217,3 +226,12 @@ class LiveFeed:
 
         log.info("feed.warmup_loaded", bars=len(warmup_bars))
         return warmup_bars
+
+
+def _candle_open_time(candle: dict, tf: TimeFrame) -> datetime:
+    """Return canonical candle open time from Hyperliquid data."""
+    return candle_open_from_ms(
+        tf=tf,
+        open_ms=candle.get("t"),
+        close_ms=candle.get("T"),
+    )

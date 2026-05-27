@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import structlog
 
+from crypto_trader.backtest.config import BacktestConfig
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE
+from crypto_trader.optimize.contracts import (
+    build_optimization_contract,
+    phase_checkpoint_context,
+    run_optimization_preflight,
+)
 from crypto_trader.optimize.evaluation import build_end_of_round_report
 from crypto_trader.optimize.greedy_optimizer import run_greedy
 from crypto_trader.optimize.phase_analyzer import analyze_phase
@@ -45,7 +53,11 @@ class PhaseRunner:
         min_delta: float = 0.001,
         max_retries: int = 2,
         max_diagnostic_retries: int = 1,
+        contract: dict[str, Any] | None = None,
+        validation_mode: str = "strict",
     ) -> None:
+        if validation_mode not in {"strict", "fast", "dev"}:
+            raise ValueError("validation_mode must be one of: strict, fast, dev")
         self.plugin = plugin
         self.output_dir = output_dir
         self.logger = PhaseLogger(output_dir)
@@ -53,6 +65,67 @@ class PhaseRunner:
         self.min_delta = min_delta
         self.max_retries = max_retries
         self.max_diagnostic_retries = max_diagnostic_retries
+        self.validation_mode = validation_mode
+        self.contract = contract or self._build_default_contract()
+        if contract:
+            self._preflight_contract(self.contract)
+
+    def _infer_strategy_type(self) -> str | None:
+        base_config = getattr(self.plugin, "base_config", None)
+        text = " ".join(
+            str(value).lower()
+            for value in (
+                getattr(self.plugin, "name", ""),
+                self.plugin.__class__.__name__,
+                self.plugin.__class__.__module__,
+                getattr(base_config.__class__, "__name__", ""),
+                getattr(base_config.__class__, "__module__", ""),
+            )
+        )
+        for strategy in ("trend", "breakout", "momentum"):
+            if strategy in text:
+                return strategy
+        return None
+
+    def _build_default_contract(self) -> dict[str, Any]:
+        """Build and preflight a contract when a plugin exposes standard fields."""
+        backtest_config = getattr(self.plugin, "backtest_config", None)
+        base_config = getattr(self.plugin, "base_config", None)
+        data_dir = getattr(self.plugin, "data_dir", None)
+        strategy_type = self._infer_strategy_type()
+        if not isinstance(backtest_config, BacktestConfig):
+            return {}
+        if base_config is None or data_dir is None or strategy_type is None:
+            return {}
+
+        contract = build_optimization_contract(
+            strategy_type=strategy_type,
+            strategy_config=base_config,
+            backtest_config=backtest_config,
+            data_dir=Path(data_dir),
+            profile=LIVE_PARITY_PROFILE,
+            plugin=self.plugin,
+        )
+        self._preflight_contract(contract)
+        return contract
+
+    def _preflight_contract(self, contract: dict[str, Any]) -> None:
+        backtest_config = getattr(self.plugin, "backtest_config", None)
+        data_dir = getattr(self.plugin, "data_dir", None)
+        if not isinstance(backtest_config, BacktestConfig) or data_dir is None:
+            return
+        run_optimization_preflight(
+            contract=contract,
+            backtest_config=backtest_config,
+            data_dir=Path(data_dir),
+            output_dir=self.output_dir,
+            profile=LIVE_PARITY_PROFILE,
+            validation_mode=self.validation_mode,
+        )
+
+    def _ensure_state_contract(self, state: PhaseState) -> None:
+        if self.contract:
+            state.ensure_contract(self.contract, strict=self.validation_mode == "strict")
 
     def load_state(self) -> PhaseState:
         """Load state from output_dir or create fresh."""
@@ -60,6 +133,7 @@ class PhaseRunner:
         state = PhaseState.load_or_create(state_path)
         if self.round_name:
             state.round_name = self.round_name
+        self._ensure_state_contract(state)
         # Apply initial mutations if fresh state
         if not state.completed_phases and not state.cumulative_mutations:
             initial = self.plugin.initial_mutations
@@ -97,6 +171,8 @@ class PhaseRunner:
     def run_all_phases(self, state: PhaseState) -> PhaseState:
         """Run all phases sequentially."""
         state_path = self.output_dir / "phase_state.json"
+        self._ensure_state_contract(state)
+        state.save(state_path)
 
         # Backup state at start
         self.logger.backup_state(state_path, "round_start")
@@ -132,6 +208,7 @@ class PhaseRunner:
         5. Analyze results and decide: advance, retry scoring, or retry diagnostics
         """
         # 1. Prepare — handle re-runs of completed phases
+        self._ensure_state_contract(state)
         if phase in state.completed_phases:
             self._prepare_state_for_phase(state, phase)
 
@@ -160,6 +237,13 @@ class PhaseRunner:
         while True:
             # a. Run greedy if needed
             if greedy_result is None:
+                checkpoint_context = phase_checkpoint_context(
+                    self.contract,
+                    phase=phase,
+                    spec=spec,
+                    scoring_weights=scoring_weights,
+                    validation_mode=self.validation_mode,
+                )
                 evaluate_fn = self.plugin.create_evaluate_batch(
                     phase,
                     state.cumulative_mutations,
@@ -174,6 +258,7 @@ class PhaseRunner:
                     max_rounds=spec.max_rounds or 20,
                     prune_threshold=spec.prune_threshold or 0.05,
                     checkpoint_path=checkpoint_path,
+                    checkpoint_context=checkpoint_context,
                 )
 
                 # Log experiment results
@@ -188,13 +273,36 @@ class PhaseRunner:
                     )
 
                 # Compute final OOS metrics via walk-forward
+                final_validation = {"status": "passed"}
                 try:
                     metrics = self.plugin.compute_final_metrics(
                         greedy_result.final_mutations
                     )
-                except Exception:
+                except Exception as exc:
                     log.exception("phase.walk_forward_failed", phase=phase)
-                    # Fall back to greedy's in-sample metrics
+                    final_validation = {
+                        "status": "failed",
+                        "error": str(exc),
+                        "mode": self.validation_mode,
+                    }
+                    if self.validation_mode == "strict":
+                        state.mark_phase_invalid(
+                            phase,
+                            reason="final_validation_failed",
+                            error=str(exc),
+                            metadata={"contract_hash": self.contract.get("contract_hash", "")},
+                        )
+                        state.save(state_path)
+                        self.logger.save_phase_output(
+                            phase,
+                            "validation_failure",
+                            final_validation,
+                        )
+                        raise RuntimeError(
+                            f"Final validation failed for phase {phase}; strict mode refuses fallback metrics."
+                        ) from exc
+                    final_validation["status"] = "fallback"
+                    final_validation["fallback_source"] = "greedy_in_sample"
                     metrics = (
                         greedy_result.accepted_experiments[-1].metrics
                         if greedy_result.accepted_experiments
@@ -210,6 +318,8 @@ class PhaseRunner:
                     "base_score": greedy_result.base_score,
                     "rounds": len(greedy_result.rounds),
                     "elapsed_seconds": greedy_result.elapsed_seconds,
+                    "contract_hash": self.contract.get("contract_hash", ""),
+                    "final_validation": final_validation,
                 })
 
             # b. Gate criteria
@@ -319,6 +429,9 @@ class PhaseRunner:
                 for r in greedy_result.rounds
             ],
             "final_metrics": metrics,
+            "final_validation": final_validation,
+            "contract_hash": self.contract.get("contract_hash", ""),
+            "contract": self.contract,
             "accepted_count": greedy_result.accepted_count,
             "new_mutations": new_mutations,
             "suggested_experiments": [
@@ -344,6 +457,7 @@ class PhaseRunner:
             "accepted": len(greedy_result.accepted_experiments),
             "final_score": greedy_result.final_score,
             "gate_passed": gate_result.passed,
+            "contract_hash": self.contract.get("contract_hash", ""),
         })
 
         return state
@@ -360,7 +474,21 @@ class PhaseRunner:
         from crypto_trader.optimize.config_mutator import apply_mutations
 
         optimized = apply_mutations(base_config, state.cumulative_mutations)
-        config_dict = {"strategy": optimized.to_dict()}
+        config_dict = {
+            "strategy": optimized.to_dict(),
+            "metadata": {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "contract_hash": self.contract.get("contract_hash", ""),
+                "profile_hash": self.contract.get("profile_hash", ""),
+                "strategy_config_hash": self.contract.get("strategy_config_hash", ""),
+                "portfolio_config_hash": self.contract.get("portfolio_config_hash", ""),
+                "data_window": self.contract.get("data_window", {}),
+                "data_fingerprint": self.contract.get("data_fingerprint", {}),
+                "symbols": self.contract.get("symbols", []),
+                "required_timeframes": self.contract.get("required_timeframes", []),
+                "contract": self.contract,
+            },
+        }
 
         out_path = self.output_dir / "optimized_config.json"
         _atomic_write_json(config_dict, out_path)

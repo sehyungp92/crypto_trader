@@ -6,6 +6,8 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Any
 
+from crypto_trader.instrumentation.strategy_ids import assistant_strategy_id
+
 
 @dataclass
 class HealthAlert:
@@ -36,7 +38,15 @@ class HealthReport:
     assessment: str = "healthy"
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        report = asdict(self)
+        strategy_ids = set(self.signal_funnels) | set(self.gate_breakdown)
+        aliases = {
+            strategy_id: assistant_strategy_id(strategy_id)
+            for strategy_id in sorted(strategy_ids)
+        }
+        if aliases:
+            report["assistant_strategy_ids"] = aliases
+        return report
 
     def to_text(self) -> str:
         """Format as human-readable summary."""
@@ -144,6 +154,9 @@ class HealthReportBuilder:
         signal_funnels: dict[str, dict] = {}
         gate_breakdown: dict[str, dict] = {}
         for sid, funnel_dict in funnels.items():
+            if not funnel_dict:
+                continue
+
             # Summarize across symbols
             total_bars = sum(funnel_dict.get("bars_received", {}).values())
             total_ind = sum(funnel_dict.get("indicators_ready", {}).values())

@@ -10,9 +10,10 @@ from crypto_trader.core.models import (
     Bar, Fill, Order, OrderType, Position, SetupGrade, Side, TimeFrame, Trade,
 )
 from crypto_trader.strategy.trend.config import TrendConfig
+from crypto_trader.strategy.trend.confirmation import TriggerResult
 from crypto_trader.strategy.trend.setup import TrendSetupResult
 from crypto_trader.strategy.trend.sizing import SizingResult
-from crypto_trader.strategy.trend.strategy import TrendStrategy, WARMUP_BARS
+from crypto_trader.strategy.trend.strategy import TrendStrategy, WARMUP_BARS, _PendingTrendSetup
 
 
 def _make_bar(symbol, tf, close, high=None, low=None, hour=10, day=15):
@@ -410,6 +411,57 @@ class TestTrendStrategy:
         assert s._setup_detector.detect.call_args.kwargs["min_confluences_override"] is None
         assert s._sizer.compute.call_args.kwargs["risk_scale"] == 1.0
         assert s._recent_exits["BTC"] == {}
+
+    def test_required_confirmation_stores_pending_setup(self):
+        cfg = TrendConfig(symbols=["BTC"])
+        cfg.confirmation.require_confirmation_for_b = True
+        cfg.confirmation.max_bars_after_setup = 2
+        ctx = _make_ctx()
+        ctx.broker.get_equity.return_value = 10000.0
+        ctx.bars.get = MagicMock(return_value=[_make_bar("BTC", TimeFrame.H1, 50000)] * 50)
+
+        s = TestTrendSymbolFilter()._make_strategy_with_regime(cfg, ctx, direction=Side.LONG)
+        setup = _mock_setup(Side.LONG)
+        s._setup_detector.detect = MagicMock(return_value=setup)
+        s._trigger_detector.check = MagicMock(return_value=None)
+        s._stop_placer.compute = MagicMock(return_value=49500)
+
+        s._handle_h1(_make_bar("BTC", TimeFrame.H1, 50000), "BTC", ctx)
+
+        ctx.broker.submit_order.assert_not_called()
+        s._stop_placer.compute.assert_not_called()
+        assert s._pending_setups["BTC"].setup is setup
+
+    def test_pending_setup_enters_on_later_confirmation(self):
+        cfg = TrendConfig(symbols=["BTC"])
+        cfg.confirmation.require_confirmation_for_b = True
+        cfg.confirmation.max_bars_after_setup = 2
+        ctx = _make_ctx()
+        ctx.broker.get_equity.return_value = 10000.0
+        ctx.bars.get = MagicMock(return_value=[_make_bar("BTC", TimeFrame.H1, 50000)] * 50)
+
+        s = TestTrendSymbolFilter()._make_strategy_with_regime(cfg, ctx, direction=Side.LONG)
+        setup = _mock_setup(Side.LONG)
+        s._pending_setups["BTC"] = _PendingTrendSetup(
+            setup=setup,
+            created_h1_bar_index=s._h1_bar_count["BTC"],
+            regime_tier="A",
+        )
+        s._setup_detector.detect = MagicMock(return_value=None)
+        s._trigger_detector.check = MagicMock(return_value=TriggerResult(
+            pattern="structure_break",
+            trigger_price=50100,
+            bar_index=0,
+            volume_confirmed=True,
+        ))
+        s._stop_placer.compute = MagicMock(return_value=49500)
+        s._sizer.compute = MagicMock(return_value=(_mock_sizing(), ""))
+
+        s._handle_h1(_make_bar("BTC", TimeFrame.H1, 50000), "BTC", ctx)
+
+        ctx.broker.submit_order.assert_called()
+        assert "BTC" not in s._pending_setups
+        assert s._position_meta["BTC"].confirmation_type == "structure_break"
 
 
 class TestTrendSymbolFilter:

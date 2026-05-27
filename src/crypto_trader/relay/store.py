@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ class RelayStore:
 
     def __init__(self, db_path: Path | str) -> None:
         self._db_path = str(db_path)
+        self._start_mono = time.monotonic()
         self._conn = sqlite3.connect(self._db_path)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")
@@ -126,16 +128,58 @@ class RelayStore:
             "FROM events GROUP BY bot_id"
         ).fetchall()
         per_bot = {
-            r[0]: {"total": r[1], "pending": r[2]}
+            r[0]: {"total": r[1], "pending": r[2] or 0}
             for r in bot_rows
         }
 
+        last_event_rows = self._conn.execute(
+            "SELECT bot_id, MAX(received_at) FROM events GROUP BY bot_id"
+        ).fetchall()
+        last_event_per_bot = {
+            r[0]: r[1]
+            for r in last_event_rows
+        }
+
+        oldest_pending_row = self._conn.execute(
+            "SELECT MIN(received_at) FROM events WHERE acked = 0"
+        ).fetchone()
+        oldest_pending_age_seconds = None
+        if oldest_pending_row and oldest_pending_row[0]:
+            try:
+                oldest_pending_at = datetime.fromisoformat(oldest_pending_row[0])
+                oldest_pending_age_seconds = max(
+                    0.0,
+                    (datetime.now(timezone.utc) - oldest_pending_at).total_seconds(),
+                )
+            except ValueError:
+                oldest_pending_age_seconds = None
+
         return {
+            "status": "ok",
+            "pending_events": pending,
             "total_events": total,
             "pending": pending,
             "acked": acked,
             "per_bot": per_bot,
+            "per_bot_pending": {
+                bot_id: stats["pending"]
+                for bot_id, stats in per_bot.items()
+            },
+            "last_event_per_bot": last_event_per_bot,
+            "oldest_pending_age_seconds": oldest_pending_age_seconds,
+            "db_size_bytes": self._db_size_bytes(),
+            "uptime_seconds": time.monotonic() - self._start_mono,
         }
+
+    def _db_size_bytes(self) -> int:
+        """Return SQLite main/WAL/SHM bytes for disk-pressure monitoring."""
+        db_path = Path(self._db_path)
+        paths = [
+            db_path,
+            Path(f"{self._db_path}-wal"),
+            Path(f"{self._db_path}-shm"),
+        ]
+        return sum(path.stat().st_size for path in paths if path.exists())
 
     def purge_acked(self, older_than_hours: int = 24) -> int:
         """Delete acked events older than N hours. Returns count deleted."""

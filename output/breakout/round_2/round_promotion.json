@@ -1,0 +1,44 @@
+{
+  "promoted_phase": 4,
+  "raw_final_phase": 6,
+  "promoted_differs_from_raw_final": true,
+  "promotion_reason": "latest gate-passing phase promoted; later exploratory phases failed phase gates",
+  "promoted_gate_passed": true,
+  "promoted_gate_failures": [],
+  "raw_final_gate_passed": false,
+  "raw_final_gate_failures": [
+    "total_trades: 13.0000 >= 15.0000 FAILED"
+  ],
+  "promoted_metrics": {
+    "total_trades": 13.0,
+    "net_return_pct": 30.201865033706415,
+    "profit_factor": 13.04673958022546,
+    "expectancy_r": 0.9427773039661768,
+    "max_drawdown_pct": 2.708077935750571,
+    "sharpe_ratio": 4.406515692129804,
+    "exit_efficiency": 0.6501650883412693
+  },
+  "raw_final_metrics": {
+    "total_trades": 13.0,
+    "net_return_pct": 36.24408348068558,
+    "profit_factor": Infinity,
+    "expectancy_r": 1.1872802399831437,
+    "max_drawdown_pct": 2.70807793575061,
+    "sharpe_ratio": 5.181856183591537,
+    "exit_efficiency": 0.6139625751482877
+  },
+  "promoted_mutations": {
+    "symbol_filter.eth_relaxed_body_direction": "long_only",
+    "symbol_filter.sol_direction": "short_only",
+    "exits.tp1_frac": 0.1,
+    "trail.trail_buffer_tight": 0.06
+  },
+  "raw_final_mutations": {
+    "symbol_filter.eth_relaxed_body_direction": "long_only",
+    "symbol_filter.sol_direction": "short_only",
+    "exits.tp1_frac": 0.1,
+    "trail.trail_buffer_tight": 0.06,
+    "profile.hvn_threshold_pct": 1.47,
+    "balance.max_zone_age_bars": 42
+  }
+}

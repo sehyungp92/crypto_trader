@@ -1,25 +1,37 @@
 {
-  "accepted": [],
-  "rejected": [
-    "finetune_trail_activation_bars_4",
-    "finetune_trail_activation_bars_6",
-    "finetune_trail_activation_r_0_27",
-    "finetune_trail_activation_r_0_285",
-    "finetune_trail_activation_r_0_315",
-    "finetune_trail_activation_r_0_33",
-    "finetune_trail_r_ceiling_1_35",
-    "finetune_trail_r_ceiling_1_425",
-    "finetune_trail_r_ceiling_1_575",
-    "finetune_trail_r_ceiling_1_65",
-    "finetune_max_trades_per_day_4",
-    "finetune_max_trades_per_day_6",
-    "finetune_min_room_b_1_125",
-    "finetune_min_room_b_1_1875",
-    "finetune_min_room_b_1_3125",
-    "finetune_min_room_b_1_375"
+  "accepted": [
+    "risk_b_0125"
   ],
-  "final_score": 0.783712110691766,
-  "base_score": 0.783712110691766,
-  "rounds": 1,
-  "elapsed_seconds": 0.0
+  "rejected": [
+    "risk_b_0095",
+    "risk_b_0110",
+    "risk_a_0200",
+    "risk_a_0215",
+    "gross_risk_045",
+    "gross_risk_050",
+    "corr_risk_022",
+    "corr_risk_025",
+    "finetune_volume_threshold_mult_1_045",
+    "finetune_volume_threshold_mult_1_155",
+    "finetune_proof_lock_trigger_r_0_38",
+    "finetune_proof_lock_trigger_r_0_42",
+    "finetune_trail_activation_r_0_3325",
+    "finetune_trail_activation_r_0_3675",
+    "finetune_mfe_retrace_trigger_r_1_1875",
+    "finetune_mfe_retrace_trigger_r_1_3125",
+    "finetune_mfe_retrace_giveback_r_0_7125",
+    "finetune_mfe_retrace_giveback_r_0_7875",
+    "finetune_mfe_retrace_min_r_0_475",
+    "finetune_mfe_retrace_min_r_0_525",
+    "finetune_min_room_b_1_045",
+    "finetune_min_room_b_1_155"
+  ],
+  "final_score": 0.8194760526289406,
+  "base_score": 0.8194760526289406,
+  "rounds": 2,
+  "elapsed_seconds": 228.39218187332153,
+  "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258",
+  "final_validation": {
+    "status": "passed"
+  }
 }

@@ -1,25 +1,23 @@
 {
   "accepted": [
-    "trail_activate_5_r03",
-    "trail_ema_only",
-    "trail_r_ceiling_15"
+    "proof_lock_040_flat"
   ],
   "rejected": [
-    "trail_activate_4_r03",
-    "trail_activate_4_r04",
-    "trail_generous",
-    "trail_structure_only",
-    "trail_lock_025",
-    "mfe_floor_100",
-    "quick_exit_5",
-    "quick_exit_4",
-    "tp_balance_100_20_200_35",
-    "tp_balance_080_20_200_35",
-    "be_accept_1_buffer_010",
-    "be_accept_1_buffer_000"
+    "proof_lock_035_neg010",
+    "proof_lock_050_pos010",
+    "quick_exit_3_020_neg010",
+    "quick_exit_4_030_000",
+    "followthrough_off",
+    "followthrough_all_flat",
+    "followthrough_continuation_flat",
+    "failure_control_stack"
   ],
-  "final_score": 0.7099260691020952,
-  "base_score": 0.5789922208174012,
-  "rounds": 4,
-  "elapsed_seconds": 0.0
+  "final_score": 0.7043310745679423,
+  "base_score": 0.6953357771458846,
+  "rounds": 2,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258",
+  "final_validation": {
+    "status": "passed"
+  }
 }

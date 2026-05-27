@@ -24,9 +24,9 @@
     },
     "setup": {
       "min_confluences_a": 2,
-      "min_confluences_b": 0,
+      "min_confluences_b": 1,
       "min_room_a": 2.0,
-      "min_room_b": 1.3,
+      "min_room_b": 1.25,
       "fib_low": 0.382,
       "fib_high": 0.618,
       "use_vwap": false,
@@ -47,7 +47,10 @@
       "enable_base_break": true,
       "require_volume_confirm": true,
       "enforce_volume_on_trigger": false,
+      "enforce_volume_on_weak_confirmations": false,
       "volume_threshold_mult": 1.0,
+      "require_zone_proximity": false,
+      "zone_proximity_atr": 0.5,
       "hammer_wick_ratio": 2.0,
       "micro_shift_min_bars": 3,
       "base_break_min_bars": 2,
@@ -82,6 +85,21 @@
       "tp2_r": 2.5,
       "tp2_frac": 0.2,
       "be_acceptance_bars": 2,
+      "proof_lock_enabled": false,
+      "proof_lock_trigger_r": 0.5,
+      "proof_lock_stop_r": 0.0,
+      "proof_lock_min_bars": 2,
+      "followthrough_exit_enabled": true,
+      "followthrough_peak_r": 0.35,
+      "followthrough_bars": 4,
+      "followthrough_floor_r": 0.0,
+      "followthrough_scope": "inflection",
+      "mfe_retrace_exit_enabled": false,
+      "mfe_retrace_trigger_r": 1.5,
+      "mfe_retrace_giveback_r": 1.25,
+      "mfe_retrace_min_r": 0.75,
+      "mfe_retrace_min_bars": 6,
+      "mfe_retrace_scope": "all",
       "soft_time_stop_bars": 12,
       "soft_time_stop_min_r": 0.5,
       "hard_time_stop_bars": 20,
@@ -92,6 +110,9 @@
       "enable_h1_thesis_exit": true,
       "enable_disorderly_exit": true,
       "enable_funding_exit": true,
+      "structure_break_body_atr_mult": 1.5,
+      "reversal_body_atr_mult": 1.0,
+      "reversal_volume_mult": 1.5,
       "be_buffer_r": 0.2,
       "quick_exit_enabled": true,
       "quick_exit_bars": 6,
@@ -99,26 +120,37 @@
       "quick_exit_max_r": -0.3
     },
     "trail": {
-      "trail_behind_structure": true,
+      "trail_mode": "components",
+      "trail_behind_structure": false,
       "trail_behind_ema": true,
       "trail_ema_period": 25,
+      "trail_chandelier_lookback": 20,
+      "trail_chandelier_atr_mult": 2.5,
       "trail_atr_buffer": 0.5,
       "trail_use_tightest": true,
-      "trail_activation_bars": 3,
-      "trail_activation_r": 0.5,
+      "trail_activation_bars": 5,
+      "trail_activation_r": 0.3,
       "trail_warmup_bars": 5,
       "trail_warmup_buffer_mult": 1.0,
       "trail_r_adaptive": true,
+      "trail_r_basis": "current",
       "trail_buffer_wide": 1.5,
       "trail_buffer_tight": 0.3,
-      "trail_r_ceiling": 2.0,
+      "trail_r_ceiling": 1.5,
+      "runner_trail_enabled": true,
+      "runner_trail_scope": "all",
+      "runner_trigger_r": 1.5,
+      "runner_trail_r_basis": "mfe",
+      "runner_trail_buffer_wide": 1.25,
+      "runner_trail_buffer_tight": 0.25,
+      "runner_trail_r_ceiling": 1.25,
       "trail_mfe_floor_enabled": false,
       "trail_mfe_floor_threshold": 0.8,
       "trail_mfe_floor_buffer": 0.5
     },
     "risk": {
-      "risk_pct_a": 0.02,
-      "risk_pct_b": 0.008,
+      "risk_pct_a": 0.019,
+      "risk_pct_b": 0.0076,
       "max_leverage_major": 10.0,
       "min_leverage": 1.5,
       "max_leverage_alt": 8.0,
@@ -150,7 +182,7 @@
     "daily_limits": {
       "max_consecutive_losses": 2,
       "max_daily_loss_pct": 0.015,
-      "max_trades_per_day": 4
+      "max_trades_per_day": 5
     },
     "funding_hold": {
       "avoid_adverse_funding": true,
@@ -167,6 +199,245 @@
       "max_loss_r": 1.5,
       "max_reentries": 2,
       "min_confluences_override": 0
+    }
+  },
+  "metadata": {
+    "generated_at": "2026-05-25T11:17:54.443615+00:00",
+    "baseline_type": "current_live_config_parity_refresh",
+    "contract_hash": "08568276931fdd61573b0541e190845cb72b15ec27d5b2a26fa1b8c8b9b08d7d",
+    "profile_hash": "c6886eb9ad8515140f9fe3f6b671fcae6b42851009fd90fdf198c67573ad36ce",
+    "strategy_config_hash": "05c9a9555d45753957522a8fc05a3426eee03623fed08ef16988501bbffe99f2",
+    "portfolio_config_hash": "",
+    "data_window": {
+      "start_date": "2025-12-01",
+      "end_date": "2026-04-30"
+    },
+    "data_fingerprint": {
+      "method": "file_stat_v1",
+      "files": [
+        {
+          "path": "candles\\BTC\\15m.parquet",
+          "exists": true,
+          "size": 316906,
+          "mtime_ns": 1779620410374830100
+        },
+        {
+          "path": "candles\\BTC\\1h.parquet",
+          "exists": true,
+          "size": 242008,
+          "mtime_ns": 1779620411819790600
+        },
+        {
+          "path": "candles\\BTC\\4h.parquet",
+          "exists": true,
+          "size": 221207,
+          "mtime_ns": 1779620413169973900
+        },
+        {
+          "path": "funding\\BTC.parquet",
+          "exists": true,
+          "size": 342509,
+          "mtime_ns": 1779620414985053100
+        },
+        {
+          "path": "candles\\ETH\\15m.parquet",
+          "exists": true,
+          "size": 249111,
+          "mtime_ns": 1779620418089790700
+        },
+        {
+          "path": "candles\\ETH\\1h.parquet",
+          "exists": true,
+          "size": 218636,
+          "mtime_ns": 1779620419289167000
+        },
+        {
+          "path": "candles\\ETH\\4h.parquet",
+          "exists": true,
+          "size": 202933,
+          "mtime_ns": 1779620419845695800
+        },
+        {
+          "path": "funding\\ETH.parquet",
+          "exists": true,
+          "size": 351937,
+          "mtime_ns": 1779620421597854800
+        },
+        {
+          "path": "candles\\SOL\\15m.parquet",
+          "exists": true,
+          "size": 301475,
+          "mtime_ns": 1779620425048188200
+        },
+        {
+          "path": "candles\\SOL\\1h.parquet",
+          "exists": true,
+          "size": 220547,
+          "mtime_ns": 1779620426076088200
+        },
+        {
+          "path": "candles\\SOL\\4h.parquet",
+          "exists": true,
+          "size": 198295,
+          "mtime_ns": 1779620426578140800
+        },
+        {
+          "path": "funding\\SOL.parquet",
+          "exists": true,
+          "size": 367440,
+          "mtime_ns": 1779620428344565900
+        }
+      ],
+      "hash": "c5cefe646b19985313e207ff958ed5e5ffca29dc4f9f70287732391aab6c5887"
+    },
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "required_timeframes": [
+      "15m",
+      "1h",
+      "4h"
+    ],
+    "contract": {
+      "schema_version": "live_baseline_round_v1",
+      "strategy_type": "momentum",
+      "baseline_type": "current_live_config_parity_refresh",
+      "economic_profile": {
+        "profile_id": "live_config_parity_refresh_20260525_supplied_v1",
+        "symbols": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "initial_equity": 10000.0,
+        "taker_fee_bps": 3.5,
+        "maker_fee_bps": 1.0,
+        "slippage_bps": 2.0,
+        "spread_bps": 2.0,
+        "apply_funding": true,
+        "warmup_days": 60,
+        "terminal_accounting_mode": "terminal_mark"
+      },
+      "data_window": {
+        "start_date": "2025-12-01",
+        "end_date": "2026-04-30"
+      },
+      "symbols": [
+        "BTC",
+        "ETH",
+        "SOL"
+      ],
+      "required_timeframes": [
+        "15m",
+        "1h",
+        "4h"
+      ],
+      "data_dir": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\data",
+      "data_fingerprint": {
+        "method": "file_stat_v1",
+        "files": [
+          {
+            "path": "candles\\BTC\\15m.parquet",
+            "exists": true,
+            "size": 316906,
+            "mtime_ns": 1779620410374830100
+          },
+          {
+            "path": "candles\\BTC\\1h.parquet",
+            "exists": true,
+            "size": 242008,
+            "mtime_ns": 1779620411819790600
+          },
+          {
+            "path": "candles\\BTC\\4h.parquet",
+            "exists": true,
+            "size": 221207,
+            "mtime_ns": 1779620413169973900
+          },
+          {
+            "path": "funding\\BTC.parquet",
+            "exists": true,
+            "size": 342509,
+            "mtime_ns": 1779620414985053100
+          },
+          {
+            "path": "candles\\ETH\\15m.parquet",
+            "exists": true,
+            "size": 249111,
+            "mtime_ns": 1779620418089790700
+          },
+          {
+            "path": "candles\\ETH\\1h.parquet",
+            "exists": true,
+            "size": 218636,
+            "mtime_ns": 1779620419289167000
+          },
+          {
+            "path": "candles\\ETH\\4h.parquet",
+            "exists": true,
+            "size": 202933,
+            "mtime_ns": 1779620419845695800
+          },
+          {
+            "path": "funding\\ETH.parquet",
+            "exists": true,
+            "size": 351937,
+            "mtime_ns": 1779620421597854800
+          },
+          {
+            "path": "candles\\SOL\\15m.parquet",
+            "exists": true,
+            "size": 301475,
+            "mtime_ns": 1779620425048188200
+          },
+          {
+            "path": "candles\\SOL\\1h.parquet",
+            "exists": true,
+            "size": 220547,
+            "mtime_ns": 1779620426076088200
+          },
+          {
+            "path": "candles\\SOL\\4h.parquet",
+            "exists": true,
+            "size": 198295,
+            "mtime_ns": 1779620426578140800
+          },
+          {
+            "path": "funding\\SOL.parquet",
+            "exists": true,
+            "size": 367440,
+            "mtime_ns": 1779620428344565900
+          }
+        ],
+        "hash": "c5cefe646b19985313e207ff958ed5e5ffca29dc4f9f70287732391aab6c5887"
+      },
+      "backtest_config": {
+        "apply_funding": true,
+        "end_date": "2026-04-30",
+        "initial_equity": 10000.0,
+        "maker_fee_bps": 1.0,
+        "slippage_bps": 2.0,
+        "spread_bps": 2.0,
+        "start_date": "2025-12-01",
+        "symbols": [
+          "BTC",
+          "ETH",
+          "SOL"
+        ],
+        "taker_fee_bps": 3.5,
+        "train_pct": 0.7,
+        "warmup_days": 60
+      },
+      "strategy_config_path": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\config\\strategies\\momentum.json",
+      "strategy_config_hash": "05c9a9555d45753957522a8fc05a3426eee03623fed08ef16988501bbffe99f2",
+      "portfolio_config_hash": "",
+      "source_artifacts": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\20260525_parity_contract_refresh\\live_config_backtests\\momentum",
+      "archived_legacy_rounds": "C:\\Users\\sehyu\\Documents\\Other\\Projects\\crypto_trader\\output\\momentum\\archive\\pre_parity_reset_20260525T111754Z",
+      "generated_at": "2026-05-25T11:17:54.443615+00:00",
+      "profile_hash": "c6886eb9ad8515140f9fe3f6b671fcae6b42851009fd90fdf198c67573ad36ce",
+      "contract_hash": "08568276931fdd61573b0541e190845cb72b15ec27d5b2a26fa1b8c8b9b08d7d"
     }
   }
 }

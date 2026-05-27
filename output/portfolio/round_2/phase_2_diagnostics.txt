@@ -1,0 +1,8 @@
+Portfolio phase 2: Capture And Exit Quality
+Objective: Reduce giveback and improve exit capture with deployable strategy config knobs.
+Selection basis: development window only.
+Holdout is validation-only and is not part of the immutable score.
+development: trades=44, return=55.50%, PF=6.35, expR=0.532, exit_eff=0.506, DD=3.35%
+holdout: trades=36, return=27.26%, PF=2.74, expR=0.346, exit_eff=0.441, DD=4.96%
+accepted: momentum_proof_lock_less_noise
+score_components: {"capture": 0.9194308023075707, "drawdown_resilience": 0.6060279993142306, "edge_quality": 0.8993400944224152, "frequency": 0.7586206896551724, "return": 0.7399616552177459, "rule_efficiency": 0.9920212765957448, "strategy_balance": 0.9602321463679013}

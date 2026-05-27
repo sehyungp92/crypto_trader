@@ -26,17 +26,17 @@
       "value_area_pct": 0.7,
       "hvn_threshold_pct": 1.5,
       "lvn_threshold_pct": 0.5,
-      "recalc_interval_bars": 2,
+      "recalc_interval_bars": 4,
       "min_bars": 20
     },
     "balance": {
-      "min_bars_in_zone": 6,
+      "min_bars_in_zone": 7,
       "zone_width_atr": 1.2,
       "min_touches": 2,
       "max_zone_age_bars": 36,
-      "require_volume_contraction": false,
+      "require_volume_contraction": true,
       "contraction_threshold": 0.8,
-      "dedup_atr_frac": 0.3
+      "dedup_atr_frac": 0.35
     },
     "context": {
       "h4_adx_threshold": 12.0,
@@ -92,7 +92,7 @@
     },
     "exits": {
       "tp1_r": 1.0,
-      "tp1_frac": 0.2,
+      "tp1_frac": 0.1,
       "tp2_r": 2.0,
       "tp2_frac": 0.4,
       "runner_frac": 0.3,
@@ -116,7 +116,7 @@
     "trail": {
       "trail_r_adaptive": true,
       "trail_buffer_wide": 1.5,
-      "trail_buffer_tight": 0.04,
+      "trail_buffer_tight": 0.06,
       "trail_r_ceiling": 2.0,
       "trail_activation_r": 0.5,
       "trail_activation_bars": 6,
@@ -155,16 +155,18 @@
     "reentry": {
       "enabled": true,
       "cooldown_bars": 3,
+      "max_wait_bars": 12,
       "max_loss_r": 1.5,
       "max_reentries": 1,
-      "min_confluences_override": 0
+      "min_confluences_override": 0,
+      "risk_scale": 1.0
     },
     "symbol_filter": {
       "btc_direction": "both",
       "eth_direction": "both",
       "sol_direction": "both",
       "btc_relaxed_body_direction": "both",
-      "eth_relaxed_body_direction": "both",
+      "eth_relaxed_body_direction": "long_only",
       "sol_relaxed_body_direction": "both"
     },
     "symbols": [

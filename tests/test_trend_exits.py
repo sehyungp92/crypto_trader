@@ -304,3 +304,24 @@ class TestScratchExit:
         scratch_orders = [o for o in orders if o.tag == "scratch_exit"]
         assert len(scratch_orders) == 1
         assert scratch_orders[0].qty == 1.0
+
+
+class TestMfeLockExit:
+    def test_mfe_lock_exits_after_peak_giveback(self):
+        mgr = ExitManager(TrendExitParams(
+            mfe_lock_exit_enabled=True,
+            mfe_lock_trigger_r=1.0,
+            mfe_lock_floor_r=0.2,
+            mfe_lock_min_bars=2,
+            time_stop_bars=50,
+            quick_exit_enabled=False,
+        ))
+        mgr.init_position("BTC", 50000, 500, 1.0, Side.LONG)
+        pos = Position("BTC", Side.LONG, 1.0, 50000)
+
+        mgr.manage(pos, _make_bar(50550, high=50650, low=50450, idx=0), [], _make_ind(), None)
+        orders = mgr.manage(pos, _make_bar(50050, high=50100, low=50000, idx=1), [], _make_ind(), None)
+
+        lock_orders = [o for o in orders if o.tag == "mfe_lock_exit"]
+        assert len(lock_orders) == 1
+        assert lock_orders[0].qty == 1.0

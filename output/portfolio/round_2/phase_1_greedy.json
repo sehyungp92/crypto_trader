@@ -1,0 +1,22 @@
+{
+  "accepted": [
+    "momentum_sol_short_probe"
+  ],
+  "rejected": [
+    "trend_sol_short_only",
+    "momentum_disable_micro_shift",
+    "momentum_weak_confirmations_need_three",
+    "momentum_sol_disabled",
+    "breakout_sol_short_only",
+    "breakout_eth_long_only",
+    "trend_raise_b_quality"
+  ],
+  "final_score": 0.8028057059208424,
+  "base_score": 0.0,
+  "rounds": 1,
+  "elapsed_seconds": 135.68767428398132,
+  "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772",
+  "final_validation": {
+    "status": "passed"
+  }
+}

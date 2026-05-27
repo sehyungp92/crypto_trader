@@ -1,29 +1,27 @@
 ======== PHASE 5 ANALYSIS ========
 Recommendation: advance
-Reason: Retry budget exhausted (scoring: 1/1, diagnostics: 1/1). Force advancing.
-Scoring assessment: INEFFECTIVE
+Reason: Gate passed.
+Scoring assessment: EFFECTIVE
 
-Accepted: 0 experiments
-Final score: 0.7591
-Base score: 0.7591
-Rounds: 1
+Accepted: 1 experiments
+Final score: 0.6839
+Base score: 0.6809
+Rounds: 2
 
-Strengths: net_return_pct, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio, exit_efficiency
-Weaknesses: total_trades
+Strengths: total_trades, win_rate, profit_factor, max_drawdown_pct, sharpe_ratio, calmar_ratio
 
 Goal Progress:
-  net_return_pct: 22.03 / 18.00 (122%)
-  total_trades: 19.00 / 36.00 (53%)
-  profit_factor: 12.89 / 1.80 (200%)
-  max_drawdown_pct: 3.46 / 10.00 (200%)
-  sharpe_ratio: 5.11 / 3.50 (146%)
-  calmar_ratio: 6.36 / 2.80 (200%)
-  exit_efficiency: 0.64 / 0.55 (116%)
+  total_trades: 44.00 / 30.00 (147%)
+  win_rate: 56.82 / 45.00 (126%)
+  profit_factor: 4.44 / 1.50 (200%)
+  max_drawdown_pct: 4.79 / 25.00 (200%)
+  sharpe_ratio: 6.66 / 1.50 (200%)
+  calmar_ratio: 11.15 / 2.00 (200%)
 
 Extra Analysis:
-  top_trade_pct: 16.2908
+  top_trade_pct: 9.8081
   direction_breakdown:
-    long: {'n': 11, 'avg_r': 0.5308219686317345}
-    short: {'n': 8, 'avg_r': 0.6518177384476679}
-  r_skew: 0.3712
-  r_mean: 0.5818
+    long: {'n': 31, 'avg_r': 0.35956511691033366}
+    short: {'n': 13, 'avg_r': 0.718012271647173}
+  r_skew: 0.2245
+  r_mean: 0.4655

@@ -94,6 +94,9 @@ class SetupDetector:
             return None
 
         pullback_bars = h1_bars[impulse.end_idx + 1:]
+        if len(pullback_bars) > cfg.pullback_max_bars:
+            return None
+
         impulse_bars = h1_bars[impulse.start_idx:impulse.end_idx + 1]
         if cfg.strict_orderly_pullback and not self._is_orderly_strict(
             pullback_bars=pullback_bars,

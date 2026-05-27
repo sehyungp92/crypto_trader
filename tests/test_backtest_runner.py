@@ -11,12 +11,12 @@ import pytest
 
 from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.backtest.metrics import PerformanceMetrics, compute_metrics
-from crypto_trader.backtest.runner import run
+from crypto_trader.backtest.runner import run, run_split_continuation
 from crypto_trader.broker.sim_broker import SimBroker
 from crypto_trader.core.clock import SimClock
 from crypto_trader.core.engine import StrategyEngine
 from crypto_trader.core.events import EventBus
-from crypto_trader.core.models import Bar, TimeFrame
+from crypto_trader.core.models import Bar, Order, OrderType, Side, TimeFrame
 from crypto_trader.strategy.momentum.config import MomentumConfig
 from crypto_trader.strategy.momentum.strategy import MomentumStrategy
 
@@ -275,3 +275,135 @@ class TestBacktestIntegration:
         )
 
         assert result.equity_curve[-1][1] == pytest.approx(9800.0)
+
+    def test_split_continuation_matches_full_run(self, monkeypatch, tmp_path):
+        from crypto_trader.backtest import runner as runner_module
+
+        start = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        bars = [
+            Bar(
+                timestamp=start + timedelta(minutes=15 * i),
+                symbol="BTC",
+                open=100.0 + i,
+                high=101.0 + i,
+                low=99.0 + i,
+                close=100.5 + i,
+                volume=1000.0,
+                timeframe=TimeFrame.M15,
+            )
+            for i in range(192)
+        ]
+
+        class ToyConfig:
+            symbols = ["BTC"]
+
+        class ToyStrategy:
+            name = "toy_split_strategy"
+            symbols = ["BTC"]
+            timeframes = [TimeFrame.M15]
+            journal = SimpleNamespace()
+
+            def __init__(self, _config=None):
+                self.count = 0
+
+            def on_init(self, ctx):
+                self.count = 0
+
+            def on_bar(self, bar, ctx):
+                self.count += 1
+                pos = ctx.broker.get_position("BTC")
+                if pos is None and self.count % 8 == 1:
+                    ctx.broker.submit_order(Order(
+                        order_id=f"entry_{self.count}",
+                        symbol="BTC",
+                        side=Side.LONG,
+                        order_type=OrderType.MARKET,
+                        qty=1.0,
+                        tag="entry",
+                    ))
+                elif pos is not None and self.count % 8 == 5:
+                    ctx.broker.submit_order(Order(
+                        order_id=f"exit_{self.count}",
+                        symbol="BTC",
+                        side=Side.SHORT,
+                        order_type=OrderType.MARKET,
+                        qty=pos.qty,
+                        tag="exit",
+                    ))
+
+            def on_fill(self, fill, ctx):
+                pass
+
+            def on_shutdown(self, ctx):
+                pass
+
+            def snapshot_state(self):
+                return {"count": self.count}
+
+            def restore_state(self, snapshot):
+                self.count = int(snapshot["count"])
+
+        def fake_feed(**kwargs):
+            start_value = kwargs["start_date"]
+            end_value = kwargs["end_date"]
+            start_dt = (
+                start_value
+                if isinstance(start_value, datetime)
+                else datetime.combine(start_value, datetime.min.time(), tzinfo=timezone.utc)
+            )
+            end_dt = (
+                end_value
+                if isinstance(end_value, datetime)
+                else datetime.combine(end_value, datetime.max.time(), tzinfo=timezone.utc)
+            )
+            return ListFeed([bar for bar in bars if start_dt <= bar.timestamp <= end_dt])
+
+        monkeypatch.setattr(
+            runner_module,
+            "_create_strategy",
+            lambda strategy_type, strategy_config: (ToyStrategy(strategy_config), [TimeFrame.M15], TimeFrame.M15),
+        )
+        monkeypatch.setattr(runner_module, "HistoricalFeed", fake_feed)
+        store = MagicMock()
+        store.load_funding.return_value = None
+        config = ToyConfig()
+        backtest_config = BacktestConfig(
+            symbols=["BTC"],
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 1, 2),
+            initial_equity=10_000.0,
+            apply_funding=False,
+        )
+
+        full = run(
+            config,
+            backtest_config,
+            data_dir=tmp_path,
+            store=store,
+            strategy_type="toy",
+        )
+        split = run_split_continuation(
+            config,
+            backtest_config,
+            split_date=date(2026, 1, 2),
+            data_dir=tmp_path,
+            store=store,
+            strategy_type="toy",
+        )
+
+        full_trades = [
+            (trade.entry_time, trade.exit_time, trade.symbol, trade.direction, trade.net_pnl)
+            for trade in full.trades
+        ]
+        stitched_trades = [
+            (trade.entry_time, trade.exit_time, trade.symbol, trade.direction, trade.net_pnl)
+            for trade in split.stitched.trades
+        ]
+
+        assert stitched_trades == full_trades
+        assert split.stitched.metrics.total_trades == full.metrics.total_trades
+        assert split.stitched.metrics.net_profit == pytest.approx(full.metrics.net_profit)
+        assert (
+            split.in_sample.metrics.net_profit + split.out_of_sample.metrics.net_profit
+            == pytest.approx(split.stitched.metrics.net_profit)
+        )

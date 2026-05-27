@@ -11,6 +11,7 @@ Implements BrokerAdapter protocol with crypto-specific features:
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
@@ -48,6 +49,28 @@ class SimBroker:
       8. Mark-to-market equity update
       9. Liquidation check
     """
+
+    _STATE_SNAPSHOT_FIELDS = (
+        "_initial_equity",
+        "_equity",
+        "_cash",
+        "_pending_orders",
+        "_positions",
+        "_closed_trades",
+        "_terminal_marks",
+        "_fills",
+        "_equity_history",
+        "_liquidation_equity_history",
+        "_funding_log",
+        "_last_funding_hour",
+        "_next_order_id",
+        "_trade_id",
+        "_last_bar",
+        "_last_prices",
+        "_bar_count_per_position",
+        "_deferring",
+        "_deferred_orders",
+    )
 
     def __init__(
         self,
@@ -92,6 +115,19 @@ class SimBroker:
         # Order deferral — prevents higher-TF timing leak (Finding 1)
         self._deferring: bool = False
         self._deferred_orders: list[Order] = []
+
+    def snapshot_state(self) -> dict[str, Any]:
+        """Return an in-memory checkpoint of all mutable broker state."""
+        return {
+            field: deepcopy(getattr(self, field))
+            for field in self._STATE_SNAPSHOT_FIELDS
+        }
+
+    def restore_state(self, snapshot: dict[str, Any]) -> None:
+        """Restore a checkpoint produced by :meth:`snapshot_state`."""
+        for field in self._STATE_SNAPSHOT_FIELDS:
+            if field in snapshot:
+                setattr(self, field, deepcopy(snapshot[field]))
 
     # -------------------------------------------------------------------
     # BrokerAdapter interface
@@ -885,6 +921,7 @@ class SimBroker:
             else:
                 existing.partial_exit_pnl += pnl
                 existing.partial_exit_commission += fill.commission
+                existing.partial_exit_qty += close_qty
                 existing.qty = remaining
 
     def _create_trade(self, pos: Position, exit_fill: Fill, qty: float, pnl: float) -> None:
@@ -899,17 +936,25 @@ class SimBroker:
         # Funding paid: realized_pnl accumulates funding costs via -= cost
         # So negative realized_pnl means funding was paid out, positive means received
         funding_paid = -pos.realized_pnl
+        total_closed_qty = pos.partial_exit_qty + qty
+        price_pnl_gross = pnl + pos.partial_exit_pnl
+        avg_exit_price = exit_fill.fill_price
+        if total_closed_qty > 0:
+            if pos.direction == Side.LONG:
+                avg_exit_price = pos.avg_entry + price_pnl_gross / total_closed_qty
+            else:
+                avg_exit_price = pos.avg_entry - price_pnl_gross / total_closed_qty
 
         trade = Trade(
             trade_id=str(self._trade_id),
             symbol=pos.symbol,
             direction=pos.direction,
             entry_price=pos.avg_entry,
-            exit_price=exit_fill.fill_price,
-            qty=qty,
+            exit_price=avg_exit_price,
+            qty=total_closed_qty,
             entry_time=pos.open_time or exit_fill.timestamp,
             exit_time=exit_fill.timestamp,
-            pnl=pnl + pos.partial_exit_pnl + pos.realized_pnl,  # Include partial TP profits + funding
+            pnl=price_pnl_gross + pos.realized_pnl,
             r_multiple=None,
             commission=total_commission + pos.partial_exit_commission,
             bars_held=bars_held,

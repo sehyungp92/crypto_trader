@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -134,6 +135,50 @@ class TestLiveWarmupBehavior:
         strategy._collector.flush_missed.assert_called_once_with()
         strategy._collector.pipeline.snapshot_and_reset.assert_called_once_with()
 
+    @pytest.mark.asyncio
+    async def test_start_passes_asset_meta_cache_to_broker(self, tmp_path):
+        from crypto_trader.live.engine import LiveEngine
+
+        asset_meta_path = tmp_path / "asset_meta.json"
+        asset_meta_path.write_text(
+            json.dumps({
+                "asset_index": {"BTC": 0},
+                "tick_sizes": {"BTC": 0.5},
+                "lot_sizes": {"BTC": 0.001},
+            }),
+            encoding="utf-8",
+        )
+        broker = MagicMock()
+        broker.get_equity.return_value = 10_000.0
+        broker.get_positions.return_value = []
+        broker.get_open_orders.return_value = []
+        feed = MagicMock()
+        feed.load_warmup_bars.return_value = []
+        strategy = _WarmupGateStrategy()
+        strategy_cfg = SimpleNamespace(symbols=["BTC"])
+        config = LiveConfig(
+            wallet_address="0xabc",
+            private_key="0xdef",
+            symbols=["BTC"],
+            state_dir=tmp_path / "state",
+            strategy_configs={"momentum": tmp_path / "momentum.json"},
+            asset_meta_path=asset_meta_path,
+        )
+
+        with (
+            patch("crypto_trader.live.engine.HyperliquidBroker", return_value=broker) as broker_cls,
+            patch("crypto_trader.live.engine.LiveFeed", return_value=feed),
+            patch("crypto_trader.live.engine._create_strategy", return_value=(strategy, [TimeFrame.M15], TimeFrame.M15)),
+            patch("hyperliquid.info.Info", return_value=MagicMock()),
+            patch.object(LiveEngine, "_load_strategy_config", return_value=strategy_cfg),
+        ):
+            engine = LiveEngine(config)
+            await engine.start()
+
+        kwargs = broker_cls.call_args.kwargs
+        assert kwargs["tick_sizes"] == {"BTC": 0.5}
+        assert kwargs["lot_sizes"] == {"BTC": 0.001}
+
 
 class TestLiveConfigRelayPlumbing:
     def test_round_trips_optional_bot_and_relay_fields(self, tmp_path):
@@ -167,13 +212,83 @@ class TestLiveConfigRelayPlumbing:
 
     def test_validate_allows_bot_id_without_relay(self):
         cfg = LiveConfig(
-            wallet_address="0xabc",
-            private_key="0xdef",
+            wallet_address="0x" + "1" * 40,
+            private_key="0x" + "2" * 64,
             symbols=["BTC"],
             bot_id="paper_bot_01",
         )
 
         assert cfg.validate() == []
+
+
+class TestLiveHealthRelayStatus:
+    def test_report_intervals_apply_minimum_floor(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        engine._config = LiveConfig(
+            health_report_interval_sec=30.0,
+            funnel_report_interval_sec=30.0,
+        )
+
+        assert engine._health_report_interval() == 60.0
+        assert engine._funnel_report_interval() == 60.0
+
+        engine._config.health_report_interval_sec = 300.0
+        engine._config.funnel_report_interval_sec = 3600.0
+        assert engine._health_report_interval() == 300.0
+        assert engine._funnel_report_interval() == 3600.0
+
+    def test_relay_health_status_reports_disabled_without_sidecar(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        engine._sidecar = None
+
+        assert engine._relay_health_status() == {
+            "enabled": False,
+            "sidecar_running": False,
+            "event_files": [],
+        }
+
+    def test_relay_health_status_maps_sidecar_fields(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        sidecar = MagicMock()
+        sidecar.status.return_value = {
+            "enabled": True,
+            "running": True,
+            "event_files": ["pipeline_funnels", "health_reports"],
+            "watermarks": {"pipeline_funnels": 123},
+            "watermark_file": "/state/.sidecar_watermarks.json",
+            "last_successful_send_at": "2026-05-10T00:00:00+00:00",
+            "consecutive_send_failures": 0,
+            "last_error": None,
+        }
+        engine._sidecar = sidecar
+
+        status = engine._relay_health_status()
+
+        assert status["enabled"] is True
+        assert status["sidecar_running"] is True
+        assert status["last_successful_send_at"] == "2026-05-10T00:00:00+00:00"
+        assert status["consecutive_send_failures"] == 0
+        assert status["watermarks"]["pipeline_funnels"] == 123
+
+    def test_relay_health_status_survives_sidecar_status_error(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        sidecar = MagicMock()
+        sidecar.status.side_effect = RuntimeError("status unavailable")
+        engine._sidecar = sidecar
+
+        status = engine._relay_health_status()
+
+        assert status["enabled"] is True
+        assert status["sidecar_running"] is False
+        assert "status unavailable" in status["status_error"]
 
 
 class TestScaledRiskUnits:

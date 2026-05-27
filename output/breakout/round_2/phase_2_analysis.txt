@@ -3,27 +3,27 @@ Recommendation: advance
 Reason: Gate passed.
 Scoring assessment: EFFECTIVE
 
-Accepted: 1 experiments
-Final score: 0.8272
-Base score: 0.7791
-Rounds: 2
+Accepted: 2 experiments
+Final score: 0.7384
+Base score: 0.6767
+Rounds: 3
 
-Strengths: net_return_pct, total_trades, profit_factor, sharpe_ratio, exit_efficiency, max_drawdown_pct
+Strengths: net_return_pct, expectancy_r, profit_factor, exit_efficiency, max_drawdown_pct
 Diagnostic Gaps: [D2] No TP hits — targets likely too high for MFE distribution
 
 Goal Progress:
-  net_return_pct: 20.52 / 14.50 (142%)
-  total_trades: 14.00 / 13.00 (108%)
-  profit_factor: 4.11 / 2.40 (171%)
-  sharpe_ratio: 3.16 / 2.30 (138%)
-  exit_efficiency: 0.59 / 0.53 (111%)
-  max_drawdown_pct: 3.35 / 10.00 (200%)
+  net_return_pct: 28.59 / 30.00 (95%)
+  total_trades: 13.00 / 18.00 (72%)
+  expectancy_r: 0.90 / 0.55 (164%)
+  profit_factor: 12.58 / 3.00 (200%)
+  exit_efficiency: 0.63 / 0.60 (105%)
+  max_drawdown_pct: 2.71 / 8.00 (200%)
 
 Extra Analysis:
-  trade_count: 14
-  winner_count: 10
-  avg_winner_r: 1.227
-  avg_loser_r: -0.617
-  avg_capture_pct: 0.586
-  avg_giveback_pct: 0.414
+  trade_count: 13
+  winner_count: 11
+  avg_winner_r: 1.180
+  avg_loser_r: -0.631
+  avg_capture_pct: 0.630
+  avg_giveback_pct: 0.370
   tp_exits: 0

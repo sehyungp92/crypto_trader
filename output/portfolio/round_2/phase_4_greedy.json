@@ -1,0 +1,14 @@
+{
+  "accepted": [
+    "collision_cap_250"
+  ],
+  "rejected": [],
+  "final_score": 0.8102259776489955,
+  "base_score": 0.805274937032392,
+  "rounds": 2,
+  "elapsed_seconds": 114.52937459945679,
+  "contract_hash": "d1e7258b44837e8b17da5d6aed66f7e415b2fb8adf424f92ff9d48d2d5602772",
+  "final_validation": {
+    "status": "passed"
+  }
+}

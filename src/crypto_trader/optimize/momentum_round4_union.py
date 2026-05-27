@@ -25,9 +25,11 @@ import pandas as pd
 import yaml
 
 from crypto_trader.backtest.config import BacktestConfig
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.backtest.runner import run
 from crypto_trader.cli import _configure_logging, _update_rounds_manifest
 from crypto_trader.optimize.config_mutator import apply_mutations, merge_mutations
+from crypto_trader.optimize.contracts import build_optimization_contract, run_optimization_preflight
 from crypto_trader.optimize.evaluation import build_end_of_round_report
 from crypto_trader.optimize.momentum_plugin import MomentumPlugin
 from crypto_trader.optimize.parallel import evaluate_parallel
@@ -152,12 +154,11 @@ def build_pre_round1_config(config_path: Path = PRE_ROUND1_CONFIG_PATH) -> Momen
 def build_backtest_config(data_dir: Path) -> tuple[BacktestConfig, dict[str, str]]:
     """Build a full-span backtest config for the current shared data window."""
     start_dt, end_dt = detect_common_window(data_dir)
-    bt_cfg = BacktestConfig(
+    bt_cfg = build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=list(SYMBOLS),
         start_date=start_dt.date(),
         end_date=end_dt.date(),
-        initial_equity=10_000.0,
-        warmup_days=0,
     )
     metadata = {
         "common_start_utc": start_dt.isoformat(),
@@ -504,6 +505,7 @@ def _phase_result_dict(
     base_mutations: dict[str, Any],
     greedy_result: GreedyResult,
     metrics: dict[str, float],
+    contract: dict[str, Any],
 ) -> dict[str, Any]:
     new_mutations = {
         key: value
@@ -527,6 +529,8 @@ def _phase_result_dict(
             for round_data in greedy_result.rounds
         ],
         "final_metrics": metrics,
+        "contract_hash": contract.get("contract_hash", ""),
+        "contract": contract,
         "accepted_count": greedy_result.accepted_count,
         "new_mutations": new_mutations,
         "suggested_experiments": [],
@@ -539,9 +543,13 @@ def _write_metadata(
     window_metadata: dict[str, str],
     candidate_info: list[dict[str, Any]],
     source_scores: dict[str, Any],
+    contract: dict[str, Any],
 ) -> None:
     metadata = {
         "window": window_metadata,
+        "contract_hash": contract.get("contract_hash", ""),
+        "profile_hash": contract.get("profile_hash", ""),
+        "contract": contract,
         "scoring_weights": ROUND4_SCORING_WEIGHTS,
         "scoring_ceilings": ROUND4_SCORING_CEILINGS,
         "hard_rejects": ROUND4_HARD_REJECTS,
@@ -579,9 +587,25 @@ def run_round4(
         data_dir=data_dir,
         max_workers=max_workers,
     )
+    contract = build_optimization_contract(
+        strategy_type="momentum",
+        strategy_config=base_config,
+        backtest_config=backtest_config,
+        data_dir=data_dir,
+        profile=LIVE_PARITY_PROFILE,
+        plugin=plugin,
+    )
+    run_optimization_preflight(
+        contract=contract,
+        backtest_config=backtest_config,
+        data_dir=data_dir,
+        output_dir=round_dir,
+        profile=LIVE_PARITY_PROFILE,
+    )
     phase_logger = PhaseLogger(round_dir)
     state_path = round_dir / "phase_state.json"
     state = PhaseState(_path=state_path)
+    state.ensure_contract(contract)
     state.start_phase(1)
     state.save(state_path)
 
@@ -671,7 +695,13 @@ def run_round4(
     phase_logger.log_analysis(1, analysis.recommendation, analysis.summary)
     phase_logger.save_phase_output(1, "analysis", analysis.report or analysis.summary)
 
-    phase_result = _phase_result_dict(spec.focus or spec.name, state.cumulative_mutations, greedy_result, metrics)
+    phase_result = _phase_result_dict(
+        spec.focus or spec.name,
+        state.cumulative_mutations,
+        greedy_result,
+        metrics,
+        contract,
+    )
     state.advance_phase(1, greedy_result.final_mutations, phase_result)
     state.complete_phase(1)
     state.save(state_path)
@@ -698,13 +728,22 @@ def run_round4(
         window_metadata=window_metadata,
         candidate_info=candidate_info,
         source_scores=source_scores,
+        contract=contract,
     )
 
-    runner = PhaseRunner(plugin, round_dir)
+    runner = PhaseRunner(plugin, round_dir, contract=contract)
     runner.run_end_of_round(state)
 
     final_metrics = state.phase_metrics.get(1)
-    _update_rounds_manifest(output_base, 1, state.cumulative_mutations, final_metrics)
+    _update_rounds_manifest(
+        output_base,
+        1,
+        state.cumulative_mutations,
+        final_metrics,
+        contract=contract,
+        phase_result=phase_result,
+        gate_result=state.phase_gate_results.get(1, {}),
+    )
     phase_logger.close()
 
     return round_dir

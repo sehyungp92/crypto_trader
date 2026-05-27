@@ -1,16 +1,23 @@
 {
   "accepted": [],
   "rejected": [
-    "entry_break_ttl1",
-    "entry_break_ttl2",
     "entry_confirm_specific_ttl1",
     "entry_confirm_specific_ttl2",
+    "entry_confirm_specific_ttl3",
+    "entry_break_ttl1",
+    "entry_break_ttl2",
+    "entry_close_ttl1",
     "fib_high_050",
+    "fib_high_0786",
     "fib_050_confirm_specific_ttl2",
-    "fib_050_break_ttl2"
+    "fib_0786_confirm_specific_ttl2"
   ],
-  "final_score": 0.5789922208174012,
-  "base_score": 0.5789922208174012,
+  "final_score": 0.6953357771458846,
+  "base_score": 0.6953357771458846,
   "rounds": 1,
-  "elapsed_seconds": 0.0
+  "elapsed_seconds": 0.0,
+  "contract_hash": "9b3657ee25e24664c377c9b7c4d0254fef1a3fc4f39b9d184597d5674ec92258",
+  "final_validation": {
+    "status": "passed"
+  }
 }

@@ -31,16 +31,17 @@ from crypto_trader.strategy.momentum.journal import TradeJournal
 from .config import TrendConfig
 from .confirmation import TriggerDetector
 from .entry import EntryGenerator
-from .exits import ExitManager
+from .exits import ExitManager, TrendExitState
 from .indicators import WeeklyTracker
 from .regime import RegimeClassifier, RegimeResult, StructureTracker
 from .risk import RiskManager
-from .setup import SetupDetector
+from .setup import SetupDetector, TrendSetupResult
 from .sizing import PositionSizer
 from .stops import StopPlacer
 from .trail import TrailManager
 from crypto_trader.instrumentation.collector import InstrumentationCollector
 from crypto_trader.instrumentation.quality import ProcessQualityScorer
+from crypto_trader.strategy.snapshot import dataclass_from_plain, to_plain
 
 log = structlog.get_logger()
 
@@ -66,6 +67,17 @@ class _PositionMeta:
     stop_order_id: str | None = None
     d1_regime_notes: str = ""
     is_reentry: bool = False
+
+
+@dataclass
+class _PendingTrendSetup:
+    """Setup waiting for a later H1 confirmation bar."""
+    setup: TrendSetupResult
+    created_h1_bar_index: int
+    regime_tier: str
+    regime_reasons: tuple[str, ...] = ()
+    is_reentry: bool = False
+    min_confluences_override: int | None = None
 
 
 class TrendStrategy:
@@ -101,6 +113,7 @@ class TrendStrategy:
         self._h1_indicators: dict[str, IndicatorSnapshot | None] = {}
         self._d1_indicators: dict[str, IndicatorSnapshot | None] = {}
         self._m15_indicators: dict[str, IndicatorSnapshot | None] = {}
+        self._pending_setups: dict[str, _PendingTrendSetup] = {}
 
         # Per-symbol incremental indicator instances
         self._h1_inc: dict[str, IncrementalIndicators] = {}
@@ -132,6 +145,33 @@ class TrendStrategy:
     @property
     def journal(self) -> TradeJournal:
         return self._journal
+
+    def snapshot_state(self) -> dict:
+        return {
+            "position_meta": to_plain(self._position_meta),
+            "exit_states": to_plain(getattr(self._exit_manager, "_states", {})),
+            "pending_setups": to_plain(self._pending_setups),
+            "recent_exits": to_plain(self._recent_exits),
+            "reentry_count": to_plain(self._reentry_count),
+        }
+
+    def restore_state(self, snapshot: dict) -> None:
+        self._position_meta = {
+            sym: dataclass_from_plain(_PositionMeta, data)
+            for sym, data in snapshot.get("position_meta", {}).items()
+        }
+        self._exit_manager._states = {
+            sym: dataclass_from_plain(TrendExitState, data)
+            for sym, data in snapshot.get("exit_states", {}).items()
+        }
+        self._pending_setups = {
+            sym: dataclass_from_plain(_PendingTrendSetup, data)
+            for sym, data in snapshot.get("pending_setups", {}).items()
+        }
+        self._recent_exits = dict(snapshot.get("recent_exits", {}))
+        self._reentry_count = {
+            sym: int(count) for sym, count in snapshot.get("reentry_count", {}).items()
+        }
 
     def on_init(self, ctx: StrategyContext) -> None:
         self._ctx = ctx
@@ -179,7 +219,7 @@ class TrendStrategy:
             self._on_entry_fill(fill, ctx)
         elif fill.tag in ("tp1", "tp2"):
             self._on_tp_fill(fill, ctx)
-        elif fill.tag in ("time_stop", "ema_failsafe", "quick_exit"):
+        elif fill.tag in ("time_stop", "ema_failsafe", "quick_exit", "scratch_exit", "mfe_lock_exit"):
             pass  # Exit fills — position closed event handles bookkeeping
 
     def on_shutdown(self, ctx: StrategyContext) -> None:
@@ -203,6 +243,23 @@ class TrendStrategy:
     def _entry_window_open(self, timestamp: datetime, ctx: StrategyContext) -> bool:
         measurement_start = self._measurement_start(ctx)
         return measurement_start is None or timestamp >= measurement_start
+
+    def _pending_setup_is_valid(
+        self,
+        sym: str,
+        pending: _PendingTrendSetup,
+        direction: Side,
+    ) -> bool:
+        bars_since = self._h1_bar_count.get(sym, 0) - pending.created_h1_bar_index
+        max_bars = max(int(self._cfg.confirmation.max_bars_after_setup), 0)
+        return (
+            pending.setup.direction == direction
+            and bars_since > 0
+            and bars_since <= max_bars
+        )
+
+    def _clear_pending_setup(self, sym: str) -> None:
+        self._pending_setups.pop(sym, None)
 
     @staticmethod
     def _scaled_risk_units(actual_risk_pct: float, baseline_risk_pct: float) -> float:
@@ -321,6 +378,7 @@ class TrendStrategy:
         self._collector.record_gate(sym, "position_check", not has_pos,
             "position_exists" if has_pos else "")
         if has_pos:
+            self._clear_pending_setup(sym)
             self._collector.end_bar(sym)
             return
 
@@ -439,10 +497,23 @@ class TrendStrategy:
             weekly_low=weekly_low,
             min_confluences_override=min_conf_override,
         )
+        trigger = None
+        setup_source = "fresh"
+        if setup is None:
+            pending = self._pending_setups.get(sym)
+            if pending is not None and self._pending_setup_is_valid(sym, pending, direction):
+                setup = pending.setup
+                setup_source = "pending_confirmation"
+                is_reentry = pending.is_reentry
+                min_conf_override = pending.min_confluences_override
+                trigger = self._trigger_detector.check(h1_bars, setup.direction, h1_ind)
+            elif pending is not None:
+                self._clear_pending_setup(sym)
+
         self._collector.record_gate(sym, "setup", setup is not None,
             "no_setup_detected" if setup is None else "",
             context={"confluences": list(setup.confluences), "grade": setup.grade.value,
-                     "room_r": setup.room_r} if setup else {})
+                     "room_r": setup.room_r, "source": setup_source} if setup else {})
         if setup is None:
             self._collector.end_bar(sym)
             return
@@ -454,7 +525,8 @@ class TrendStrategy:
             setup_room_r=setup.room_r, funding_rate=0.0)
 
         # --- Confirmation ---
-        trigger = self._trigger_detector.check(h1_bars, setup.direction, h1_ind)
+        if trigger is None:
+            trigger = self._trigger_detector.check(h1_bars, setup.direction, h1_ind)
         confirmation_required = (
             self._cfg.confirmation.require_confirmation
             or (self._cfg.confirmation.require_confirmation_for_b and setup.grade == SetupGrade.B)
@@ -462,10 +534,23 @@ class TrendStrategy:
         confirm_ok = trigger is not None or not confirmation_required
         self._collector.record_gate(sym, "confirmation", confirm_ok,
             "no_confirmation_pattern" if not confirm_ok else "",
-            context={"pattern": trigger.pattern} if trigger else {})
+            context={"pattern": trigger.pattern, "source": setup_source} if trigger else {
+                "source": setup_source,
+                "max_bars_after_setup": self._cfg.confirmation.max_bars_after_setup,
+            })
         if not confirm_ok:
+            if setup_source == "fresh":
+                self._pending_setups[sym] = _PendingTrendSetup(
+                    setup=setup,
+                    created_h1_bar_index=self._h1_bar_count[sym],
+                    regime_tier=regime.tier,
+                    regime_reasons=tuple(regime.reasons) if regime else (),
+                    is_reentry=is_reentry,
+                    min_confluences_override=min_conf_override,
+                )
             self._collector.end_bar(sym)
             return
+        self._clear_pending_setup(sym)
 
         # --- Stop placement ---
         stop_level = self._stop_placer.compute(

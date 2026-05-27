@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import date
 import json
 from pathlib import Path
@@ -18,6 +18,7 @@ from crypto_trader.backtest.analysis import (
 )
 from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.backtest.metrics import metrics_to_dict
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.backtest.runner import BacktestResult, run
 from crypto_trader.data.store import ParquetStore
 from crypto_trader.optimize.breakout_round3_pre_round1 import (
@@ -34,6 +35,7 @@ from crypto_trader.optimize.breakout_round6_phased import (
     ROUND6_PHASE_GATE_CRITERIA,
 )
 from crypto_trader.optimize.config_mutator import apply_mutations
+from crypto_trader.optimize.contracts import build_optimization_contract, run_optimization_preflight
 from crypto_trader.optimize.momentum_round4_union import (
     build_pre_round1_config as build_momentum_pre_round1_config,
 )
@@ -74,6 +76,24 @@ _BREAKOUT_MANIFEST_PATH = Path("output/breakout/rounds_manifest.json")
 
 _TREND_PRE_ROUND1_PATH = Path("config/trend_pre_round1.yaml")
 
+_SOURCE_METRIC_KEYS = (
+    "total_trades",
+    "win_rate",
+    "profit_factor",
+    "max_drawdown_pct",
+    "sharpe_ratio",
+    "calmar_ratio",
+    "net_return_pct",
+    "expectancy_r",
+    "exit_efficiency",
+    "realized_pnl_net",
+    "terminal_mark_pnl_net",
+    "net_profit",
+    "total_fees",
+    "funding_cost_total",
+    "terminal_mark_count",
+)
+
 _MOMENTUM_STRUCTURAL_PREFIXES = (
     "setup.",
     "bias.",
@@ -99,6 +119,12 @@ class EvaluationSnapshot:
     phase_gates: dict[str, dict[str, Any]]
     final_phase: int
     final_phase_gate_passed: bool
+    contract_hash: str = ""
+    profile_hash: str = ""
+    strategy_config_hash: str = ""
+    portfolio_config_hash: str = ""
+    data_window: dict[str, Any] = field(default_factory=dict)
+    contract: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -143,6 +169,7 @@ class StrategyRevalidationContext:
     spec_payload: dict[str, Any]
     store: ParquetStore
     max_workers: int = 2
+    contract: dict[str, Any] = field(default_factory=dict)
 
     @property
     def final_phase(self) -> int:
@@ -189,6 +216,37 @@ def parse_gate_criteria(raw: dict[str, Any]) -> dict[int, list[GateCriterion]]:
     return parsed
 
 
+def _profile_warmup_days(spec_payload: dict[str, Any]) -> int:
+    return max(
+        LIVE_PARITY_PROFILE.warmup_days,
+        int(spec_payload.get("warmup_days", LIVE_PARITY_PROFILE.warmup_days)),
+    )
+
+
+def _build_revalidation_contract(
+    *,
+    root: Path,
+    strategy: str,
+    strategy_config: Any,
+    backtest_config: BacktestConfig,
+    scoring_weights: dict[str, float],
+    scoring_ceilings: dict[str, float],
+    hard_rejects: dict[str, tuple[str, float]],
+    phase_gate_criteria: dict[int, list[GateCriterion]],
+) -> dict[str, Any]:
+    return build_optimization_contract(
+        strategy_type=strategy,
+        strategy_config=strategy_config,
+        backtest_config=backtest_config,
+        data_dir=root / "data",
+        profile=LIVE_PARITY_PROFILE,
+        scoring_weights=scoring_weights,
+        scoring_ceilings=scoring_ceilings,
+        hard_rejects=hard_rejects,
+        gate_criteria=phase_gate_criteria,
+    )
+
+
 def build_manifest_checkpoints(manifest: dict[str, Any]) -> list[ManifestCheckpoint]:
     """Build cumulative checkpoints from a rounds manifest."""
     checkpoints: list[ManifestCheckpoint] = [
@@ -201,15 +259,7 @@ def build_manifest_checkpoints(manifest: dict[str, Any]) -> list[ManifestCheckpo
         cumulative.update(round_entry.get("mutations", {}))
         source_metrics = {
             key: float(round_entry[key])
-            for key in (
-                "total_trades",
-                "win_rate",
-                "profit_factor",
-                "max_drawdown_pct",
-                "sharpe_ratio",
-                "calmar_ratio",
-                "net_return_pct",
-            )
+            for key in _SOURCE_METRIC_KEYS
             if key in round_entry
         }
         checkpoints.append(
@@ -316,12 +366,32 @@ def load_strategy_revalidation_context(
         manifest_path = root / _MOMENTUM_MANIFEST_PATH
         spec_payload = _load_json(spec_path)
         baseline_config = build_momentum_pre_round1_config(root / "config" / "momentum_round3_pre_round1.yaml")
-        backtest_config = BacktestConfig(
+        backtest_config = build_backtest_config_from_profile(
+            profile=LIVE_PARITY_PROFILE,
             symbols=list(spec_payload["symbols"]),
             start_date=date.fromisoformat(spec_payload["window"]["start_date"]),
             end_date=date.fromisoformat(spec_payload["window"]["end_date"]),
-            initial_equity=10_000.0,
-            warmup_days=int(spec_payload.get("warmup_days", 0)),
+            warmup_days=_profile_warmup_days(spec_payload),
+        )
+        scoring_weights = dict(spec_payload["immutable_scoring_weights"])
+        scoring_ceilings = dict(spec_payload["immutable_scoring_ceilings"])
+        hard_rejects = normalize_hard_rejects(spec_payload["hard_rejects"])
+        phase_gate_criteria = parse_gate_criteria(spec_payload["phase_gate_criteria"])
+        contract = _build_revalidation_contract(
+            root=root,
+            strategy=strategy,
+            strategy_config=baseline_config,
+            backtest_config=backtest_config,
+            scoring_weights=scoring_weights,
+            scoring_ceilings=scoring_ceilings,
+            hard_rejects=hard_rejects,
+            phase_gate_criteria=phase_gate_criteria,
+        )
+        run_optimization_preflight(
+            contract=contract,
+            backtest_config=backtest_config,
+            data_dir=root / "data",
+            profile=LIVE_PARITY_PROFILE,
         )
         return StrategyRevalidationContext(
             root=root,
@@ -330,14 +400,15 @@ def load_strategy_revalidation_context(
             backtest_config=backtest_config,
             symbols=list(spec_payload["symbols"]),
             manifest_path=manifest_path,
-            scoring_weights=dict(spec_payload["immutable_scoring_weights"]),
-            scoring_ceilings=dict(spec_payload["immutable_scoring_ceilings"]),
-            hard_rejects=normalize_hard_rejects(spec_payload["hard_rejects"]),
-            phase_gate_criteria=parse_gate_criteria(spec_payload["phase_gate_criteria"]),
+            scoring_weights=scoring_weights,
+            scoring_ceilings=scoring_ceilings,
+            hard_rejects=hard_rejects,
+            phase_gate_criteria=phase_gate_criteria,
             spec_path=spec_path,
             spec_payload=spec_payload,
             store=ParquetStore(base_dir=root / "data"),
             max_workers=int(spec_payload.get("max_workers", 2)),
+            contract=contract,
         )
 
     if strategy == "trend":
@@ -347,12 +418,32 @@ def load_strategy_revalidation_context(
         with open(root / _TREND_PRE_ROUND1_PATH, encoding="utf-8") as handle:
             raw = yaml.safe_load(handle) or {}
         baseline_config = TrendConfig.from_dict(raw.get("strategy", raw))
-        backtest_config = BacktestConfig(
+        backtest_config = build_backtest_config_from_profile(
+            profile=LIVE_PARITY_PROFILE,
             symbols=list(spec_payload["symbols"]),
             start_date=date.fromisoformat(spec_payload["measurement_start"]),
             end_date=date.fromisoformat(spec_payload["measurement_end"]),
-            initial_equity=10_000.0,
-            warmup_days=int(spec_payload.get("warmup_days", 0)),
+            warmup_days=_profile_warmup_days(spec_payload),
+        )
+        scoring_weights = dict(spec_payload["scoring_weights"])
+        scoring_ceilings = dict(spec_payload["immutable_scoring_ceilings"])
+        hard_rejects = normalize_hard_rejects(spec_payload["hard_rejects"])
+        phase_gate_criteria = parse_gate_criteria(spec_payload["phase_gate_criteria"])
+        contract = _build_revalidation_contract(
+            root=root,
+            strategy=strategy,
+            strategy_config=baseline_config,
+            backtest_config=backtest_config,
+            scoring_weights=scoring_weights,
+            scoring_ceilings=scoring_ceilings,
+            hard_rejects=hard_rejects,
+            phase_gate_criteria=phase_gate_criteria,
+        )
+        run_optimization_preflight(
+            contract=contract,
+            backtest_config=backtest_config,
+            data_dir=root / "data",
+            profile=LIVE_PARITY_PROFILE,
         )
         return StrategyRevalidationContext(
             root=root,
@@ -361,14 +452,15 @@ def load_strategy_revalidation_context(
             backtest_config=backtest_config,
             symbols=list(spec_payload["symbols"]),
             manifest_path=manifest_path,
-            scoring_weights=dict(spec_payload["scoring_weights"]),
-            scoring_ceilings=dict(spec_payload["immutable_scoring_ceilings"]),
-            hard_rejects=normalize_hard_rejects(spec_payload["hard_rejects"]),
-            phase_gate_criteria=parse_gate_criteria(spec_payload["phase_gate_criteria"]),
+            scoring_weights=scoring_weights,
+            scoring_ceilings=scoring_ceilings,
+            hard_rejects=hard_rejects,
+            phase_gate_criteria=phase_gate_criteria,
             spec_path=spec_path,
             spec_payload=spec_payload,
             store=ParquetStore(base_dir=root / "data"),
             max_workers=int(spec_payload.get("max_workers", 2)),
+            contract=contract,
         )
 
     if strategy == "breakout":
@@ -376,12 +468,32 @@ def load_strategy_revalidation_context(
         manifest_path = root / _BREAKOUT_MANIFEST_PATH
         spec_payload = _load_json(spec_path)
         baseline_config = build_breakout_pre_round1_config()
-        backtest_config = BacktestConfig(
+        backtest_config = build_backtest_config_from_profile(
+            profile=LIVE_PARITY_PROFILE,
             symbols=list(spec_payload["symbols"]),
             start_date=date.fromisoformat(spec_payload["window"]["start_date"]),
             end_date=date.fromisoformat(spec_payload["window"]["end_date"]),
-            initial_equity=10_000.0,
-            warmup_days=int(spec_payload.get("warmup_days", 0)),
+            warmup_days=_profile_warmup_days(spec_payload),
+        )
+        scoring_weights = dict(spec_payload["immutable_scoring_weights"])
+        scoring_ceilings = dict(spec_payload["immutable_scoring_ceilings"])
+        hard_rejects = normalize_hard_rejects(spec_payload["hard_rejects"])
+        phase_gate_criteria = parse_gate_criteria(spec_payload["phase_gate_criteria"])
+        contract = _build_revalidation_contract(
+            root=root,
+            strategy=strategy,
+            strategy_config=baseline_config,
+            backtest_config=backtest_config,
+            scoring_weights=scoring_weights,
+            scoring_ceilings=scoring_ceilings,
+            hard_rejects=hard_rejects,
+            phase_gate_criteria=phase_gate_criteria,
+        )
+        run_optimization_preflight(
+            contract=contract,
+            backtest_config=backtest_config,
+            data_dir=root / "data",
+            profile=LIVE_PARITY_PROFILE,
         )
         return StrategyRevalidationContext(
             root=root,
@@ -390,14 +502,15 @@ def load_strategy_revalidation_context(
             backtest_config=backtest_config,
             symbols=list(spec_payload["symbols"]),
             manifest_path=manifest_path,
-            scoring_weights=dict(spec_payload["immutable_scoring_weights"]),
-            scoring_ceilings=dict(spec_payload["immutable_scoring_ceilings"]),
-            hard_rejects=normalize_hard_rejects(spec_payload["hard_rejects"]),
-            phase_gate_criteria=parse_gate_criteria(spec_payload["phase_gate_criteria"]),
+            scoring_weights=scoring_weights,
+            scoring_ceilings=scoring_ceilings,
+            hard_rejects=hard_rejects,
+            phase_gate_criteria=phase_gate_criteria,
             spec_path=spec_path,
             spec_payload=spec_payload,
             store=ParquetStore(base_dir=root / "data"),
             max_workers=int(spec_payload.get("max_workers", 2)),
+            contract=contract,
         )
 
     raise ValueError(f"Unsupported strategy: {strategy}")
@@ -431,6 +544,16 @@ def _evaluate_mutations(
     mutations: dict[str, Any],
 ) -> EvaluationBundle:
     config = apply_mutations(context.baseline_config, mutations)
+    contract = _build_revalidation_contract(
+        root=context.root,
+        strategy=context.strategy,
+        strategy_config=config,
+        backtest_config=context.backtest_config,
+        scoring_weights=context.scoring_weights,
+        scoring_ceilings=context.scoring_ceilings,
+        hard_rejects=context.hard_rejects,
+        phase_gate_criteria=context.phase_gate_criteria,
+    )
     result = run(
         config,
         context.backtest_config,
@@ -456,12 +579,35 @@ def _evaluate_mutations(
         phase_gates=phase_gates,
         final_phase=context.final_phase,
         final_phase_gate_passed=phase_gates[str(context.final_phase)]["passed"],
+        contract_hash=contract.get("contract_hash", ""),
+        profile_hash=contract.get("profile_hash", ""),
+        strategy_config_hash=contract.get("strategy_config_hash", ""),
+        portfolio_config_hash=contract.get("portfolio_config_hash", ""),
+        data_window=contract.get("data_window", {}),
+        contract=contract,
     )
     return EvaluationBundle(snapshot=snapshot, result=result, config=config)
 
 
-def _write_strategy_config(path: Path, config: Any) -> None:
+def _write_strategy_config(
+    path: Path,
+    config: Any,
+    *,
+    contract: dict[str, Any] | None = None,
+) -> None:
     payload = {"strategy": config.to_dict()}
+    if contract is not None:
+        payload["metadata"] = {
+            "contract_hash": contract.get("contract_hash", ""),
+            "profile_hash": contract.get("profile_hash", ""),
+            "strategy_config_hash": contract.get("strategy_config_hash", ""),
+            "portfolio_config_hash": contract.get("portfolio_config_hash", ""),
+            "data_window": contract.get("data_window", {}),
+            "data_fingerprint": contract.get("data_fingerprint", {}),
+            "symbols": contract.get("symbols", []),
+            "required_timeframes": contract.get("required_timeframes", []),
+            "contract": contract,
+        }
     _write_json(path, payload)
 
 
@@ -472,7 +618,11 @@ def _write_checkpoint_artifacts(
     source_manifest_metrics: dict[str, float] | None = None,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    _write_strategy_config(output_dir / "optimized_config.json", bundle.config)
+    _write_strategy_config(
+        output_dir / "optimized_config.json",
+        bundle.config,
+        contract=bundle.snapshot.contract,
+    )
     generate_report(bundle.result, output_dir)
     export_equity_curve(bundle.result, output_dir)
     export_trade_journal(bundle.result, output_dir)
@@ -506,13 +656,20 @@ def run_manifest_replay(
         )
 
     final_bundle = bundles[-1]
-    _write_strategy_config(output_dir / "final_cumulative_config.json", final_bundle.config)
+    _write_strategy_config(
+        output_dir / "final_cumulative_config.json",
+        final_bundle.config,
+        contract=final_bundle.snapshot.contract,
+    )
     _write_json(
         output_dir / "manifest_replay_summary.json",
         {
             "strategy": context.strategy,
             "manifest_path": str(context.manifest_path),
             "spec_path": str(context.spec_path),
+            "contract_hash": context.contract.get("contract_hash", ""),
+            "profile_hash": context.contract.get("profile_hash", ""),
+            "contract": context.contract,
             "backtest_window": {
                 "start_date": context.backtest_config.start_date.isoformat(),
                 "end_date": context.backtest_config.end_date.isoformat(),
@@ -697,8 +854,21 @@ def write_cleaned_seed(
         raise ValueError(f"Unsupported strategy: {context.strategy}")
 
     cleaned_config = apply_mutations(context.baseline_config, cleaned_mutations)
+    contract = _build_revalidation_contract(
+        root=context.root,
+        strategy=context.strategy,
+        strategy_config=cleaned_config,
+        backtest_config=context.backtest_config,
+        scoring_weights=context.scoring_weights,
+        scoring_ceilings=context.scoring_ceilings,
+        hard_rejects=context.hard_rejects,
+        phase_gate_criteria=context.phase_gate_criteria,
+    )
+    notes["contract_hash"] = contract.get("contract_hash", "")
+    notes["profile_hash"] = contract.get("profile_hash", "")
+    notes["contract"] = contract
     seed_path = output_dir / "cleaned_seed_config.json"
-    _write_strategy_config(seed_path, cleaned_config)
+    _write_strategy_config(seed_path, cleaned_config, contract=contract)
     _write_json(output_dir / "cleaned_seed_notes.json", notes)
     return seed_path, notes
 
@@ -738,12 +908,27 @@ def _run_momentum_cleaned_seed_rerun(
         data_dir=context.root / "data",
         max_workers=context.max_workers,
     )
-    runner = PhaseRunner(plugin, output_dir)
+    contract = build_optimization_contract(
+        strategy_type="momentum",
+        strategy_config=base_config,
+        backtest_config=context.backtest_config,
+        data_dir=context.root / "data",
+        profile=LIVE_PARITY_PROFILE,
+        plugin=plugin,
+        scoring_weights=MOMENTUM_SCORING_WEIGHTS,
+        scoring_ceilings=MOMENTUM_SCORING_CEILINGS,
+        hard_rejects=MOMENTUM_HARD_REJECTS,
+        gate_criteria=MOMENTUM_PHASE_GATE_CRITERIA,
+    )
+    runner = PhaseRunner(plugin, output_dir, contract=contract)
     state = PhaseState.load_or_create(output_dir / "phase_state.json")
     run_spec = {
         "strategy": "momentum",
         "baseline_seed": str(baseline_path),
         "rerun_reason": "Cleaned-seed rerun after manifest replay, ablation, and perturbation.",
+        "contract_hash": contract.get("contract_hash", ""),
+        "profile_hash": contract.get("profile_hash", ""),
+        "contract": contract,
         "immutable_scoring_weights": MOMENTUM_SCORING_WEIGHTS,
         "immutable_scoring_ceilings": MOMENTUM_SCORING_CEILINGS,
         "hard_rejects": MOMENTUM_HARD_REJECTS,
@@ -765,6 +950,8 @@ def _run_momentum_cleaned_seed_rerun(
         "completed_phases": state.completed_phases,
         "cumulative_mutations": state.cumulative_mutations,
         "final_metrics": final_metrics,
+        "contract_hash": contract.get("contract_hash", ""),
+        "contract": contract,
     }
     _write_json(output_dir / "run_summary.json", summary)
     return summary
@@ -782,13 +969,33 @@ def _run_trend_cleaned_seed_rerun(
         data_dir=context.root / "data",
         max_workers=context.max_workers,
     )
-    runner = PhaseRunner(plugin, output_dir, round_name="trend_cleaned_seed_rerun")
+    contract = build_optimization_contract(
+        strategy_type="trend",
+        strategy_config=base_config,
+        backtest_config=context.backtest_config,
+        data_dir=context.root / "data",
+        profile=LIVE_PARITY_PROFILE,
+        plugin=plugin,
+        scoring_weights=ROUND7_SCORING_WEIGHTS,
+        scoring_ceilings=ROUND7_IMMUTABLE_SCORING_CEILINGS,
+        hard_rejects=ROUND7_HARD_REJECTS,
+        gate_criteria=ROUND7_PHASE_GATE_CRITERIA,
+    )
+    runner = PhaseRunner(
+        plugin,
+        output_dir,
+        round_name="trend_cleaned_seed_rerun",
+        contract=contract,
+    )
     state = PhaseState.load_or_create(output_dir / "phase_state.json")
 
     run_spec = {
         "strategy": "trend",
         "baseline_seed": str(baseline_path),
         "rerun_reason": "Cleaned-seed rerun after manifest replay, ablation, and perturbation.",
+        "contract_hash": contract.get("contract_hash", ""),
+        "profile_hash": contract.get("profile_hash", ""),
+        "contract": contract,
         "scoring_weights": ROUND7_SCORING_WEIGHTS,
         "immutable_scoring_ceilings": ROUND7_IMMUTABLE_SCORING_CEILINGS,
         "hard_rejects": ROUND7_HARD_REJECTS,
@@ -809,6 +1016,8 @@ def _run_trend_cleaned_seed_rerun(
         "completed_phases": state.completed_phases,
         "cumulative_mutations": state.cumulative_mutations,
         "final_metrics": final_metrics,
+        "contract_hash": contract.get("contract_hash", ""),
+        "contract": contract,
     }
     _write_json(output_dir / "run_summary.json", summary)
     return summary
@@ -826,12 +1035,27 @@ def _run_breakout_cleaned_seed_rerun(
         data_dir=context.root / "data",
         max_workers=context.max_workers,
     )
-    runner = PhaseRunner(plugin, output_dir)
+    contract = build_optimization_contract(
+        strategy_type="breakout",
+        strategy_config=base_config,
+        backtest_config=context.backtest_config,
+        data_dir=context.root / "data",
+        profile=LIVE_PARITY_PROFILE,
+        plugin=plugin,
+        scoring_weights=ROUND6_IMMUTABLE_SCORING_WEIGHTS,
+        scoring_ceilings=ROUND6_IMMUTABLE_SCORING_CEILINGS,
+        hard_rejects=ROUND6_HARD_REJECTS,
+        gate_criteria=ROUND6_PHASE_GATE_CRITERIA,
+    )
+    runner = PhaseRunner(plugin, output_dir, contract=contract)
     state = PhaseState.load_or_create(output_dir / "phase_state.json")
     run_spec = {
         "strategy": "breakout",
         "baseline_seed": str(baseline_path),
         "rerun_reason": "Cleaned-seed rerun after manifest replay, ablation, and perturbation.",
+        "contract_hash": contract.get("contract_hash", ""),
+        "profile_hash": contract.get("profile_hash", ""),
+        "contract": contract,
         "immutable_scoring_weights": ROUND6_IMMUTABLE_SCORING_WEIGHTS,
         "immutable_scoring_ceilings": ROUND6_IMMUTABLE_SCORING_CEILINGS,
         "hard_rejects": ROUND6_HARD_REJECTS,
@@ -853,6 +1077,8 @@ def _run_breakout_cleaned_seed_rerun(
         "completed_phases": state.completed_phases,
         "cumulative_mutations": state.cumulative_mutations,
         "final_metrics": final_metrics,
+        "contract_hash": contract.get("contract_hash", ""),
+        "contract": contract,
     }
     _write_json(output_dir / "run_summary.json", summary)
     return summary

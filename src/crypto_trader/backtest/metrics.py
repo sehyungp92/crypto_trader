@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from crypto_trader.core.runtime_types import TradeOutcome
+
 
 @dataclass
 class PerformanceMetrics:
@@ -46,6 +48,7 @@ class PerformanceMetrics:
     b_setup_win_rate: float = 0.0
     long_win_rate: float = 0.0
     short_win_rate: float = 0.0
+    total_fees: float = 0.0
     funding_cost_total: float = 0.0
     per_asset: dict[str, dict] = field(default_factory=dict)
     per_session: dict[str, dict] = field(default_factory=dict)
@@ -75,6 +78,31 @@ def _trade_reporting_r(trade: object) -> float | None:
     if geometric_r is None:
         return None
     return float(geometric_r)
+
+
+def _trade_outcome(trade: object) -> TradeOutcome:
+    return TradeOutcome.from_trade(trade)
+
+
+def _trade_net_pnl(trade: object) -> float:
+    try:
+        return _trade_outcome(trade).realized_pnl_net
+    except AttributeError:
+        return float(getattr(trade, "net_pnl", 0.0))
+
+
+def _trade_funding_paid(trade: object) -> float:
+    try:
+        return _trade_outcome(trade).funding_paid
+    except AttributeError:
+        return float(getattr(trade, "funding_paid", 0.0) or 0.0)
+
+
+def _trade_total_fees(trade: object) -> float:
+    try:
+        return _trade_outcome(trade).total_fees
+    except AttributeError:
+        return float(getattr(trade, "commission", 0.0) or 0.0)
 
 
 def _trade_reporting_rs(trades: list) -> list[float]:
@@ -109,9 +137,10 @@ def compute_metrics(broker: object) -> PerformanceMetrics:
 
     m = PerformanceMetrics()
     m.total_trades = len(trades)
-    m.realized_pnl_net = float(sum(t.net_pnl for t in trades))
+    m.realized_pnl_net = float(sum(_trade_net_pnl(t) for t in trades))
     m.terminal_mark_count = len(terminal_marks)
     m.terminal_mark_pnl_net = float(sum(mark.unrealized_pnl_net for mark in terminal_marks))
+    m.total_fees = float(sum(_trade_total_fees(t) for t in trades))
 
     if equity_history:
         final_equity = equity_history[-1][1]
@@ -166,8 +195,8 @@ def compute_metrics(broker: object) -> PerformanceMetrics:
     if m.total_trades == 0:
         return m
 
-    winners = [t for t in trades if t.net_pnl > 0]
-    losers = [t for t in trades if t.net_pnl <= 0]
+    winners = [t for t in trades if _trade_net_pnl(t) > 0]
+    losers = [t for t in trades if _trade_net_pnl(t) <= 0]
     m.win_rate = len(winners) / m.total_trades * 100
 
     winner_rs = _trade_reporting_rs(winners)
@@ -178,8 +207,8 @@ def compute_metrics(broker: object) -> PerformanceMetrics:
     all_rs = _trade_reporting_rs(trades)
     m.expectancy_r = float(np.mean(all_rs)) if all_rs else 0.0
 
-    gross_profit = sum(t.net_pnl for t in winners) if winners else 0.0
-    gross_loss = abs(sum(t.net_pnl for t in losers)) if losers else 0.0
+    gross_profit = sum(_trade_net_pnl(t) for t in winners) if winners else 0.0
+    gross_loss = abs(sum(_trade_net_pnl(t) for t in losers)) if losers else 0.0
     m.profit_factor = (
         gross_profit / gross_loss
         if gross_loss > 0
@@ -200,15 +229,15 @@ def compute_metrics(broker: object) -> PerformanceMetrics:
     if m.avg_mae_r != 0:
         m.edge_ratio = float(m.avg_mfe_r / abs(m.avg_mae_r))
 
-    avg_winner_pnl = float(np.mean([t.net_pnl for t in winners])) if winners else 0.0
-    avg_loser_pnl = abs(float(np.mean([t.net_pnl for t in losers]))) if losers else 0.0
+    avg_winner_pnl = float(np.mean([_trade_net_pnl(t) for t in winners])) if winners else 0.0
+    avg_loser_pnl = abs(float(np.mean([_trade_net_pnl(t) for t in losers]))) if losers else 0.0
     m.payoff_ratio = float(avg_winner_pnl / avg_loser_pnl) if avg_loser_pnl > 0 else 0.0
 
     if winners:
-        sorted_winners = sorted(winners, key=lambda trade: trade.net_pnl, reverse=True)
+        sorted_winners = sorted(winners, key=_trade_net_pnl, reverse=True)
         top_n = max(1, len(sorted_winners) // 5)
-        top_profit = sum(trade.net_pnl for trade in sorted_winners[:top_n])
-        total_profit = sum(trade.net_pnl for trade in sorted_winners)
+        top_profit = sum(_trade_net_pnl(trade) for trade in sorted_winners[:top_n])
+        total_profit = sum(_trade_net_pnl(trade) for trade in sorted_winners)
         m.profit_concentration = float(top_profit / total_profit * 100) if total_profit > 0 else 0.0
 
     m.max_consecutive_wins, m.max_consecutive_losses = _compute_streaks(trades)
@@ -229,31 +258,31 @@ def compute_metrics(broker: object) -> PerformanceMetrics:
     a_trades = [t for t in trades if t.setup_grade == SetupGrade.A]
     b_trades = [t for t in trades if t.setup_grade == SetupGrade.B]
     m.a_setup_win_rate = (
-        sum(1 for trade in a_trades if trade.net_pnl > 0) / len(a_trades) * 100
+        sum(1 for trade in a_trades if _trade_net_pnl(trade) > 0) / len(a_trades) * 100
     ) if a_trades else 0.0
     m.b_setup_win_rate = (
-        sum(1 for trade in b_trades if trade.net_pnl > 0) / len(b_trades) * 100
+        sum(1 for trade in b_trades if _trade_net_pnl(trade) > 0) / len(b_trades) * 100
     ) if b_trades else 0.0
 
     longs = [t for t in trades if t.direction == Side.LONG]
     shorts = [t for t in trades if t.direction == Side.SHORT]
     m.long_win_rate = (
-        sum(1 for trade in longs if trade.net_pnl > 0) / len(longs) * 100
+        sum(1 for trade in longs if _trade_net_pnl(trade) > 0) / len(longs) * 100
     ) if longs else 0.0
     m.short_win_rate = (
-        sum(1 for trade in shorts if trade.net_pnl > 0) / len(shorts) * 100
+        sum(1 for trade in shorts if _trade_net_pnl(trade) > 0) / len(shorts) * 100
     ) if shorts else 0.0
 
-    m.funding_cost_total = sum(t.funding_paid for t in trades)
+    m.funding_cost_total = sum(_trade_funding_paid(t) for t in trades)
 
     symbols = set(t.symbol for t in trades)
     for symbol in symbols:
         sym_trades = [t for t in trades if t.symbol == symbol]
-        sym_winners = [t for t in sym_trades if t.net_pnl > 0]
+        sym_winners = [t for t in sym_trades if _trade_net_pnl(t) > 0]
         m.per_asset[symbol] = {
             "trades": len(sym_trades),
             "win_rate": len(sym_winners) / len(sym_trades) * 100 if sym_trades else 0.0,
-            "net_profit": sum(t.net_pnl for t in sym_trades),
+            "net_profit": sum(_trade_net_pnl(t) for t in sym_trades),
         }
 
     def _session_label(hour: int) -> str:
@@ -273,11 +302,11 @@ def compute_metrics(broker: object) -> PerformanceMetrics:
         session_buckets.setdefault(_session_label(hour), []).append(trade)
 
     for label, session_trades in session_buckets.items():
-        session_winners = [t for t in session_trades if t.net_pnl > 0]
+        session_winners = [t for t in session_trades if _trade_net_pnl(t) > 0]
         m.per_session[label] = {
             "trades": len(session_trades),
             "win_rate": len(session_winners) / len(session_trades) * 100 if session_trades else 0.0,
-            "net_profit": sum(t.net_pnl for t in session_trades),
+            "net_profit": sum(_trade_net_pnl(t) for t in session_trades),
         }
 
     return m
@@ -288,7 +317,7 @@ def _compute_streaks(trades: list) -> tuple[int, int]:
     max_wins = max_losses = 0
     cur_wins = cur_losses = 0
     for trade in trades:
-        if trade.net_pnl > 0:
+        if _trade_net_pnl(trade) > 0:
             cur_wins += 1
             cur_losses = 0
             max_wins = max(max_wins, cur_wins)
@@ -337,12 +366,12 @@ def _compute_group_breakdown(trades: list, *, key_fn: object) -> dict:
 
     result = {}
     for key, group in sorted(groups.items(), key=lambda item: str(item[0])):
-        group_winners = [trade for trade in group if trade.net_pnl > 0]
+        group_winners = [trade for trade in group if _trade_net_pnl(trade) > 0]
         group_rs = _trade_reporting_rs(group)
         result[key] = {
             "trades": len(group),
             "win_rate": len(group_winners) / len(group) * 100 if group else 0.0,
-            "net_profit": sum(trade.net_pnl for trade in group),
+            "net_profit": sum(_trade_net_pnl(trade) for trade in group),
             "avg_r": float(np.mean(group_rs)) if group_rs else 0.0,
         }
     return result
@@ -375,6 +404,7 @@ def metrics_to_dict(metrics: PerformanceMetrics) -> dict[str, float]:
         "b_setup_win_rate": metrics.b_setup_win_rate,
         "long_win_rate": metrics.long_win_rate,
         "short_win_rate": metrics.short_win_rate,
+        "total_fees": metrics.total_fees,
         "funding_cost_total": metrics.funding_cost_total,
         "edge_ratio": metrics.edge_ratio,
         "payoff_ratio": metrics.payoff_ratio,
@@ -418,13 +448,14 @@ def filter_metrics_for_scoring(
             "b_setup_win_rate",
             "long_win_rate",
             "short_win_rate",
+            "total_fees",
             "funding_cost_total",
         ):
             out[key] = 0.0
         return out
 
-    winners = [trade for trade in filtered if trade.net_pnl > 0]
-    losers = [trade for trade in filtered if trade.net_pnl <= 0]
+    winners = [trade for trade in filtered if _trade_net_pnl(trade) > 0]
+    losers = [trade for trade in filtered if _trade_net_pnl(trade) <= 0]
 
     out["win_rate"] = len(winners) / n * 100
 
@@ -436,8 +467,8 @@ def filter_metrics_for_scoring(
     all_rs = _trade_reporting_rs(filtered)
     out["expectancy_r"] = float(np.mean(all_rs)) if all_rs else 0.0
 
-    gross_profit = sum(trade.net_pnl for trade in winners) if winners else 0.0
-    gross_loss = abs(sum(trade.net_pnl for trade in losers)) if losers else 0.0
+    gross_profit = sum(_trade_net_pnl(trade) for trade in winners) if winners else 0.0
+    gross_loss = abs(sum(_trade_net_pnl(trade) for trade in losers)) if losers else 0.0
     out["profit_factor"] = (
         gross_profit / gross_loss
         if gross_loss > 0
@@ -460,8 +491,8 @@ def filter_metrics_for_scoring(
     else:
         out["edge_ratio"] = 0.0
 
-    avg_winner_pnl = float(np.mean([trade.net_pnl for trade in winners])) if winners else 0.0
-    avg_loser_pnl = abs(float(np.mean([trade.net_pnl for trade in losers]))) if losers else 0.0
+    avg_winner_pnl = float(np.mean([_trade_net_pnl(trade) for trade in winners])) if winners else 0.0
+    avg_loser_pnl = abs(float(np.mean([_trade_net_pnl(trade) for trade in losers]))) if losers else 0.0
     out["payoff_ratio"] = float(avg_winner_pnl / avg_loser_pnl) if avg_loser_pnl > 0 else 0.0
 
     _, max_consecutive_losses = _compute_streaks(filtered)
@@ -470,22 +501,23 @@ def filter_metrics_for_scoring(
     a_trades = [trade for trade in filtered if trade.setup_grade == SetupGrade.A]
     b_trades = [trade for trade in filtered if trade.setup_grade == SetupGrade.B]
     out["a_setup_win_rate"] = (
-        sum(1 for trade in a_trades if trade.net_pnl > 0) / len(a_trades) * 100
+        sum(1 for trade in a_trades if _trade_net_pnl(trade) > 0) / len(a_trades) * 100
     ) if a_trades else 0.0
     out["b_setup_win_rate"] = (
-        sum(1 for trade in b_trades if trade.net_pnl > 0) / len(b_trades) * 100
+        sum(1 for trade in b_trades if _trade_net_pnl(trade) > 0) / len(b_trades) * 100
     ) if b_trades else 0.0
 
     longs = [trade for trade in filtered if trade.direction == Side.LONG]
     shorts = [trade for trade in filtered if trade.direction == Side.SHORT]
     out["long_win_rate"] = (
-        sum(1 for trade in longs if trade.net_pnl > 0) / len(longs) * 100
+        sum(1 for trade in longs if _trade_net_pnl(trade) > 0) / len(longs) * 100
     ) if longs else 0.0
     out["short_win_rate"] = (
-        sum(1 for trade in shorts if trade.net_pnl > 0) / len(shorts) * 100
+        sum(1 for trade in shorts if _trade_net_pnl(trade) > 0) / len(shorts) * 100
     ) if shorts else 0.0
 
-    out["funding_cost_total"] = sum(trade.funding_paid for trade in filtered)
+    out["funding_cost_total"] = sum(_trade_funding_paid(trade) for trade in filtered)
+    out["total_fees"] = sum(_trade_total_fees(trade) for trade in filtered)
     return out
 
 
@@ -500,6 +532,6 @@ def _compute_weekly_returns(trades: list) -> list[dict]:
             continue
         iso = trade.entry_time.isocalendar()
         week_key = f"{iso[0]}-W{iso[1]:02d}"
-        weekly[week_key] = weekly.get(week_key, 0.0) + trade.net_pnl
+        weekly[week_key] = weekly.get(week_key, 0.0) + _trade_net_pnl(trade)
 
     return [{"week": key, "pnl": pnl} for key, pnl in sorted(weekly.items())]

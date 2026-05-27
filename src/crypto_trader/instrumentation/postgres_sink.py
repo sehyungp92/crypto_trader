@@ -20,6 +20,21 @@ from crypto_trader.instrumentation.types import (
 log = structlog.get_logger()
 
 
+def _has_explicit_economics(event: InstrumentedTradeEvent) -> bool:
+    return any((
+        event.price_pnl_gross != 0.0,
+        event.total_fees != 0.0,
+        event.realized_pnl_net != 0.0,
+        event.funding_paid != 0.0,
+    ))
+
+
+def _event_realized_net_pnl(event: InstrumentedTradeEvent) -> float:
+    if _has_explicit_economics(event):
+        return event.realized_pnl_net
+    return event.pnl
+
+
 class PostgresSink:
     """Writes instrumentation events to PostgreSQL.
 
@@ -41,7 +56,7 @@ class PostgresSink:
     def write_trade(self, event: InstrumentedTradeEvent) -> None:
         """INSERT trade, idempotent via ON CONFLICT DO NOTHING."""
         try:
-            net_pnl = event.pnl - event.funding_paid
+            net_pnl = _event_realized_net_pnl(event)
             confluences = json.dumps(event.confluences) if event.confluences else "[]"
             market_ctx = (
                 json.dumps(event.market_context.to_dict())

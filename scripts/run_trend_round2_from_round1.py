@@ -9,7 +9,7 @@ from typing import Any
 
 import structlog
 
-from crypto_trader.backtest.config import BacktestConfig
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.backtest.metrics import metrics_to_dict
 from crypto_trader.backtest.runner import run
 from crypto_trader.cli import _detect_next_round, _update_rounds_manifest
@@ -248,12 +248,11 @@ def main() -> None:
     start_date = common_start.date()
     end_date = common_end.date()
 
-    bt_config = BacktestConfig(
+    bt_config = build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=list(SYMBOLS),
         start_date=start_date,
         end_date=end_date,
-        initial_equity=10_000.0,
-        warmup_days=60,
     )
     plugin = Round2TrendPlugin(
         bt_config,

@@ -12,8 +12,11 @@ drawdown contained enough that pure leverage changes do not dominate.
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
+
+import structlog
 
 from crypto_trader.optimize.breakout_plugin import BreakoutPlugin
 from crypto_trader.optimize.breakout_round3_pre_round1 import (
@@ -22,6 +25,11 @@ from crypto_trader.optimize.breakout_round3_pre_round1 import (
     build_pre_round1_config,
 )
 from crypto_trader.optimize.config_mutator import merge_mutations
+from crypto_trader.optimize.greedy_optimizer import (
+    _compute_identity,
+    _load_checkpoint,
+    _save_checkpoint,
+)
 from crypto_trader.optimize.parallel import evaluate_parallel
 from crypto_trader.optimize.types import (
     EvaluateFn,
@@ -33,6 +41,8 @@ from crypto_trader.optimize.types import (
     PhaseSpec,
     ScoredCandidate,
 )
+
+log = structlog.get_logger("optimize.breakout_round4_trade_frequency")
 
 ROUND3_SOURCE_DIRS: tuple[str, str] = ("round_3_breakout", "round_3")
 
@@ -192,8 +202,9 @@ def run_greedy_without_pruning(
     too aggressive, because some round-3 mutations only become viable after a
     structural mutation is accepted first.
     """
-    del prune_threshold, checkpoint_path, checkpoint_context, logger
+    del prune_threshold, logger
 
+    start_time = time.time()
     remaining = list(candidates)
     accepted: list[ScoredCandidate] = []
     rejected_by_name: dict[str, ScoredCandidate] = {}
@@ -201,12 +212,38 @@ def run_greedy_without_pruning(
     rounds: list[GreedyRound] = []
     round_num = 0
     total_candidates = len(candidates)
+    best_score = 0.0
+
+    identity = _compute_identity(
+        current_mutations,
+        [candidate.name for candidate in candidates],
+        checkpoint_context,
+    )
+    if checkpoint_path and checkpoint_path.exists():
+        checkpoint = _load_checkpoint(checkpoint_path, identity)
+        if checkpoint:
+            accepted = checkpoint["accepted"]
+            active_mutations = checkpoint["mutations"]
+            round_num = checkpoint["round"]
+            rounds = checkpoint.get("rounds", [])
+            best_score = checkpoint["best_score"]
+            accepted_names = {sc.experiment.name for sc in accepted}
+            remaining = [candidate for candidate in remaining if candidate.name not in accepted_names]
+            log.info(
+                "greedy_unpruned.resumed",
+                round=round_num,
+                remaining=len(remaining),
+                accepted=len(accepted),
+            )
 
     baseline_results = evaluate_fn([Experiment("__baseline__", {})], active_mutations)
     base_score = 0.0
     if baseline_results and not baseline_results[0].rejected:
         base_score = baseline_results[0].score
-    best_score = base_score
+    if accepted:
+        best_score = max(best_score, *(sc.score for sc in accepted), base_score)
+    else:
+        best_score = base_score
 
     while remaining and round_num < max_rounds:
         round_num += 1
@@ -256,6 +293,24 @@ def run_greedy_without_pruning(
         best_score = best.score
         remaining = [c for c in remaining if c.name != best.experiment.name]
         rejected_by_name.pop(best.experiment.name, None)
+        if checkpoint_path:
+            _save_checkpoint(
+                checkpoint_path,
+                accepted,
+                [],
+                active_mutations,
+                best_score,
+                round_num,
+                identity,
+                rounds,
+                checkpoint_context,
+            )
+
+    if checkpoint_path and checkpoint_path.exists():
+        try:
+            checkpoint_path.unlink()
+        except OSError:
+            pass
 
     return GreedyResult(
         accepted_experiments=accepted,
@@ -267,7 +322,7 @@ def run_greedy_without_pruning(
         kept_features=[sc.experiment.name for sc in accepted],
         total_candidates=total_candidates,
         accepted_count=len(accepted),
-        elapsed_seconds=0.0,
+        elapsed_seconds=time.time() - start_time,
     )
 
 

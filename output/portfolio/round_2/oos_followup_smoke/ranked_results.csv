@@ -1,0 +1,3 @@
+label,kind,selection_score,passes_dev_minus_2_trade_preserve,passes_strict_is,dev_return_pct,dev_trades,dev_pf,dev_dd,oos_return_pct,oos_trades,oos_pf,oos_dd,delta_dev_return_pct,delta_dev_trades,delta_oos_return_pct,delta_oos_trades,notes
+recommended_orderly_body_1_08,anchor,26.676810644412907,True,False,65.483233276425,46.0,5.941174961155169,3.846207393448526,40.101634853955645,43.0,2.6457917764117185,5.42104513484111,-1.171733094382958,1.0,6.362135934698969,4.0,First-pass recommended candidate.
+baseline_current_round2,baseline,0.0,False,False,66.65496637080795,45.0,6.321492107306187,3.846207393448526,33.739498919256675,39.0,2.5531918767231168,5.4210451348411,0.0,0.0,0.0,0.0,

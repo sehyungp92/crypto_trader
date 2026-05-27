@@ -43,6 +43,14 @@ class PositionClosedEvent(Event):
 
 
 @dataclass
+class CanonicalRuntimeEvent(Event):
+    """Canonical parity event emitted beside legacy runtime callbacks."""
+
+    stream: str
+    payload: dict[str, Any]
+
+
+@dataclass
 class InstrumentedTradeEmitted(Event):
     """Emitted when an instrumented trade event is produced."""
     event: Any  # InstrumentedTradeEvent (avoid circular import)

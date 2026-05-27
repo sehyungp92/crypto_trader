@@ -1,10 +1,14 @@
 {
   "accepted": [
-    "reentry_scratch_075"
+    "risk_b_0_024"
   ],
   "rejected": [],
-  "final_score": 0.8831831227414803,
-  "base_score": 0.7366486302055253,
+  "final_score": 0.6969851275210142,
+  "base_score": 0.6839283503680831,
   "rounds": 2,
-  "elapsed_seconds": 27.489177465438843
+  "elapsed_seconds": 183.7479965686798,
+  "contract_hash": "abea552891debbe69fd2aed965722c3c6c84488d13570d8df19b549d17d0712a",
+  "final_validation": {
+    "status": "passed"
+  }
 }

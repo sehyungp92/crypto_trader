@@ -58,79 +58,82 @@ def _result_terminal_marks(result: Any) -> list[Any]:
 # ── Scoring weights (balanced — warmup provides sufficient trades) ────────
 
 SCORING_WEIGHTS: dict[str, float] = {
-    "returns":  0.35,
-    "coverage": 0.20,
-    "capture":  0.20,
-    "calmar":   0.15,
-    "edge":     0.10,
+    "returns": 0.22,
+    "coverage": 0.17,
+    "edge": 0.16,
+    "expectancy": 0.14,
+    "capture": 0.13,
+    "entry_quality": 0.10,
+    "risk": 0.08,
 }
 
 PHASE_SCORING_EMPHASIS: dict[int, dict[str, float]] = {
-    1: {"returns": 0.30, "coverage": 0.25, "capture": 0.15, "calmar": 0.15, "edge": 0.15},
-    2: {"returns": 0.30, "coverage": 0.25, "capture": 0.15, "calmar": 0.15, "edge": 0.15},
-    3: {"returns": 0.30, "coverage": 0.15, "capture": 0.30, "calmar": 0.15, "edge": 0.10},
-    4: {"returns": 0.35, "coverage": 0.15, "capture": 0.25, "calmar": 0.15, "edge": 0.10},
-    5: {"returns": 0.40, "coverage": 0.10, "capture": 0.15, "calmar": 0.25, "edge": 0.10},
-    6: {"returns": 0.35, "coverage": 0.15, "capture": 0.20, "calmar": 0.20, "edge": 0.10},
+    phase: dict(SCORING_WEIGHTS) for phase in range(1, 7)
 }
 
 # Hard rejects — baseline now has 35 trades, PF 3.10
 HARD_REJECTS: dict[str, tuple[str, float]] = {
-    "max_drawdown_pct": ("<=", 50.0),
-    "total_trades": (">=", 8),
-    "profit_factor": (">=", 0.8),
+    "max_drawdown_pct": ("<=", 12.0),
+    "total_trades": (">=", 30),
+    "profit_factor": (">=", 1.5),
+    "expectancy_r": (">=", 0.10),
+    "net_return_pct": (">=", 20.0),
 }
 
-# Scoring ceilings — prevent saturation on high-return/high-coverage regime.
-# Without these, returns (13.48%/10=1.0) and coverage (35/30=1.0) saturate at
-# baseline, making the optimizer blind to 55% of scoring weight.
+# Scoring ceilings leave headroom above the latest optimized baseline so the
+# optimizer still sees improvements in return, coverage, capture, and entry quality.
 SCORING_CEILINGS: dict[str, float] = {
-    "returns":  30.0,   # 30% = 1.0 (baseline 13.48% → 0.45, R3 final 26.3% → 0.88)
-    "edge":     10.0,   # PF 11 = 1.0 (baseline PF 3.10 → 0.21, R3 PF 7.23 → 0.62)
-    "coverage": 50.0,   # 50 trades = 1.0 (baseline 35 → 0.70, penalizes trade loss)
-    "calmar":    8.0,   # calmar 8 = 1.0 (baseline 2.87 → 0.36, R3 5.69 → 0.71)
+    "returns": 85.0,
+    "coverage": 85.0,
+    "edge": 4.0,
+    "expectancy": 0.60,
+    "capture": 0.75,
+    "entry_quality": 0.75,
+    "risk": 12.0,
 }
 
 PHASE_GATE_CRITERIA: dict[int, list[GateCriterion]] = {
     1: [  # Signal — quality signal discovery
-        GateCriterion(metric="total_trades", operator=">=", threshold=3),
-        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=50),
-        GateCriterion(metric="profit_factor", operator=">=", threshold=0.5),
+        GateCriterion(metric="total_trades", operator=">=", threshold=30),
+        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=12),
+        GateCriterion(metric="profit_factor", operator=">=", threshold=1.5),
     ],
     2: [  # Regime — coverage + regime tuning
-        GateCriterion(metric="total_trades", operator=">=", threshold=3),
-        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=45),
-        GateCriterion(metric="profit_factor", operator=">=", threshold=0.5),
+        GateCriterion(metric="total_trades", operator=">=", threshold=30),
+        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=12),
+        GateCriterion(metric="profit_factor", operator=">=", threshold=1.5),
     ],
     3: [  # Trail — capture optimization
-        GateCriterion(metric="total_trades", operator=">=", threshold=3),
-        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=40),
-        GateCriterion(metric="profit_factor", operator=">=", threshold=0.7),
+        GateCriterion(metric="total_trades", operator=">=", threshold=30),
+        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=12),
+        GateCriterion(metric="profit_factor", operator=">=", threshold=1.5),
+        GateCriterion(metric="exit_efficiency", operator=">=", threshold=0.45),
     ],
     4: [  # Exit — exit efficiency
-        GateCriterion(metric="total_trades", operator=">=", threshold=3),
-        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=40),
-        GateCriterion(metric="profit_factor", operator=">=", threshold=0.7),
+        GateCriterion(metric="total_trades", operator=">=", threshold=30),
+        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=12),
+        GateCriterion(metric="profit_factor", operator=">=", threshold=1.5),
+        GateCriterion(metric="exit_efficiency", operator=">=", threshold=0.45),
     ],
     5: [  # Risk — risk-adjusted returns
-        GateCriterion(metric="total_trades", operator=">=", threshold=3),
-        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=35),
-        GateCriterion(metric="profit_factor", operator=">=", threshold=0.7),
+        GateCriterion(metric="total_trades", operator=">=", threshold=30),
+        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=12),
+        GateCriterion(metric="profit_factor", operator=">=", threshold=1.5),
     ],
     6: [  # Finetune — balanced polish
-        GateCriterion(metric="total_trades", operator=">=", threshold=3),
-        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=40),
-        GateCriterion(metric="profit_factor", operator=">=", threshold=0.7),
+        GateCriterion(metric="total_trades", operator=">=", threshold=30),
+        GateCriterion(metric="max_drawdown_pct", operator="<=", threshold=12),
+        GateCriterion(metric="profit_factor", operator=">=", threshold=1.5),
     ],
 }
 
 PHASE_NAMES: dict[int, str] = {
     1: "Signal & Setup",
-    2: "Regime & Coverage",
-    3: "Trail & Stop",
-    4: "Profit Taking & Exit",
-    5: "Risk & Sizing",
-    6: "Finetune",
+    2: "Confirmation & Entry",
+    3: "Early Trade Management",
+    4: "Trail & Profit Capture",
+    5: "Frequency Expansion",
+    6: "Risk & Finetune",
 }
 
 # ── Phase diagnostic module mapping ──────────────────────────────────────
@@ -155,7 +158,7 @@ CONFIRMATION_DISABLE_MAP: dict[str, str] = {
 
 # ── Phase candidate generators ───────────────────────────────────────────
 
-def _phase1_candidates() -> list[Experiment]:
+def _archived_phase1_candidates() -> list[Experiment]:
     """Signal & Setup — centered on baked impulse_min_atr_move=0.8."""
     experiments = []
     # Impulse parameters (0.8 is now default — explore below and above)
@@ -197,7 +200,7 @@ def _phase1_candidates() -> list[Experiment]:
     return experiments
 
 
-def _phase2_candidates() -> list[Experiment]:
+def _archived_phase2_candidates() -> list[Experiment]:
     """Regime & Coverage — tune regime acceptance around baked h1_min_adx=22."""
     experiments = []
     # Regime ADX thresholds (12 is baked, explore around it)
@@ -237,7 +240,7 @@ def _phase2_candidates() -> list[Experiment]:
     return experiments
 
 
-def _phase3_candidates() -> list[Experiment]:
+def _archived_phase3_candidates() -> list[Experiment]:
     """Trail & Stop — centered on baked atr_mult=2.0, trail_buffer_tight=0.1."""
     experiments = []
     # Trail ceiling (default 1.5, explore range)
@@ -273,7 +276,7 @@ def _phase3_candidates() -> list[Experiment]:
     return experiments
 
 
-def _phase4_candidates() -> list[Experiment]:
+def _archived_phase4_candidates() -> list[Experiment]:
     """Profit Taking & Exit — centered on baked tp1_r=0.8, time_stop_bars=20."""
     experiments = []
     # TP1 (0.8 is now default — explore around it)
@@ -305,7 +308,7 @@ def _phase4_candidates() -> list[Experiment]:
     return experiments
 
 
-def _phase5_candidates() -> list[Experiment]:
+def _archived_phase5_candidates() -> list[Experiment]:
     """Risk & Sizing — scale after alpha confirmed (risk_pct_b=0.01 baked)."""
     experiments = []
     for v in [0.01, 0.02, 0.025]:
@@ -326,7 +329,7 @@ def _phase5_candidates() -> list[Experiment]:
     return experiments
 
 
-def _phase6_candidates(cumulative_mutations: dict[str, Any]) -> list[Experiment]:
+def _archived_phase6_candidates(cumulative_mutations: dict[str, Any]) -> list[Experiment]:
     """Finetune — perturb accepted mutations + structural param variants."""
     experiments = []
 
@@ -373,6 +376,189 @@ def _phase6_candidates(cumulative_mutations: dict[str, Any]) -> list[Experiment]
                 experiments.append(Experiment(
                     f"perturb_{key.split('.')[-1]}_{mult}",
                     {key: new_val},
+                ))
+
+    return experiments
+
+
+def _phase1_candidates() -> list[Experiment]:
+    """Signal & setup discrimination before adding new entry paths."""
+    return [
+        Experiment("score_b_1_20", {"setup.min_setup_score_b": 1.20}),
+        Experiment("score_b_1_50", {"setup.min_setup_score_b": 1.50}),
+        Experiment("score_a_2_30", {"setup.min_setup_score_a": 2.30}),
+        Experiment("room_1_20", {"setup.min_room_r": 1.20}),
+        Experiment("room_1_80", {"setup.min_room_r": 1.80}),
+        Experiment("impulse_atr_0_70", {"setup.impulse_min_atr_move": 0.70}),
+        Experiment("impulse_atr_1_00", {"setup.impulse_min_atr_move": 1.00}),
+        Experiment("pullback_bars_14", {"setup.pullback_max_bars": 14}),
+        Experiment("weekly_room_0_80", {
+            "setup.weekly_room_filter_enabled": True,
+            "setup.min_weekly_room_r": 0.80,
+        }),
+        Experiment("quality_bundle", {
+            "setup.min_setup_score_b": 1.50,
+            "setup.min_room_r": 1.80,
+            "setup.pullback_max_bars": 14,
+        }),
+    ]
+
+
+def _phase2_candidates() -> list[Experiment]:
+    """Confirmation and entry timing, with pending H1 confirmation support."""
+    return [
+        Experiment("confirm_b_pending_2", {
+            "confirmation.require_confirmation_for_b": True,
+            "confirmation.max_bars_after_setup": 2,
+        }),
+        Experiment("confirm_b_pending_3", {
+            "confirmation.require_confirmation_for_b": True,
+            "confirmation.max_bars_after_setup": 3,
+        }),
+        Experiment("confirm_all_pending_2", {
+            "confirmation.require_confirmation": True,
+            "confirmation.max_bars_after_setup": 2,
+        }),
+        Experiment("trigger_structure_or_ema", {
+            "confirmation.enable_engulfing": False,
+            "confirmation.enable_hammer": False,
+        }),
+        Experiment("volume_trigger_1_00", {"confirmation.volume_threshold_mult": 1.00}),
+        Experiment("volume_trigger_1_15", {"confirmation.volume_threshold_mult": 1.15}),
+        Experiment("entry_hybrid_grade", {"entry.mode": "hybrid_grade"}),
+        Experiment("entry_break", {"entry.mode": "break"}),
+        Experiment("entry_confirm_ttl_1", {"entry.max_bars_after_confirmation": 1}),
+        Experiment("confirm_entry_bundle", {
+            "confirmation.require_confirmation_for_b": True,
+            "confirmation.max_bars_after_setup": 2,
+            "entry.mode": "confirm_preferred",
+        }),
+    ]
+
+
+def _phase3_candidates() -> list[Experiment]:
+    """Early trade management focused on failed follow-through."""
+    return [
+        Experiment("scratch_off", {"exits.scratch_exit_enabled": False}),
+        Experiment("scratch_floor_0_00", {"exits.scratch_floor_r": 0.00}),
+        Experiment("scratch_peak_0_50_floor_0_10", {
+            "exits.scratch_peak_r": 0.50,
+            "exits.scratch_floor_r": 0.10,
+        }),
+        Experiment("scratch_min_bars_4", {"exits.scratch_min_bars": 4}),
+        Experiment("mfe_lock_0_75_0_00", {
+            "exits.mfe_lock_exit_enabled": True,
+            "exits.mfe_lock_trigger_r": 0.75,
+            "exits.mfe_lock_floor_r": 0.00,
+        }),
+        Experiment("mfe_lock_1_00_0_20", {
+            "exits.mfe_lock_exit_enabled": True,
+            "exits.mfe_lock_trigger_r": 1.00,
+            "exits.mfe_lock_floor_r": 0.20,
+        }),
+        Experiment("quick_exit_8", {"exits.quick_exit_bars": 8}),
+        Experiment("quick_exit_16", {"exits.quick_exit_bars": 16}),
+        Experiment("time_stop_exit_10", {
+            "exits.time_stop_bars": 10,
+            "exits.time_stop_action": "exit",
+        }),
+        Experiment("failed_followthrough_bundle", {
+            "exits.scratch_peak_r": 0.50,
+            "exits.scratch_floor_r": 0.10,
+            "exits.mfe_lock_exit_enabled": True,
+            "exits.mfe_lock_trigger_r": 1.00,
+            "exits.mfe_lock_floor_r": 0.20,
+        }),
+    ]
+
+
+def _phase4_candidates() -> list[Experiment]:
+    """Profit capture after entry and early-management candidates settle."""
+    return [
+        Experiment("trail_use_mfe", {"trail.trail_use_mfe_for_adaptive": True}),
+        Experiment("trail_use_mfe_tighter", {
+            "trail.trail_use_mfe_for_adaptive": True,
+            "trail.trail_buffer_tight": 0.10,
+        }),
+        Experiment("trail_activation_0_50_bars_4", {
+            "trail.trail_activation_r": 0.50,
+            "trail.trail_activation_bars": 4,
+        }),
+        Experiment("structure_trail_on", {"trail.structure_trail_enabled": True}),
+        Experiment("tp1_1_00", {"exits.tp1_r": 1.00}),
+        Experiment("tp2_1_50_frac_0_45", {
+            "exits.tp2_r": 1.50,
+            "exits.tp2_frac": 0.45,
+        }),
+        Experiment("be_min_bars_2", {"exits.be_min_bars_above": 2}),
+        Experiment("ema_failsafe_0_75", {"exits.ema_failsafe_min_expansion_r": 0.75}),
+        Experiment("capture_bundle", {
+            "trail.trail_use_mfe_for_adaptive": True,
+            "exits.mfe_lock_exit_enabled": True,
+            "exits.mfe_lock_trigger_r": 1.00,
+            "exits.mfe_lock_floor_r": 0.20,
+        }),
+    ]
+
+
+def _phase5_candidates() -> list[Experiment]:
+    """Frequency expansion, guarded by immutable score and hard rejects."""
+    return [
+        Experiment("h1_adx_18", {"regime.h1_min_adx": 18.0}),
+        Experiment("b_adx_rising_off", {"regime.b_adx_rising_required": False}),
+        Experiment("room_1_20_expansion", {"setup.min_room_r": 1.20}),
+        Experiment("pullback_bars_24", {"setup.pullback_max_bars": 24}),
+        Experiment("orderly_volume_1_10", {"setup.orderly_max_countertrend_volume_ratio": 1.10}),
+        Experiment("btc_both", {"symbol_filter.btc_direction": "both"}),
+        Experiment("sol_disabled", {"symbol_filter.sol_direction": "disabled"}),
+        Experiment("relative_strength_24", {
+            "filters.relative_strength_filter_enabled": True,
+            "filters.relative_strength_lookback": 24,
+            "filters.relative_strength_min_delta": 0.0,
+        }),
+        Experiment("coverage_bundle", {
+            "regime.h1_min_adx": 18.0,
+            "setup.min_room_r": 1.20,
+            "setup.pullback_max_bars": 24,
+        }),
+    ]
+
+
+def _phase6_candidates(cumulative_mutations: dict[str, Any]) -> list[Experiment]:
+    """Risk scaling and small perturbations after structural alpha tests."""
+    experiments = [
+        Experiment("risk_b_0_018", {"risk.risk_pct_b": 0.018}),
+        Experiment("risk_b_0_024", {"risk.risk_pct_b": 0.024}),
+        Experiment("risk_a_0_010", {"risk.risk_pct_a": 0.010}),
+        Experiment("risk_a_0_015", {"risk.risk_pct_a": 0.015}),
+        Experiment("max_pos_4", {"limits.max_concurrent_positions": 4}),
+        Experiment("max_pos_6", {"limits.max_concurrent_positions": 6}),
+        Experiment("daily_loss_0_035", {"limits.max_daily_loss_pct": 0.035}),
+        Experiment("daily_loss_0_050", {"limits.max_daily_loss_pct": 0.050}),
+        Experiment("corr_risk_0_050", {"limits.max_correlated_risk_pct": 0.050}),
+    ]
+
+    perturbable = {
+        "setup.min_setup_score_b",
+        "setup.min_room_r",
+        "setup.impulse_min_atr_move",
+        "setup.pullback_max_bars",
+        "confirmation.volume_threshold_mult",
+        "trail.trail_buffer_tight",
+        "exits.scratch_peak_r",
+        "exits.scratch_floor_r",
+        "exits.mfe_lock_trigger_r",
+        "exits.mfe_lock_floor_r",
+        "risk.risk_pct_a",
+        "risk.risk_pct_b",
+        "regime.h1_min_adx",
+    }
+    for key, val in cumulative_mutations.items():
+        if key in perturbable and isinstance(val, (int, float)):
+            for mult in (0.9, 1.1):
+                experiments.append(Experiment(
+                    f"perturb_{key.split('.')[-1]}_{mult}",
+                    {key: round(val * mult, 4)},
                 ))
 
     return experiments
@@ -450,11 +636,19 @@ class TrendPlugin:
             candidates=candidates,
             scoring_weights=scoring,
             hard_rejects=dict(HARD_REJECTS),
-            min_delta=0.005,
-            max_rounds=3,
+            min_delta=0.004,
+            max_rounds=4,
+            prune_threshold=0.0,
             gate_criteria=gate_criteria,
             gate_criteria_fn=lambda m, _p=phase: self._gate_criteria_fn(m, _p),
             analysis_policy=PhaseAnalysisPolicy(
+                max_scoring_retries=1,
+                max_diagnostic_retries=1,
+                focus_metrics=[
+                    "net_return_pct", "total_trades", "profit_factor",
+                    "expectancy_r", "exit_efficiency", "avg_mae_r",
+                    "max_drawdown_pct",
+                ],
                 diagnostic_gap_fn=lambda p, m: self._diagnostic_gap_fn(p, m),
                 suggest_experiments_fn=lambda p, m, w, s: self._suggest_experiments_fn(p, m, w, s),
                 decide_action_fn=lambda *args: self._decide_action_fn(*args),
@@ -979,7 +1173,7 @@ class TrendPlugin:
         self, phase: int, current_weights: dict[str, float],
         metrics: dict[str, float], strengths: list[str], weaknesses: list[str],
     ) -> dict[str, float] | None:
-        return None  # Keep phase-specific defaults
+        return None  # Keep immutable seven-component score
 
     def _build_extra_analysis_fn(
         self, phase: int, metrics: dict[str, float],

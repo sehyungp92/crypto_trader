@@ -61,6 +61,9 @@ def _make_trade_event(**overrides) -> InstrumentedTradeEvent:
         exit_price=91000.0,
         position_size=0.1,
         pnl=100.0,
+        price_pnl_gross=102.5,
+        total_fees=2.0,
+        realized_pnl_net=100.0,
         commission=2.0,
         funding_paid=0.5,
         setup_grade="A",
@@ -130,8 +133,41 @@ class TestWriteTrade:
         assert params[2] == "BTC"  # symbol
         assert params[3] == "long"  # direction
         assert params[9] == 100.0  # pnl
-        assert params[10] == 100.0 - 0.5  # net_pnl = pnl(already net of commission) - funding
+        assert params[10] == 100.0  # net_pnl uses canonical realized net, no funding double-count
         assert params[11] == 1.5  # r_multiple
+
+    def test_prefers_explicit_realized_net_pnl(self):
+        sink, mock_conn, _ = _make_sink()
+        event = _make_trade_event(pnl=100.0, realized_pnl_net=97.5)
+
+        sink.write_trade(event)
+
+        _, params = mock_conn.execute.call_args.args
+        assert params[10] == 97.5
+
+    def test_keeps_zero_realized_net_pnl(self):
+        sink, mock_conn, _ = _make_sink()
+        event = _make_trade_event(pnl=12.0, realized_pnl_net=0.0)
+
+        sink.write_trade(event)
+
+        _, params = mock_conn.execute.call_args.args
+        assert params[10] == 0.0
+
+    def test_legacy_event_without_explicit_economics_falls_back_to_pnl(self):
+        sink, mock_conn, _ = _make_sink()
+        event = _make_trade_event(
+            pnl=12.0,
+            price_pnl_gross=0.0,
+            total_fees=0.0,
+            funding_paid=0.0,
+            realized_pnl_net=0.0,
+        )
+
+        sink.write_trade(event)
+
+        _, params = mock_conn.execute.call_args.args
+        assert params[10] == 12.0
 
     def test_idempotent_no_exception(self):
         """Duplicate trade_id should not raise (ON CONFLICT DO NOTHING)."""

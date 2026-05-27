@@ -1,18 +1,29 @@
 {
   "accepted": [
-    "trail_tight_004"
+    "tp1_frac_010",
+    "trail_tight_006"
   ],
   "rejected": [
-    "trail_activation_035_bars4",
-    "trail_activation_030_bars4",
-    "trail_tight_007",
-    "early_lock_035_0",
-    "early_lock_045_01",
-    "trail_activation_030_tight_007",
-    "early_lock_035_tight_007"
+    "quick_exit_on",
+    "quick_exit_4_045_neg005",
+    "quick_exit_5_055_000",
+    "early_lock_045_000",
+    "early_lock_055_010",
+    "trail_activation_035",
+    "trail_activation_bars_4",
+    "trail_tight_008",
+    "trail_tight_010",
+    "tp1_frac_030",
+    "be_buffer_015",
+    "be_buffer_045",
+    "failure_handling_stack"
   ],
-  "final_score": 0.8308811486158278,
-  "base_score": 0.8272094930945119,
-  "rounds": 2,
-  "elapsed_seconds": 0.0
+  "final_score": 0.7547205753980846,
+  "base_score": 0.7383535837871253,
+  "rounds": 3,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b67f72073b5481a69fd9bbabef07de19ebea5412a6856e6826ae320ca50e74e4",
+  "final_validation": {
+    "status": "passed"
+  }
 }

@@ -1,0 +1,13 @@
+{
+  "accepted": [],
+  "rejected": [],
+  "final_score": null,
+  "base_score": null,
+  "rounds": 0,
+  "elapsed_seconds": 0.0,
+  "contract_hash": "b61440554de64a0c1151551839d31cf8287e65e37b80deb6b2237c80471fe180",
+  "final_validation": {
+    "status": "passed",
+    "source": "portfolio_live_config_refresh"
+  }
+}

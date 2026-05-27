@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.backtest.diagnostics import generate_diagnostics
 from crypto_trader.backtest.metrics import metrics_to_dict
+from crypto_trader.backtest.profiles import LIVE_PARITY_PROFILE, build_backtest_config_from_profile
 from crypto_trader.backtest.runner import run as run_individual
 from crypto_trader.core.models import Side, Trade
 from crypto_trader.optimize.config_mutator import apply_mutations, merge_mutations
@@ -162,17 +163,12 @@ class OpenReplayRisk:
 
 
 def _bt_config(window: WindowSpec) -> BacktestConfig:
-    return BacktestConfig(
+    return build_backtest_config_from_profile(
+        profile=LIVE_PARITY_PROFILE,
         symbols=list(SYMBOLS),
         start_date=window.start,
         end_date=window.end,
         initial_equity=INITIAL_EQUITY,
-        taker_fee_bps=4.5,
-        maker_fee_bps=1.0,
-        slippage_bps=2.0,
-        spread_bps=1.0,
-        apply_funding=True,
-        warmup_days=60,
     )
 
 
