@@ -58,10 +58,11 @@ export function DailyPnlBars({ data }: { data: DailyPnlPoint[] }) {
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              formatter={(v: number, _: string, item: { payload: { trades: number } }) => [
-                `$${v.toFixed(2)} (${item.payload.trades} trades)`,
-                "Net P&L",
-              ]}
+              formatter={(value, _name, item) => {
+                const pnl = Number(value);
+                const trades = Number(item.payload?.trades ?? 0);
+                return [`$${pnl.toFixed(2)} (${trades} trades)`, "Net P&L"];
+              }}
             />
             <Bar dataKey="pnl" radius={[3, 3, 0, 0]}>
               {formatted.map((entry, idx) => (
