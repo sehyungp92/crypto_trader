@@ -10,8 +10,11 @@ import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Callable
 
 import structlog
+
+from crypto_trader.instrumentation.types import canonical_event_envelope
 
 log = structlog.get_logger()
 
@@ -24,6 +27,29 @@ _EVENT_FILES = (
     "pipeline_funnels",
     "health_reports",
 )
+
+_EVENT_FILE_MAP = {
+    "instrumented_trades": "trade",
+    "missed_opportunities": "missed_opportunity",
+    "daily_snapshots": "daily_snapshot",
+    "errors": "error",
+    "pipeline_funnels": "pipeline_funnel",
+    "health_reports": "heartbeat",
+    "orders": "order",
+    "fills": "fill",
+    "portfolio_rules": "portfolio_rule",
+    "risk_decisions": "risk_decision",
+    "positions": "position_snapshot",
+    "portfolio": "portfolio_snapshot",
+    "allocations": "allocation_snapshot",
+    "config_snapshots": "config_snapshot",
+    "deployments": "deployment",
+    "decisions": "decision_event",
+    "markets": "market_snapshot",
+    "indicators": "indicator_snapshot",
+    "filters": "filter_decision",
+    "regime": "regime_transition",
+}
 
 
 class SidecarForwarder:
@@ -45,6 +71,7 @@ class SidecarForwarder:
         shared_secret: str,
         poll_interval: float = 5.0,
         batch_size: int = 50,
+        error_callback: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         self._state_dir = state_dir
         self._state_dir.mkdir(parents=True, exist_ok=True)
@@ -61,6 +88,7 @@ class SidecarForwarder:
         self._last_successful_send_at: str | None = None
         self._consecutive_send_failures = 0
         self._last_send_error: str | None = None
+        self._error_callback = error_callback
 
     def start(self) -> None:
         """Start the sidecar polling thread."""
@@ -86,6 +114,11 @@ class SidecarForwarder:
             "enabled": True,
             "running": self.is_running,
             "event_files": list(_EVENT_FILES),
+            "canonical_event_files": [
+                str(path.relative_to(self._state_dir))
+                for path in self._canonical_event_paths()
+            ],
+            "event_file_map": dict(_EVENT_FILE_MAP),
             "watermarks": dict(self._watermarks),
             "watermark_file": str(self._watermark_file),
             "last_successful_send_at": self._last_successful_send_at,
@@ -101,19 +134,63 @@ class SidecarForwarder:
 
     def _poll_once(self) -> None:
         """Poll each configured JSONL event file once."""
-        for event_type in _EVENT_FILES:
+        for event_type, path, watermark_key in self._event_sources():
             try:
-                path = self._state_dir / f"{event_type}.jsonl"
                 if not path.exists():
                     continue
-                new_events, new_offset = self._read_since_watermark(path, event_type)
+                new_events, new_offset = self._read_since_watermark(path, watermark_key)
                 if new_events:
                     if self._send_batch(new_events, event_type):
                         # Only advance watermark after successful send
-                        self._watermarks[event_type] = new_offset
+                        self._watermarks[watermark_key] = new_offset
                         self._save_watermarks()
             except Exception:
                 log.exception("sidecar.poll_error", event_type=event_type)
+                self._emit_error(
+                    error_type="RuntimeError",
+                    message=f"sidecar poll failed for {event_type}",
+                    severity="low",
+                    recovery_action="retry_next_poll",
+                    event_type=event_type,
+                )
+
+    def _event_sources(self) -> list[tuple[str, Path, str]]:
+        canonical_paths = self._canonical_event_paths()
+        canonical_types = {path.parent.name for path in canonical_paths}
+        sources = []
+        for legacy_type in _EVENT_FILES:
+            canonical_type = _EVENT_FILE_MAP.get(legacy_type, legacy_type)
+            legacy_path = self._state_dir / f"{legacy_type}.jsonl"
+            if canonical_type not in canonical_types or self._has_unread_bytes(legacy_path, legacy_type):
+                sources.append((
+                    legacy_type,
+                    legacy_path,
+                    legacy_type,
+                ))
+        for path in canonical_paths:
+            try:
+                rel = path.relative_to(self._state_dir).as_posix()
+                event_type = path.parent.name
+                sources.append((event_type, path, rel))
+            except ValueError:
+                continue
+        return sources
+
+    def _has_unread_bytes(self, path: Path, key: str) -> bool:
+        if not path.exists():
+            return False
+        try:
+            size = path.stat().st_size
+        except OSError:
+            return False
+        offset = self._watermarks.get(key, 0)
+        return offset < size or offset > size
+
+    def _canonical_event_paths(self) -> list[Path]:
+        root = self._state_dir / "instrumentation" / "events"
+        if not root.exists():
+            return []
+        return sorted(root.glob("*/*.jsonl"))
 
     def _read_since_watermark(self, path: Path, key: str) -> tuple[list[dict], int]:
         """Read new lines since last watermark offset.
@@ -161,11 +238,21 @@ class SidecarForwarder:
         last_error: str | None = None
         try:
             import urllib.request
+            canonical_type = _EVENT_FILE_MAP.get(event_type, event_type)
+            canonical_events = [
+                canonical_event_envelope(
+                    canonical_type,
+                    event,
+                    bot_id=self._bot_id,
+                    source={"file_event_type": event_type},
+                )
+                for event in events
+            ]
 
             payload = {
                 "bot_id": self._bot_id,
-                "event_type": event_type,
-                "events": events,
+                "event_type": canonical_type,
+                "events": canonical_events,
             }
 
             # Canonical JSON for HMAC
@@ -195,7 +282,7 @@ class SidecarForwarder:
                             self._consecutive_send_failures = 0
                             self._last_send_error = None
                             log.debug("sidecar.batch_sent",
-                                     event_type=event_type, count=len(events))
+                                     event_type=canonical_type, count=len(events))
                             return True
                 except Exception as e:
                     last_error = str(e)
@@ -206,14 +293,51 @@ class SidecarForwarder:
                             break
                     else:
                         log.error("sidecar.send_failed", event_type=event_type, error=str(e))
+                        self._emit_error(
+                            error_type=type(e).__name__,
+                            message=str(e),
+                            severity="medium",
+                            recovery_action="retry_next_poll",
+                            event_type=event_type,
+                        )
 
         except Exception as exc:
             last_error = str(exc)
             log.exception("sidecar.batch_error", event_type=event_type)
+            self._emit_error(
+                error_type=type(exc).__name__,
+                message=str(exc),
+                severity="medium",
+                recovery_action="retry_next_poll",
+                event_type=event_type,
+            )
 
         self._consecutive_send_failures += 1
         self._last_send_error = last_error
         return False
+
+    def _emit_error(
+        self,
+        *,
+        error_type: str,
+        message: str,
+        severity: str,
+        recovery_action: str,
+        event_type: str,
+    ) -> None:
+        if self._error_callback is None or _EVENT_FILE_MAP.get(event_type, event_type) == "error":
+            return
+        try:
+            self._error_callback({
+                "component": "sidecar",
+                "error_type": error_type,
+                "message": message,
+                "severity": severity,
+                "recovery_action": recovery_action,
+                "event_type": event_type,
+            })
+        except Exception:
+            log.exception("sidecar.error_callback_failed", event_type=event_type)
 
     def _load_watermarks(self) -> None:
         """Load watermarks from disk."""

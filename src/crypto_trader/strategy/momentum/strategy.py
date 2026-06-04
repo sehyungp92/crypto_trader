@@ -15,6 +15,7 @@ from crypto_trader.core.models import (
     Order,
     OrderStatus,
     OrderType,
+    Position,
     SetupGrade,
     Side,
     TerminalMark,
@@ -40,6 +41,7 @@ from crypto_trader.strategy.momentum.stops import StopPlacer
 from crypto_trader.strategy.momentum.trail import TrailManager
 from crypto_trader.strategy.snapshot import dataclass_from_plain, to_plain
 from crypto_trader.instrumentation.collector import InstrumentationCollector
+from crypto_trader.instrumentation.lineage import stable_hash
 from crypto_trader.instrumentation.quality import ProcessQualityScorer
 
 log = structlog.get_logger()
@@ -121,6 +123,61 @@ class MomentumStrategy:
     def journal(self) -> TradeJournal:
         return self._journal
 
+    @staticmethod
+    def _management_order_id(purpose: str, symbol: str, seed: dict[str, object]) -> str:
+        order_seed = {
+            "strategy": "momentum",
+            "purpose": purpose,
+            "symbol": symbol,
+            **seed,
+        }
+        return f"mom_{purpose}_{symbol}_{stable_hash(order_seed, length=8)}"
+
+    def _ensure_exit_order_id(
+        self,
+        order: Order,
+        *,
+        bar: Bar,
+        position: Position,
+        state: PositionExitState | None,
+        order_index: int,
+        confirmation_type: str | None,
+    ) -> None:
+        if order.order_id:
+            return
+        purpose = str(order.tag or order.order_type.value or "exit").lower()
+        seed: dict[str, object] = {
+            "bar_timestamp": bar.timestamp.isoformat(),
+            "timeframe": bar.timeframe.value,
+            "position_direction": position.direction.value,
+            "side": order.side.value,
+            "order_type": order.order_type.value,
+            "qty": order.qty,
+            "limit_price": order.limit_price,
+            "stop_price": order.stop_price,
+            "tag": order.tag,
+            "order_index": order_index,
+            "confirmation_type": confirmation_type or "",
+        }
+        if state is not None:
+            seed.update({
+                "entry_price": state.entry_price,
+                "stop_distance": state.stop_distance,
+                "remaining_qty": state.remaining_qty,
+                "bars_since_entry": state.bars_since_entry,
+                "mfe_r": state.mfe_r,
+                "mae_r": state.mae_r,
+                "current_stop_order_id": state.current_stop_order_id or "",
+                "current_stop_price": state.current_stop_price,
+                "current_stop_tag": state.current_stop_tag,
+                "tp1_hit": state.tp1_hit,
+                "tp2_hit": state.tp2_hit,
+                "be_moved": state.be_moved,
+                "proof_lock_moved": state.proof_lock_moved,
+            })
+        order.order_id = self._management_order_id(purpose, order.symbol, seed)
+        order.metadata.setdefault("client_order_id", order.order_id)
+
     def snapshot_state(self) -> dict:
         return {
             "position_meta": to_plain(self._position_meta),
@@ -197,8 +254,16 @@ class MomentumStrategy:
                 if stop_dist > 0:
                     meta.stop_distance = stop_dist
                     close_side = Side.SHORT if fill.side == Side.LONG else Side.LONG
+                    stop_id = self._management_order_id("stop", sym, {
+                        "fill_id": fill.exchange_fill_id or fill.order_id,
+                        "order_id": fill.order_id,
+                        "timestamp": fill.timestamp.isoformat(),
+                        "side": fill.side.value,
+                        "qty": fill.qty,
+                        "stop_price": stop_price,
+                    })
                     stop_order = Order(
-                        order_id="",
+                        order_id=stop_id,
                         symbol=sym,
                         side=close_side,
                         order_type=OrderType.STOP,
@@ -258,8 +323,23 @@ class MomentumStrategy:
                     else:
                         stop_price = meta.stop_level
                         stop_tag = "protective_stop"
+                previous_stop_order_id = state.current_stop_order_id
+                stop_purpose = (
+                    "be" if stop_tag == "breakeven_stop"
+                    else "trail" if stop_tag == "trailing_stop"
+                    else "stop"
+                )
+                new_stop_id = self._management_order_id(stop_purpose, sym, {
+                    "fill_id": fill.exchange_fill_id or fill.order_id,
+                    "order_id": fill.order_id,
+                    "timestamp": fill.timestamp.isoformat(),
+                    "side": fill.side.value,
+                    "qty": state.remaining_qty,
+                    "stop_price": stop_price,
+                    "previous_stop_order_id": previous_stop_order_id,
+                })
                 new_stop = Order(
-                    order_id="",
+                    order_id=new_stop_id,
                     symbol=sym,
                     side=fill.side,  # closing side (same direction as the TP fill)
                     order_type=OrderType.STOP,
@@ -654,10 +734,18 @@ class MomentumStrategy:
                 ctx.broker,
                 confirmation_type=confirmation_type,
             )
-            for order in exit_orders:
+            state = self._exit_manager.get_state(pos.symbol)
+            for order_index, order in enumerate(exit_orders):
+                self._ensure_exit_order_id(
+                    order,
+                    bar=bar,
+                    position=pos,
+                    state=state,
+                    order_index=order_index,
+                    confirmation_type=confirmation_type,
+                )
                 oid = ctx.broker.submit_order(order)
                 # Track new stop order ID
-                state = self._exit_manager.get_state(pos.symbol)
                 if state and order.tag in EXIT_STOP_TAGS:
                     state.current_stop_order_id = oid
 
@@ -698,8 +786,18 @@ class MomentumStrategy:
                     if not cancelled:
                         log.warning("strategy.cancel_failed", symbol=pos.symbol, order_id=state.current_stop_order_id, context="trail_resubmit")
                 close_side = Side.SHORT if pos.direction == Side.LONG else Side.LONG
+                trail_stop_id = self._management_order_id("trail", pos.symbol, {
+                    "bar_timestamp": bar.timestamp.isoformat(),
+                    "timeframe": bar.timeframe.value,
+                    "direction": pos.direction.value,
+                    "qty": state.remaining_qty,
+                    "stop_price": new_trail,
+                    "previous_stop_order_id": state.current_stop_order_id,
+                    "bars_since_entry": bars_since_entry,
+                    "confirmation_type": confirmation_type,
+                })
                 trail_stop = Order(
-                    order_id="",
+                    order_id=trail_stop_id,
                     symbol=pos.symbol,
                     side=close_side,
                     order_type=OrderType.STOP,

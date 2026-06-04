@@ -1,9 +1,35 @@
-# Data (large parquet files, mounted as volume in Docker)
-data/
+# Data used for backtesting
+data/*
 *.parquet
+!data/downloader.py
+!data/store.py
+!data/candles/
+!data/candles/BTC/
+!data/candles/BTC/15m.parquet
+!data/candles/BTC/30m.parquet
+!data/candles/BTC/1h.parquet
+!data/candles/BTC/4h.parquet
+!data/candles/BTC/1d.parquet
+!data/candles/ETH/
+!data/candles/ETH/15m.parquet
+!data/candles/ETH/30m.parquet
+!data/candles/ETH/1h.parquet
+!data/candles/ETH/4h.parquet
+!data/candles/ETH/1d.parquet
+!data/candles/SOL/
+!data/candles/SOL/15m.parquet
+!data/candles/SOL/30m.parquet
+!data/candles/SOL/1h.parquet
+!data/candles/SOL/4h.parquet
+!data/candles/SOL/1d.parquet
+!data/funding/
+!data/funding/BTC.parquet
+!data/funding/ETH.parquet
+!data/funding/SOL.parquet
 
 # Documentation (generated/internal design docs)
-docs/
+docs/*
+!docs/2026-05-31-crypto-trader-instrumentation-implementation-guide.md
 
 # Python
 __pycache__/

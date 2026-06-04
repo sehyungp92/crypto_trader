@@ -22,48 +22,42 @@ class EventEmitter:
 
     def __init__(self) -> None:
         self._sinks: list[Sink] = []
+        self._sink_failures: dict[str, int] = {}
 
     def add_sink(self, sink: Sink) -> None:
         self._sinks.append(sink)
 
+    @property
+    def sink_failures(self) -> dict[str, int]:
+        return dict(self._sink_failures)
+
+    def emit(self, event_type: str, event) -> None:
+        """Emit a generic assistant instrumentation event."""
+        self._dispatch("event", lambda sink: sink.write_event(event_type, event))
+
     def emit_trade(self, event: InstrumentedTradeEvent) -> None:
-        for sink in self._sinks:
-            try:
-                sink.write_trade(event)
-            except Exception:
-                log.exception("emitter.trade_failed", sink=type(sink).__name__)
+        self._dispatch("trade", lambda sink: sink.write_trade(event))
 
     def emit_missed(self, event: MissedOpportunityEvent) -> None:
-        for sink in self._sinks:
-            try:
-                sink.write_missed(event)
-            except Exception:
-                log.exception("emitter.missed_failed", sink=type(sink).__name__)
+        self._dispatch("missed", lambda sink: sink.write_missed(event))
 
     def emit_daily(self, event: DailySnapshot) -> None:
-        for sink in self._sinks:
-            try:
-                sink.write_daily(event)
-            except Exception:
-                log.exception("emitter.daily_failed", sink=type(sink).__name__)
+        self._dispatch("daily", lambda sink: sink.write_daily(event))
 
     def emit_error(self, event: ErrorEvent) -> None:
-        for sink in self._sinks:
-            try:
-                sink.write_error(event)
-            except Exception:
-                log.exception("emitter.error_failed", sink=type(sink).__name__)
+        self._dispatch("error", lambda sink: sink.write_error(event))
 
     def emit_funnel(self, event: PipelineFunnelSnapshot) -> None:
-        for sink in self._sinks:
-            try:
-                sink.write_funnel(event)
-            except Exception:
-                log.exception("emitter.funnel_failed", sink=type(sink).__name__)
+        self._dispatch("funnel", lambda sink: sink.write_funnel(event))
 
     def emit_health_report(self, event: HealthReportSnapshot) -> None:
+        self._dispatch("health_report", lambda sink: sink.write_health_report(event))
+
+    def _dispatch(self, operation: str, write_fn) -> None:
         for sink in self._sinks:
+            sink_name = type(sink).__name__
             try:
-                sink.write_health_report(event)
+                write_fn(sink)
             except Exception:
-                log.exception("emitter.health_report_failed", sink=type(sink).__name__)
+                self._sink_failures[sink_name] = self._sink_failures.get(sink_name, 0) + 1
+                log.exception(f"emitter.{operation}_failed", sink=sink_name)

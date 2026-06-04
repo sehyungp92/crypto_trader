@@ -814,6 +814,79 @@ def _json_identity_error(label: str, actual: Path, expected: Path) -> str:
     return ""
 
 
+@cli.group()
+def admin() -> None:
+    """Operator tools for durable live OMS state."""
+
+
+@admin.command("resolve-discrepancy")
+@click.option("--config", "config_path", required=True, type=click.Path(exists=True),
+              help="Live config JSON file")
+@click.option("--id", "discrepancy_id", required=True, type=int,
+              help="OMS reconciliation discrepancy id to resolve")
+@click.option("--resolution", required=True,
+              help="Human-readable resolution note")
+@click.option("--resolved-by", default="admin", show_default=True,
+              help="Operator, ticket, or automation id applying the correction")
+@click.option("--action", default="resolve_discrepancy", show_default=True,
+              help="Lifecycle action name to emit")
+@click.option("--description", default="", help="Optional lifecycle event description")
+@click.option("--metadata", default=None,
+              help="Optional JSON object merged into the correction metadata")
+def admin_resolve_discrepancy(
+    config_path: str,
+    discrepancy_id: int,
+    resolution: str,
+    resolved_by: str,
+    action: str,
+    description: str,
+    metadata: str | None,
+) -> None:
+    """Resolve an OMS discrepancy and emit admin-correction evidence."""
+    from crypto_trader.live.config import LiveConfig
+    from crypto_trader.live.engine import LiveEngine
+
+    log = structlog.get_logger()
+    metadata_payload: dict = {}
+    if metadata:
+        try:
+            parsed = json.loads(metadata)
+        except json.JSONDecodeError as exc:
+            raise click.ClickException(f"--metadata must be a JSON object: {exc}") from exc
+        if not isinstance(parsed, dict):
+            raise click.ClickException("--metadata must be a JSON object")
+        metadata_payload = parsed
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        config = LiveConfig.from_dict(json.load(f))
+
+    engine = LiveEngine(config)
+    try:
+        try:
+            engine.load_instrumentation_context_from_config()
+        except Exception:
+            log.exception("admin.instrumentation_context_load_failed")
+        resolved = engine.record_admin_correction(
+            discrepancy_id,
+            resolution=resolution,
+            resolved_by=resolved_by,
+            action=action,
+            description=description,
+            metadata=metadata_payload,
+        )
+        if not resolved:
+            raise click.ClickException(f"Discrepancy {discrepancy_id} was not found or could not be resolved")
+        discrepancy = engine._oms.get_discrepancy(discrepancy_id)
+        click.echo(json.dumps({
+            "resolved": True,
+            "discrepancy_id": discrepancy_id,
+            "status": (discrepancy or {}).get("status"),
+            "resolved_at": (discrepancy or {}).get("resolved_at"),
+        }, indent=2, sort_keys=True))
+    finally:
+        engine._oms.close()
+
+
 @cli.command()
 @click.option("--state-dir", default="state", type=click.Path(), help="State directory with JSONL files")
 def status(state_dir: str) -> None:

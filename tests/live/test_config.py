@@ -144,6 +144,25 @@ class TestLiveConfig:
         assert "private_key" not in d
         assert d["wallet_address"] == VALID_WALLET
 
+    def test_to_dict_redacted_omits_secret_fields(self):
+        cfg = LiveConfig(
+            wallet_address=VALID_WALLET,
+            private_key=VALID_PRIVATE_KEY,
+            bot_id="paper_bot",
+            relay_url="https://relay.example.com",
+            relay_secret="secret",
+            postgres_dsn="postgres://user:pass@host/db",
+        )
+
+        d = cfg.to_dict(redacted=True)
+
+        assert "private_key" not in d
+        assert "wallet_address" not in d
+        assert "relay_secret" not in d
+        assert "postgres_dsn" not in d
+        assert d["bot_id"] == "paper_bot"
+        assert d["relay_url"] == "https://relay.example.com"
+
     def test_roundtrip(self):
         cfg = LiveConfig(
             wallet_address="0x123",

@@ -50,10 +50,17 @@ class ExecutionGateway:
     def submit_order(self, order: Order) -> str:
         """Submit through the adapter and return the strategy-visible order id."""
         context = self._decision_context
+        submitted_at = _now()
+        if context is not None:
+            order.metadata.setdefault("decision_id", context.decision_id)
+            order.metadata.setdefault("bar_id", context.metadata.get("bar_id"))
+            order.metadata.setdefault("decision_time", context.decision_time.isoformat())
+        order.metadata.setdefault("submitted_at", submitted_at.isoformat())
         intent = OrderIntent.from_order(order, context)
+        order.metadata.setdefault("intent_id", intent.intent_id)
         if context is not None:
             context.record_order()
-        self._emit("order_intent", intent.to_dict(), _now())
+        self._emit("order_intent", intent.to_dict(), submitted_at)
 
         reports = self._adapter.submit(intent)
         self._last_reports = reports

@@ -76,9 +76,10 @@ class _WarmupGateStrategy:
 
 class TestLiveWarmupBehavior:
     @pytest.mark.asyncio
-    async def test_start_keeps_warmup_bars_outside_entry_window(self, tmp_path):
+    async def test_start_keeps_warmup_bars_outside_entry_window(self, tmp_path, monkeypatch):
         from crypto_trader.live.engine import LiveEngine
 
+        monkeypatch.setenv("CRYPTO_TRADER_BRIDGE_CONTRACT_ROOT", str(tmp_path / "contracts"))
         broker = MagicMock()
         broker.get_equity.return_value = 10_000.0
         broker.get_positions.return_value = []
@@ -136,9 +137,10 @@ class TestLiveWarmupBehavior:
         strategy._collector.pipeline.snapshot_and_reset.assert_called_once_with()
 
     @pytest.mark.asyncio
-    async def test_start_passes_asset_meta_cache_to_broker(self, tmp_path):
+    async def test_start_passes_asset_meta_cache_to_broker(self, tmp_path, monkeypatch):
         from crypto_trader.live.engine import LiveEngine
 
+        monkeypatch.setenv("CRYPTO_TRADER_BRIDGE_CONTRACT_ROOT", str(tmp_path / "contracts"))
         asset_meta_path = tmp_path / "asset_meta.json"
         asset_meta_path.write_text(
             json.dumps({
@@ -249,6 +251,8 @@ class TestLiveHealthRelayStatus:
             "enabled": False,
             "sidecar_running": False,
             "event_files": [],
+            "canonical_event_files": [],
+            "event_file_map": {},
         }
 
     def test_relay_health_status_maps_sidecar_fields(self):
@@ -260,6 +264,8 @@ class TestLiveHealthRelayStatus:
             "enabled": True,
             "running": True,
             "event_files": ["pipeline_funnels", "health_reports"],
+            "canonical_event_files": ["trade_events", "order_events"],
+            "event_file_map": {"trade_events": "/audit/trade_events.jsonl"},
             "watermarks": {"pipeline_funnels": 123},
             "watermark_file": "/state/.sidecar_watermarks.json",
             "last_successful_send_at": "2026-05-10T00:00:00+00:00",
@@ -274,6 +280,8 @@ class TestLiveHealthRelayStatus:
         assert status["sidecar_running"] is True
         assert status["last_successful_send_at"] == "2026-05-10T00:00:00+00:00"
         assert status["consecutive_send_failures"] == 0
+        assert status["canonical_event_files"] == ["trade_events", "order_events"]
+        assert status["event_file_map"] == {"trade_events": "/audit/trade_events.jsonl"}
         assert status["watermarks"]["pipeline_funnels"] == 123
 
     def test_relay_health_status_survives_sidecar_status_error(self):
@@ -288,6 +296,8 @@ class TestLiveHealthRelayStatus:
 
         assert status["enabled"] is True
         assert status["sidecar_running"] is False
+        assert status["canonical_event_files"] == []
+        assert status["event_file_map"] == {}
         assert "status unavailable" in status["status_error"]
 
 

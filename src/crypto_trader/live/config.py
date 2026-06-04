@@ -50,6 +50,9 @@ class LiveConfig:
 
     # Instrumentation / relay (optional)
     bot_id: str = ""
+    family_id: str = "crypto_perps"
+    portfolio_id: str = "default"
+    account_alias: str = "default"
     relay_url: str = ""
     relay_secret: str = ""
 
@@ -129,14 +132,21 @@ class LiveConfig:
             state_dir=Path(d.get("state_dir", "data/live_state")),
             asset_meta_path=Path(d["asset_meta_path"]) if d.get("asset_meta_path") else None,
             bot_id=d.get("bot_id", ""),
+            family_id=d.get("family_id", "crypto_perps"),
+            portfolio_id=d.get("portfolio_id", "default"),
+            account_alias=d.get("account_alias", "default"),
             relay_url=d.get("relay_url", ""),
             relay_secret=d.get("relay_secret", ""),
             postgres_dsn=os.environ.get("POSTGRES_DSN") or d.get("postgres_dsn", ""),
         )
 
-    def to_dict(self) -> dict:
-        """Serialize to dict (excludes private_key for safety)."""
-        return {
+    def to_dict(self, *, redacted: bool = False) -> dict:
+        """Serialize to dict.
+
+        ``redacted=True`` is intended for assistant config snapshots and removes
+        credential-bearing fields entirely.
+        """
+        payload = {
             "wallet_address": self.wallet_address,
             "is_testnet": self.is_testnet,
             "poll_interval_sec": self.poll_interval_sec,
@@ -159,10 +169,17 @@ class LiveConfig:
             "state_dir": str(self.state_dir),
             "asset_meta_path": str(self.asset_meta_path) if self.asset_meta_path else None,
             "bot_id": self.bot_id,
+            "family_id": self.family_id,
+            "portfolio_id": self.portfolio_id,
+            "account_alias": self.account_alias,
             "relay_url": self.relay_url,
             "relay_secret": self.relay_secret,
             "postgres_dsn": self.postgres_dsn,
         }
+        if redacted:
+            for key in ("wallet_address", "relay_secret", "postgres_dsn"):
+                payload.pop(key, None)
+        return payload
 
 
 def _is_placeholder(value: str) -> bool:

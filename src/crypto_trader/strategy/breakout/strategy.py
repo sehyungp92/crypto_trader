@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timezone
@@ -23,6 +22,7 @@ from crypto_trader.core.models import (
     TimeFrame,
     Trade,
 )
+from crypto_trader.instrumentation.lineage import stable_hash
 from crypto_trader.strategy.momentum.indicators import (
     IncrementalIndicators,
     IndicatorSnapshot,
@@ -136,6 +136,57 @@ class BreakoutStrategy:
     @property
     def journal(self) -> TradeJournal:
         return self._journal
+
+    @staticmethod
+    def _management_order_id(purpose: str, symbol: str, seed: dict[str, object]) -> str:
+        order_seed = {
+            "strategy": "breakout",
+            "purpose": purpose,
+            "symbol": symbol,
+            **seed,
+        }
+        return f"brk_{purpose}_{symbol}_{stable_hash(order_seed, length=8)}"
+
+    def _ensure_exit_order_id(
+        self,
+        order: Order,
+        *,
+        bar: Bar,
+        state: BreakoutExitState | None,
+        order_index: int,
+    ) -> None:
+        if order.order_id:
+            return
+        purpose = str(order.tag or order.order_type.value or "exit").lower()
+        seed: dict[str, object] = {
+            "bar_timestamp": bar.timestamp.isoformat(),
+            "timeframe": bar.timeframe.value,
+            "side": order.side.value,
+            "order_type": order.order_type.value,
+            "qty": order.qty,
+            "limit_price": order.limit_price,
+            "stop_price": order.stop_price,
+            "tag": order.tag,
+            "order_index": order_index,
+        }
+        if state is not None:
+            seed.update({
+                "direction": state.direction.value,
+                "entry_price": state.entry_price,
+                "stop_distance": state.stop_distance,
+                "remaining_qty": state.remaining_qty,
+                "bars_since_entry": state.bars_since_entry,
+                "current_r": state.current_r,
+                "mfe_r": state.mfe_r,
+                "mae_r": state.mae_r,
+                "peak_r": state.peak_r,
+                "tp1_hit": state.tp1_hit,
+                "tp2_hit": state.tp2_hit,
+                "be_moved": state.be_moved,
+                "early_lock_applied": state.early_lock_applied,
+            })
+        order.order_id = self._management_order_id(purpose, order.symbol, seed)
+        order.metadata.setdefault("client_order_id", order.order_id)
 
     def snapshot_state(self) -> dict:
         return {
@@ -714,7 +765,15 @@ class BreakoutStrategy:
             return False
 
         # Entry order
-        order_id = f"brk_entry_{sym}_{uuid.uuid4().hex[:8]}"
+        order_seed = {
+            "symbol": sym,
+            "timeframe": bar.timeframe.value,
+            "bar_timestamp": bar.timestamp.isoformat(),
+            "direction": setup.direction.value,
+            "grade": setup.grade.value,
+            "is_a_plus": setup.is_a_plus,
+        }
+        order_id = f"brk_entry_{sym}_{stable_hash(order_seed, length=8)}"
         entry_order = self._entry_generator.generate(
             bar=bar,
             direction=setup.direction,
@@ -806,7 +865,14 @@ class BreakoutStrategy:
 
         # Exit management — returns orders to submit
         orders = self._exit_manager.process_bar(bar, sym)
-        for order in orders:
+        exit_state = self._exit_manager.get_state(sym)
+        for order_index, order in enumerate(orders):
+            self._ensure_exit_order_id(
+                order,
+                bar=bar,
+                state=exit_state,
+                order_index=order_index,
+            )
             ctx.broker.submit_order(order)
 
         # Check if remaining quantity is 0 after partial exits
@@ -848,7 +914,14 @@ class BreakoutStrategy:
                     if not cancelled:
                         log.warning("breakout.cancel_failed", symbol=sym,
                             order_id=meta.stop_order_id, context="early_lock_be")
-                    new_stop_id = f"brk_lock_{sym}_{uuid.uuid4().hex[:8]}"
+                    new_stop_id = self._management_order_id("lock", sym, {
+                        "bar_timestamp": bar.timestamp.isoformat(),
+                        "timeframe": bar.timeframe.value,
+                        "direction": exit_state.direction.value,
+                        "qty": remaining_qty,
+                        "stop_price": lock_price,
+                        "previous_stop_order_id": meta.stop_order_id,
+                    })
                     reverse_side = Side.SHORT if exit_state.direction == Side.LONG else Side.LONG
                     lock_order = Order(
                         order_id=new_stop_id,
@@ -883,7 +956,14 @@ class BreakoutStrategy:
                     if not cancelled:
                         log.warning("breakout.cancel_failed", symbol=sym,
                             order_id=meta.stop_order_id, context="smart_be_after_tp1")
-                    new_stop_id = f"brk_be_{sym}_{uuid.uuid4().hex[:8]}"
+                    new_stop_id = self._management_order_id("be", sym, {
+                        "bar_timestamp": bar.timestamp.isoformat(),
+                        "timeframe": bar.timeframe.value,
+                        "direction": exit_state.direction.value,
+                        "qty": remaining_qty,
+                        "stop_price": be_price,
+                        "previous_stop_order_id": meta.stop_order_id,
+                    })
                     reverse_side = Side.SHORT if exit_state.direction == Side.LONG else Side.LONG
                     be_order = Order(
                         order_id=new_stop_id,
@@ -918,7 +998,15 @@ class BreakoutStrategy:
                 if not cancelled:
                     log.warning("breakout.cancel_failed", symbol=sym,
                         order_id=meta.stop_order_id, context="trail_resubmit")
-                new_stop_id = f"brk_trail_{sym}_{uuid.uuid4().hex[:8]}"
+                new_stop_id = self._management_order_id("trail", sym, {
+                    "bar_timestamp": bar.timestamp.isoformat(),
+                    "timeframe": bar.timeframe.value,
+                    "direction": exit_state.direction.value,
+                    "qty": remaining_qty,
+                    "stop_price": new_stop,
+                    "previous_stop_order_id": meta.stop_order_id,
+                    "bars_since_entry": bars_since,
+                })
                 reverse_side = Side.SHORT if exit_state.direction == Side.LONG else Side.LONG
                 trail_order = Order(
                     order_id=new_stop_id,
@@ -962,7 +1050,14 @@ class BreakoutStrategy:
 
         # Submit protective stop
         reverse_side = Side.SHORT if fill.side == Side.LONG else Side.LONG
-        stop_id = f"brk_stop_{sym}_{uuid.uuid4().hex[:8]}"
+        stop_id = self._management_order_id("stop", sym, {
+            "fill_id": fill.exchange_fill_id or fill.order_id,
+            "order_id": fill.order_id,
+            "timestamp": fill.timestamp.isoformat(),
+            "side": fill.side.value,
+            "qty": meta.original_qty,
+            "stop_price": meta.stop_level,
+        })
         stop_order = Order(
             order_id=stop_id,
             symbol=sym,
@@ -1038,7 +1133,15 @@ class BreakoutStrategy:
             else:
                 stop_price = min(stop_price, current_stop)
 
-        new_stop_id = f"brk_stop_{sym}_{uuid.uuid4().hex[:8]}"
+        new_stop_id = self._management_order_id("stop", sym, {
+            "fill_id": fill.exchange_fill_id or fill.order_id,
+            "order_id": fill.order_id,
+            "timestamp": fill.timestamp.isoformat(),
+            "side": fill.side.value,
+            "qty": remaining_qty,
+            "stop_price": stop_price,
+            "previous_stop_order_id": meta.stop_order_id,
+        })
         stop_order = Order(
             order_id=new_stop_id,
             symbol=sym,

@@ -18,12 +18,20 @@ CREATE TABLE IF NOT EXISTS events (
     event_type TEXT NOT NULL,
     payload TEXT NOT NULL,
     received_at TEXT NOT NULL,
-    acked INTEGER DEFAULT 0
+    acked INTEGER DEFAULT 0,
+    logical_event_id TEXT,
+    strategy_id TEXT,
+    portfolio_id TEXT,
+    exchange_timestamp TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_events_bot_acked ON events(bot_id, acked);
 CREATE INDEX IF NOT EXISTS idx_events_received ON events(received_at);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
+CREATE INDEX IF NOT EXISTS idx_events_logical ON events(logical_event_id);
+CREATE INDEX IF NOT EXISTS idx_events_strategy ON events(strategy_id);
+CREATE INDEX IF NOT EXISTS idx_events_portfolio ON events(portfolio_id);
+CREATE INDEX IF NOT EXISTS idx_events_exchange_ts ON events(exchange_timestamp);
 """
 
 
@@ -37,6 +45,7 @@ class RelayStore:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.executescript(_SCHEMA)
+        self._ensure_optional_columns()
         self._conn.commit()
 
     def close(self) -> None:
@@ -49,13 +58,30 @@ class RelayStore:
 
         for event in events:
             event_id = _extract_event_id(event)
+            row_event_type = _extract_event_type(event, event_type)
+            logical_event_id = _extract_logical_event_id(event)
+            strategy_id = _extract_field(event, "strategy_id")
+            portfolio_id = _extract_field(event, "portfolio_id")
+            exchange_timestamp = _extract_field(event, "exchange_timestamp")
             payload = json.dumps(event, default=str)
 
             try:
                 self._conn.execute(
-                    "INSERT INTO events (event_id, bot_id, event_type, payload, received_at) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (event_id, bot_id, event_type, payload, now),
+                    "INSERT INTO events ("
+                    "event_id, bot_id, event_type, payload, received_at, "
+                    "logical_event_id, strategy_id, portfolio_id, exchange_timestamp"
+                    ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        event_id,
+                        bot_id,
+                        row_event_type,
+                        payload,
+                        now,
+                        logical_event_id,
+                        strategy_id,
+                        portfolio_id,
+                        exchange_timestamp,
+                    ),
                 )
                 inserted += 1
             except sqlite3.IntegrityError:
@@ -74,14 +100,16 @@ class RelayStore:
         """Get unacked events since watermark ID."""
         if bot_id:
             rows = self._conn.execute(
-                "SELECT id, event_id, bot_id, event_type, payload, received_at "
+                "SELECT id, event_id, bot_id, event_type, payload, received_at, "
+                "logical_event_id, strategy_id, portfolio_id, exchange_timestamp "
                 "FROM events WHERE id > ? AND acked = 0 AND bot_id = ? "
                 "ORDER BY id LIMIT ?",
                 (since_id, bot_id, limit),
             ).fetchall()
         else:
             rows = self._conn.execute(
-                "SELECT id, event_id, bot_id, event_type, payload, received_at "
+                "SELECT id, event_id, bot_id, event_type, payload, received_at, "
+                "logical_event_id, strategy_id, portfolio_id, exchange_timestamp "
                 "FROM events WHERE id > ? AND acked = 0 "
                 "ORDER BY id LIMIT ?",
                 (since_id, limit),
@@ -95,6 +123,10 @@ class RelayStore:
                 "event_type": r[3],
                 "payload": json.loads(r[4]),
                 "received_at": r[5],
+                "logical_event_id": r[6],
+                "strategy_id": r[7],
+                "portfolio_id": r[8],
+                "exchange_timestamp": r[9],
             }
             for r in rows
         ]
@@ -169,7 +201,29 @@ class RelayStore:
             "oldest_pending_age_seconds": oldest_pending_age_seconds,
             "db_size_bytes": self._db_size_bytes(),
             "uptime_seconds": time.monotonic() - self._start_mono,
+            "event_type_counts": self._event_type_counts(),
         }
+
+    def _ensure_optional_columns(self) -> None:
+        columns = {
+            row[1]
+            for row in self._conn.execute("PRAGMA table_info(events)").fetchall()
+        }
+        additions = {
+            "logical_event_id": "TEXT",
+            "strategy_id": "TEXT",
+            "portfolio_id": "TEXT",
+            "exchange_timestamp": "TEXT",
+        }
+        for column, column_type in additions.items():
+            if column not in columns:
+                self._conn.execute(f"ALTER TABLE events ADD COLUMN {column} {column_type}")
+
+    def _event_type_counts(self) -> dict[str, int]:
+        rows = self._conn.execute(
+            "SELECT event_type, COUNT(*) FROM events WHERE acked = 0 GROUP BY event_type"
+        ).fetchall()
+        return {str(row[0]): int(row[1]) for row in rows}
 
     def _db_size_bytes(self) -> int:
         """Return SQLite main/WAL/SHM bytes for disk-pressure monitoring."""
@@ -197,19 +251,67 @@ class RelayStore:
 
 def _extract_event_id(event: dict) -> str:
     """Extract event_id from event payload."""
-    # Try metadata.event_id first
+    # Canonical assistant envelopes deduplicate by top-level identity. Nested
+    # metadata remains only a compatibility fallback for legacy rows.
+    eid = event.get("event_id")
+    if eid:
+        return str(eid)
+
     metadata = event.get("metadata", {})
     if isinstance(metadata, dict):
         eid = metadata.get("event_id")
         if eid:
             return str(eid)
 
-    # Fallback to top-level event_id
-    eid = event.get("event_id")
-    if eid:
-        return str(eid)
+    payload = event.get("payload")
+    if isinstance(payload, dict):
+        eid = payload.get("event_id")
+        if eid:
+            return str(eid)
+        payload_metadata = payload.get("metadata")
+        if isinstance(payload_metadata, dict):
+            eid = payload_metadata.get("event_id")
+            if eid:
+                return str(eid)
 
     # Generate from hash of payload
     import hashlib
     raw = json.dumps(event, sort_keys=True, default=str)
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def _extract_event_type(event: dict, default: str) -> str:
+    event_type = event.get("event_type")
+    if event_type:
+        return str(event_type)
+    payload = event.get("payload")
+    if isinstance(payload, dict) and payload.get("event_type"):
+        return str(payload["event_type"])
+    return default
+
+
+def _extract_logical_event_id(event: dict) -> str | None:
+    value = event.get("logical_event_id")
+    if value:
+        return str(value)
+    payload = event.get("payload")
+    if isinstance(payload, dict) and payload.get("logical_event_id"):
+        return str(payload["logical_event_id"])
+    return None
+
+
+def _extract_field(event: dict, field: str) -> str | None:
+    value = event.get(field)
+    if value:
+        return str(value)
+    payload = event.get("payload")
+    if isinstance(payload, dict) and payload.get(field):
+        return str(payload[field])
+    metadata = event.get("metadata")
+    if isinstance(metadata, dict) and metadata.get(field):
+        return str(metadata[field])
+    if isinstance(payload, dict):
+        payload_metadata = payload.get("metadata")
+        if isinstance(payload_metadata, dict) and payload_metadata.get(field):
+            return str(payload_metadata[field])
+    return None

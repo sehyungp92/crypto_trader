@@ -266,18 +266,30 @@ class StrategySlotRuntime:
             source="runtime",
             timestamp_policy=TimestampPolicy.OPEN_TIME,
         )
+        bar_id = self._bar_id(bar, event)
+        decision_id = self._decision_key(bar, event)
+        payload = event.to_dict()
+        payload.update({
+            "strategy_id": self.strategy_id,
+            "decision_id": decision_id,
+            "bar_id": bar_id,
+            "metadata": {
+                **payload.get("metadata", {}),
+                "strategy_id": self.strategy_id,
+                "decision_id": decision_id,
+                "bar_id": bar_id,
+            },
+        })
         self.events.emit(CanonicalRuntimeEvent(
             timestamp=event.available_at,
             stream="market",
-            payload=event.to_dict(),
+            payload=payload,
         ))
         return event
 
     def _decision_context(self, bar: Bar, event: MarketEvent) -> DecisionContext:
-        key = (
-            f"{self.strategy_id}|{bar.symbol}|{bar.timeframe.value}|"
-            f"{event.available_at.isoformat()}"
-        )
+        key = self._decision_key(bar, event)
+        bar_id = self._bar_id(bar, event)
         return DecisionContext(
             decision_id=key,
             strategy_id=self.strategy_id,
@@ -285,18 +297,42 @@ class StrategySlotRuntime:
             timeframe=bar.timeframe,
             decision_time=event.available_at,
             decision_key=key,
-            metadata={"source": event.source},
+            metadata={
+                "source": event.source,
+                "bar_id": bar_id,
+                "market_available_at": event.available_at.isoformat(),
+            },
+        )
+
+    def _decision_key(self, bar: Bar, event: MarketEvent) -> str:
+        return (
+            f"{self.strategy_id}|{bar.symbol}|{bar.timeframe.value}|"
+            f"{event.available_at.isoformat()}"
+        )
+
+    def _bar_id(self, bar: Bar, event: MarketEvent) -> str:
+        return (
+            f"{self.strategy_id}:{bar.symbol}:{bar.timeframe.value}:"
+            f"{event.available_at.isoformat()}"
         )
 
     def _begin_decision_context(self, context: DecisionContext) -> None:
         begin_fn = getattr(self.ctx.broker, "begin_decision_context", None)
         if begin_fn is not None:
             begin_fn(context)
+        collector = getattr(self.strategy, "_collector", None)
+        begin_collector = getattr(collector, "begin_decision_context", None)
+        if callable(begin_collector):
+            begin_collector(context)
 
     def _end_decision_context(self, context: DecisionContext) -> None:
         end_fn = getattr(self.ctx.broker, "end_decision_context", None)
         if end_fn is not None:
             end_fn(context)
+        collector = getattr(self.strategy, "_collector", None)
+        end_collector = getattr(collector, "end_decision_context", None)
+        if callable(end_collector):
+            end_collector(context)
 
     def _emit_decision_event(self, context: DecisionContext) -> None:
         event = context.to_decision_event()

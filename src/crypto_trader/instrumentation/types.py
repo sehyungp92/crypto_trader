@@ -8,7 +8,42 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Any
 
+from crypto_trader.instrumentation.lineage import stable_hash
 from crypto_trader.instrumentation.strategy_ids import assistant_strategy_id
+
+
+ASSISTANT_EVENT_SCHEMA_VERSION = "assistant_event_v1"
+
+
+def _event_payload_hash(payload: dict[str, Any]) -> str:
+    return stable_hash(payload, length=32)
+
+
+def _metadata_aliases(metadata: "EventMetadata", lineage: dict[str, Any] | None = None) -> dict[str, Any]:
+    metadata_dict = metadata.to_dict()
+    aliases = {
+        "event_id": metadata.event_id,
+        "event_type": metadata.event_type,
+        "bot_id": metadata.bot_id,
+        "family_id": metadata.family_id,
+        "portfolio_id": metadata.portfolio_id,
+        "account_alias": metadata.account_alias,
+        "strategy_id": metadata.strategy_id,
+        "assistant_strategy_id": assistant_strategy_id(metadata.strategy_id),
+        "exchange_timestamp": metadata.exchange_timestamp.isoformat(),
+        "local_timestamp": metadata.local_timestamp.isoformat(),
+        "schema_version": metadata.schema_version,
+        "lineage": lineage if lineage is not None else dict(metadata.lineage),
+    }
+    if metadata.bar_id:
+        aliases["bar_id"] = metadata.bar_id
+    if metadata.config_version:
+        aliases["config_version"] = metadata.config_version
+    if metadata.deployment_id:
+        aliases["deployment_id"] = metadata.deployment_id
+    if metadata.code_sha:
+        aliases["code_sha"] = metadata.code_sha
+    return {"metadata": metadata_dict, **aliases}
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +149,20 @@ class EventMetadata:
     bot_id: str
     strategy_id: str
     exchange_timestamp: datetime
+    event_type: str = ""
+    payload_key: str = ""
+    local_timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    clock_skew_ms: float | None = None
+    data_source: str = "runtime"
+    bar_id: str = ""
+    schema_version: str = ASSISTANT_EVENT_SCHEMA_VERSION
+    family_id: str = "crypto_perps"
+    portfolio_id: str = "default"
+    account_alias: str = "default"
+    config_version: str = ""
+    deployment_id: str = ""
+    code_sha: str = ""
+    lineage: dict[str, Any] = field(default_factory=dict)
     trace_id: str = field(default_factory=lambda: uuid.uuid4().hex[:16])
 
     @staticmethod
@@ -123,25 +172,176 @@ class EventMetadata:
         exchange_ts: datetime,
         event_type: str,
         payload_key: str,
+        *,
+        local_ts: datetime | None = None,
+        data_source: str = "runtime",
+        bar_id: str = "",
+        lineage: dict[str, Any] | None = None,
+        family_id: str = "crypto_perps",
+        portfolio_id: str = "default",
+        account_alias: str = "default",
+        config_version: str = "",
+        deployment_id: str = "",
+        code_sha: str = "",
     ) -> EventMetadata:
-        raw = f"{bot_id}|{exchange_ts.isoformat()}|{event_type}|{payload_key}"
+        raw = f"{bot_id}|{strategy_id}|{exchange_ts.isoformat()}|{event_type}|{payload_key}"
         event_id = hashlib.sha256(raw.encode()).hexdigest()[:16]
+        local_timestamp = local_ts or datetime.now(timezone.utc)
+        clock_skew_ms = None
+        try:
+            clock_skew_ms = (local_timestamp - exchange_ts).total_seconds() * 1000
+        except Exception:
+            clock_skew_ms = None
         return EventMetadata(
             event_id=event_id,
             bot_id=bot_id,
             strategy_id=strategy_id,
             exchange_timestamp=exchange_ts,
+            event_type=event_type,
+            payload_key=payload_key,
+            local_timestamp=local_timestamp,
+            clock_skew_ms=clock_skew_ms,
+            data_source=data_source,
+            bar_id=bar_id,
+            family_id=family_id,
+            portfolio_id=portfolio_id,
+            account_alias=account_alias,
+            config_version=config_version,
+            deployment_id=deployment_id,
+            code_sha=code_sha,
+            lineage=dict(lineage or {}),
         )
 
     def to_dict(self) -> dict:
         return {
             "event_id": self.event_id,
+            "event_type": self.event_type,
+            "payload_key": self.payload_key,
             "bot_id": self.bot_id,
+            "family_id": self.family_id,
+            "portfolio_id": self.portfolio_id,
+            "account_alias": self.account_alias,
             "strategy_id": self.strategy_id,
             "assistant_strategy_id": assistant_strategy_id(self.strategy_id),
             "exchange_timestamp": self.exchange_timestamp.isoformat(),
+            "local_timestamp": self.local_timestamp.isoformat(),
+            "clock_skew_ms": self.clock_skew_ms,
+            "data_source": self.data_source,
+            "bar_id": self.bar_id,
+            "schema_version": self.schema_version,
+            "config_version": self.config_version,
+            "deployment_id": self.deployment_id,
+            "code_sha": self.code_sha,
+            "lineage": dict(self.lineage),
             "trace_id": self.trace_id,
         }
+
+
+@dataclass
+class GenericInstrumentationEvent:
+    """Canonical assistant event wrapper for non-legacy instrumentation types."""
+
+    metadata: EventMetadata
+    payload: dict[str, Any] = field(default_factory=dict)
+    lineage: dict[str, Any] = field(default_factory=dict)
+    logical_event_id: str = ""
+    priority: str = "normal"
+    source: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def event_type(self) -> str:
+        return self.metadata.event_type
+
+    def to_dict(self) -> dict[str, Any]:
+        lineage = dict(self.lineage or self.metadata.lineage)
+        payload = dict(self.payload)
+        payload.setdefault("metadata", self.metadata.to_dict())
+        payload.setdefault("lineage", lineage)
+        payload.setdefault("event_type", self.metadata.event_type)
+        payload.setdefault("event_id", self.metadata.event_id)
+        if self.logical_event_id:
+            payload.setdefault("logical_event_id", self.logical_event_id)
+        payload_hash = _event_payload_hash(payload)
+        return {
+            "schema_version": ASSISTANT_EVENT_SCHEMA_VERSION,
+            "event_id": self.metadata.event_id,
+            "logical_event_id": self.logical_event_id or self.metadata.event_id,
+            "event_type": self.metadata.event_type,
+            "bot_id": self.metadata.bot_id,
+            "family_id": self.metadata.family_id,
+            "portfolio_id": self.metadata.portfolio_id,
+            "account_alias": self.metadata.account_alias,
+            "strategy_id": self.metadata.strategy_id,
+            "assistant_strategy_id": assistant_strategy_id(self.metadata.strategy_id),
+            "symbol": payload.get("symbol") or payload.get("pair", ""),
+            "exchange_timestamp": self.metadata.exchange_timestamp.isoformat(),
+            "local_timestamp": self.metadata.local_timestamp.isoformat(),
+            "payload_hash": payload_hash,
+            "priority": self.priority,
+            "lineage": lineage,
+            "source": dict(self.source),
+            "payload": payload,
+        }
+
+
+def canonical_event_envelope(
+    event_type: str,
+    payload: dict[str, Any],
+    *,
+    bot_id: str = "",
+    source: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Wrap legacy payloads in the canonical assistant event envelope."""
+    if payload.get("schema_version") == ASSISTANT_EVENT_SCHEMA_VERSION and "payload" in payload:
+        if not source:
+            return payload
+        canonical = dict(payload)
+        existing_source = canonical.get("source")
+        merged_source = dict(existing_source) if isinstance(existing_source, dict) else {}
+        merged_source.update(source)
+        canonical["source"] = merged_source
+        return canonical
+
+    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    event_id = str(payload.get("event_id") or metadata.get("event_id") or stable_hash(payload))
+    logical_event_id = str(payload.get("logical_event_id") or event_id)
+    lineage = payload.get("lineage")
+    if not isinstance(lineage, dict):
+        lineage = metadata.get("lineage") if isinstance(metadata.get("lineage"), dict) else {}
+    strategy_id = str(payload.get("strategy_id") or metadata.get("strategy_id") or "")
+    canonical_payload = dict(payload)
+    canonical_payload.setdefault("event_type", event_type)
+    canonical_payload.setdefault("event_id", event_id)
+    canonical_payload.setdefault("logical_event_id", logical_event_id)
+    payload_hash = _event_payload_hash(canonical_payload)
+    return {
+        "schema_version": ASSISTANT_EVENT_SCHEMA_VERSION,
+        "event_id": event_id,
+        "logical_event_id": logical_event_id,
+        "event_type": event_type,
+        "bot_id": str(payload.get("bot_id") or metadata.get("bot_id") or bot_id),
+        "family_id": str(payload.get("family_id") or metadata.get("family_id") or lineage.get("family_id", "")),
+        "portfolio_id": str(payload.get("portfolio_id") or metadata.get("portfolio_id") or lineage.get("portfolio_id", "")),
+        "account_alias": str(payload.get("account_alias") or metadata.get("account_alias") or lineage.get("account_alias", "")),
+        "strategy_id": strategy_id,
+        "assistant_strategy_id": assistant_strategy_id(strategy_id),
+        "symbol": str(payload.get("symbol") or payload.get("pair") or ""),
+        "exchange_timestamp": (
+            payload.get("exchange_timestamp")
+            or metadata.get("exchange_timestamp")
+            or payload.get("timestamp")
+        ),
+        "local_timestamp": (
+            payload.get("local_timestamp")
+            or metadata.get("local_timestamp")
+            or datetime.now(timezone.utc).isoformat()
+        ),
+        "payload_hash": payload_hash,
+        "priority": payload.get("priority", "normal"),
+        "lineage": lineage,
+        "source": dict(source or {}),
+        "payload": canonical_payload,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -152,10 +352,30 @@ class EventMetadata:
 class InstrumentedTradeEvent:
     """Full trade record with context."""
     metadata: EventMetadata
+    lineage: dict[str, Any] = field(default_factory=dict)
+    logical_event_id: str = ""
     # Identity
     trade_id: str = ""
     pair: str = ""
     side: str = ""
+    entry_decision_id: str = ""
+    exit_decision_id: str = ""
+    entry_signal_id: str = ""
+    entry_bar_id: str = ""
+    exit_bar_id: str = ""
+    entry_order_ids: list[str] = field(default_factory=list)
+    exit_order_ids: list[str] = field(default_factory=list)
+    entry_fill_ids: list[str] = field(default_factory=list)
+    exit_fill_ids: list[str] = field(default_factory=list)
+    client_order_ids: list[str] = field(default_factory=list)
+    exchange_order_ids: list[str] = field(default_factory=list)
+    intent_id: str = ""
+    decision_ref: dict[str, Any] = field(default_factory=dict)
+    action_ref: dict[str, Any] = field(default_factory=dict)
+    portfolio_decision_ref: dict[str, Any] = field(default_factory=dict)
+    artifact_hash: str = ""
+    resource_plan_hash: str = ""
+    runtime_join: dict[str, Any] = field(default_factory=dict)
     # Timing
     entry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     exit_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -166,11 +386,17 @@ class InstrumentedTradeEvent:
     pnl: float = 0.0
     price_pnl_gross: float = 0.0
     total_fees: float = 0.0
+    price_pnl_after_funding: float = 0.0
     realized_pnl_net: float = 0.0
     pnl_pct: float = 0.0
     r_multiple: float | None = None
+    realized_r_net: float | None = None
+    geometric_r: float | None = None
     commission: float = 0.0
     funding_paid: float = 0.0
+    slippage_pct: float | None = None
+    latency_ms: float | None = None
+    liquidity: str | None = None
     # Signal
     entry_signal: str = ""
     entry_signal_strength: float = 0.0
@@ -199,26 +425,65 @@ class InstrumentedTradeEvent:
     strategy_params_at_entry: dict = field(default_factory=dict)
     sizing_inputs: dict = field(default_factory=dict)
     portfolio_state_at_entry: dict | None = None
+    portfolio_rule_event_id: str = ""
+    risk_decision_id: str = ""
 
     def to_dict(self) -> dict:
+        lineage = dict(self.lineage or self.metadata.lineage)
+        notional_usd = self.entry_price * self.position_size
         d: dict[str, Any] = {
-            "metadata": self.metadata.to_dict(),
+            **_metadata_aliases(self.metadata, lineage),
+            "logical_event_id": self.logical_event_id or self.trade_id or self.metadata.event_id,
             "trade_id": self.trade_id,
             "pair": self.pair,
+            "symbol": self.pair,
             "side": self.side,
+            "entry_decision_id": self.entry_decision_id,
+            "exit_decision_id": self.exit_decision_id,
+            "entry_signal_id": self.entry_signal_id,
+            "entry_bar_id": self.entry_bar_id,
+            "exit_bar_id": self.exit_bar_id,
+            "entry_order_ids": list(self.entry_order_ids),
+            "exit_order_ids": list(self.exit_order_ids),
+            "entry_fill_ids": list(self.entry_fill_ids),
+            "exit_fill_ids": list(self.exit_fill_ids),
+            "client_order_ids": list(self.client_order_ids),
+            "exchange_order_ids": list(self.exchange_order_ids),
+            "intent_id": self.intent_id,
+            "decision_ref": dict(self.decision_ref),
+            "action_ref": dict(self.action_ref),
+            "portfolio_decision_ref": dict(self.portfolio_decision_ref),
+            "artifact_hash": self.artifact_hash,
+            "resource_plan_hash": self.resource_plan_hash,
+            "runtime_join": dict(self.runtime_join),
             "entry_time": self.entry_time.isoformat(),
             "exit_time": self.exit_time.isoformat(),
+            "time_in_trade_seconds": max(
+                0.0,
+                (self.exit_time - self.entry_time).total_seconds(),
+            ),
             "entry_price": self.entry_price,
             "exit_price": self.exit_price,
             "position_size": self.position_size,
+            "notional_usd": notional_usd,
             "pnl": self.pnl,
             "price_pnl_gross": self.price_pnl_gross,
             "total_fees": self.total_fees,
+            "price_pnl_after_funding": (
+                self.price_pnl_after_funding
+                if self.price_pnl_after_funding != 0.0
+                else self.price_pnl_gross - self.funding_paid
+            ),
             "realized_pnl_net": self.realized_pnl_net,
             "pnl_pct": self.pnl_pct,
             "r_multiple": self.r_multiple,
+            "realized_r_net": self.realized_r_net,
+            "geometric_r": self.geometric_r,
             "commission": self.commission,
             "funding_paid": self.funding_paid,
+            "slippage_pct": self.slippage_pct,
+            "latency_ms": self.latency_ms,
+            "liquidity": self.liquidity,
             "entry_signal": self.entry_signal,
             "entry_signal_strength": self.entry_signal_strength,
             "setup_grade": self.setup_grade,
@@ -245,6 +510,8 @@ class InstrumentedTradeEvent:
             "strategy_params_at_entry": self.strategy_params_at_entry,
             "sizing_inputs": self.sizing_inputs,
             "portfolio_state_at_entry": self.portfolio_state_at_entry,
+            "portfolio_rule_event_id": self.portfolio_rule_event_id,
+            "risk_decision_id": self.risk_decision_id,
         }
         return d
 
@@ -257,15 +524,28 @@ class InstrumentedTradeEvent:
 class MissedOpportunityEvent:
     """Blocked signals with backfill slots."""
     metadata: EventMetadata
+    lineage: dict[str, Any] = field(default_factory=dict)
+    opportunity_id: str = ""
+    logical_event_id: str = ""
+    revision: int = 0
+    supersedes_event_id: str = ""
     pair: str = ""
+    symbol: str = ""
+    timeframe: str = ""
+    bar_id: str = ""
+    decision_id: str = ""
+    signal_id: str = ""
     signal: str = ""
     signal_strength: float = 0.0
     blocked_by: str = ""
     block_reason: str = ""
+    blocking_rule_type: str = "strategy_filter"
     margin_pct: float | None = None
     hypothetical_entry: float = 0.0
+    simulation_policy: dict[str, Any] = field(default_factory=dict)
     market_context: MarketContext | None = None
     filter_decisions: list[FilterDecision] = field(default_factory=list)
+    portfolio_rule_event_id: str = ""
     # Backfilled later
     outcome_1h: float | None = None
     outcome_4h: float | None = None
@@ -274,18 +554,56 @@ class MissedOpportunityEvent:
     would_have_hit_sl: bool | None = None
     backfill_status: str = "pending"
 
+    def bump_revision(self, event_type: str = "missed_opportunity") -> None:
+        """Give a mutable missed opportunity update a new event id."""
+        self.revision += 1
+        self.supersedes_event_id = self.metadata.event_id
+        logical = self.logical_event_id or self.opportunity_id or self.metadata.event_id
+        payload_key = f"{logical}:revision:{self.revision}"
+        self.metadata = EventMetadata.create(
+            bot_id=self.metadata.bot_id,
+            strategy_id=self.metadata.strategy_id,
+            exchange_ts=self.metadata.exchange_timestamp,
+            event_type=event_type,
+            payload_key=payload_key,
+            local_ts=datetime.now(timezone.utc),
+            data_source=self.metadata.data_source,
+            bar_id=self.metadata.bar_id,
+            lineage=self.metadata.lineage,
+            family_id=self.metadata.family_id,
+            portfolio_id=self.metadata.portfolio_id,
+            account_alias=self.metadata.account_alias,
+            config_version=self.metadata.config_version,
+            deployment_id=self.metadata.deployment_id,
+            code_sha=self.metadata.code_sha,
+        )
+
     def to_dict(self) -> dict:
+        lineage = dict(self.lineage or self.metadata.lineage)
+        symbol = self.symbol or self.pair
         return {
-            "metadata": self.metadata.to_dict(),
+            **_metadata_aliases(self.metadata, lineage),
+            "opportunity_id": self.opportunity_id or self.logical_event_id or self.metadata.event_id,
+            "logical_event_id": self.logical_event_id or self.opportunity_id or self.metadata.event_id,
+            "revision": self.revision,
+            "supersedes_event_id": self.supersedes_event_id,
             "pair": self.pair,
+            "symbol": symbol,
+            "timeframe": self.timeframe,
+            "bar_id": self.bar_id or self.metadata.bar_id,
+            "decision_id": self.decision_id,
+            "signal_id": self.signal_id,
             "signal": self.signal,
             "signal_strength": self.signal_strength,
             "blocked_by": self.blocked_by,
             "block_reason": self.block_reason,
+            "blocking_rule_type": self.blocking_rule_type,
             "margin_pct": self.margin_pct,
             "hypothetical_entry": self.hypothetical_entry,
+            "simulation_policy": dict(self.simulation_policy),
             "market_context": self.market_context.to_dict() if self.market_context else None,
             "filter_decisions": [fd.to_dict() for fd in self.filter_decisions],
+            "portfolio_rule_event_id": self.portfolio_rule_event_id,
             "outcome_1h": self.outcome_1h,
             "outcome_4h": self.outcome_4h,
             "outcome_24h": self.outcome_24h,
@@ -303,6 +621,7 @@ class MissedOpportunityEvent:
 class DailySnapshot:
     """End-of-day aggregate (live mode only)."""
     metadata: EventMetadata
+    lineage: dict[str, Any] = field(default_factory=dict)
     date: str = ""
     total_trades: int = 0
     win_count: int = 0
@@ -319,10 +638,12 @@ class DailySnapshot:
     avg_process_quality: float = 0.0
     root_cause_distribution: dict[str, int] = field(default_factory=dict)
     per_strategy_summary: dict[str, dict] = field(default_factory=dict)
+    family_summary: dict[str, Any] = field(default_factory=dict)
+    portfolio_summary: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
-            "metadata": self.metadata.to_dict(),
+            **_metadata_aliases(self.metadata, dict(self.lineage or self.metadata.lineage)),
             "date": self.date,
             "total_trades": self.total_trades,
             "win_count": self.win_count,
@@ -339,6 +660,8 @@ class DailySnapshot:
             "avg_process_quality": self.avg_process_quality,
             "root_cause_distribution": self.root_cause_distribution,
             "per_strategy_summary": self.per_strategy_summary,
+            "family_summary": self.family_summary,
+            "portfolio_summary": self.portfolio_summary,
         }
 
 
@@ -350,18 +673,31 @@ class DailySnapshot:
 class ErrorEvent:
     """Error telemetry."""
     metadata: EventMetadata
+    lineage: dict[str, Any] = field(default_factory=dict)
     error_type: str = ""
     message: str = ""
     stack_trace: str = ""
     severity: str = "low"
+    component: str = ""
+    symbol: str = ""
+    order_id: str = ""
+    fill_id: str = ""
+    decision_id: str = ""
+    recovery_action: str = ""
 
     def to_dict(self) -> dict:
         return {
-            "metadata": self.metadata.to_dict(),
+            **_metadata_aliases(self.metadata, dict(self.lineage or self.metadata.lineage)),
             "error_type": self.error_type,
             "message": self.message,
             "stack_trace": self.stack_trace,
             "severity": self.severity,
+            "component": self.component,
+            "symbol": self.symbol,
+            "order_id": self.order_id,
+            "fill_id": self.fill_id,
+            "decision_id": self.decision_id,
+            "recovery_action": self.recovery_action,
         }
 
 
@@ -378,10 +714,22 @@ class PipelineFunnelSnapshot:
     period_end: str
     funnel: dict = field(default_factory=dict)
     assessment: str = "normal"
+    metadata: EventMetadata | None = None
+    lineage: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         payload = asdict(self)
+        metadata = payload.pop("metadata", None)
+        lineage = payload.pop("lineage", self.lineage)
         payload["assistant_strategy_id"] = assistant_strategy_id(self.strategy_id)
+        payload["event_type"] = "pipeline_funnel"
+        if self.metadata is not None:
+            payload = {
+                **_metadata_aliases(self.metadata, dict(self.lineage or self.metadata.lineage)),
+                **payload,
+            }
+        else:
+            payload["lineage"] = lineage
         return payload
 
 
@@ -394,6 +742,18 @@ class HealthReportSnapshot:
     """Periodic system health report."""
     timestamp: str
     report: dict = field(default_factory=dict)
+    metadata: EventMetadata | None = None
+    lineage: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        payload = asdict(self)
+        payload.pop("metadata", None)
+        lineage = payload.pop("lineage", self.lineage)
+        payload["event_type"] = "heartbeat"
+        if self.metadata is not None:
+            return {
+                **_metadata_aliases(self.metadata, dict(self.lineage or self.metadata.lineage)),
+                **payload,
+            }
+        payload["lineage"] = lineage
+        return payload

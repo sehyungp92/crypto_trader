@@ -23,6 +23,9 @@
   "state_dir": "data/live_state",
   "asset_meta_path": null,
   "bot_id": "paper_bot_01",
+  "family_id": "crypto_perps",
+  "portfolio_id": "round_3_crypto_perps",
+  "account_alias": "paper_testnet",
   "relay_url": "",
   "relay_secret": "",
   "strategy_configs": {

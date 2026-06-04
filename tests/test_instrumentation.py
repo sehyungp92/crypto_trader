@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -913,11 +913,13 @@ class TestDailyAggregator:
             metadata=meta, pnl=999.0, commission=99.0,
             price_pnl_gross=12.0, total_fees=1.0, funding_paid=2.0,
             realized_pnl_net=9.0,
+            realized_r_net=1.25,
         ))
         agg.record_trade(InstrumentedTradeEvent(
             metadata=meta, pnl=999.0, commission=99.0,
             price_pnl_gross=1.0, total_fees=0.5, funding_paid=1.5,
             realized_pnl_net=-1.0,
+            realized_r_net=-0.5,
         ))
 
         snap = agg.compute_snapshot("2025-01-01")
@@ -926,7 +928,17 @@ class TestDailyAggregator:
         assert snap.loss_count == 1
         assert snap.gross_pnl == pytest.approx(13.0)
         assert snap.net_pnl == pytest.approx(8.0)
+        assert snap.family_summary["gross_pnl"] == pytest.approx(13.0)
+        assert snap.family_summary["net_pnl"] == pytest.approx(8.0)
+        assert snap.family_summary["fees"] == pytest.approx(1.5)
+        assert snap.family_summary["funding"] == pytest.approx(3.5)
+        assert snap.family_summary["realized_R"] == pytest.approx(0.75)
         assert snap.per_strategy_summary["momentum"]["pnl"] == pytest.approx(8.0)
+        assert snap.per_strategy_summary["momentum"]["gross_pnl"] == pytest.approx(13.0)
+        assert snap.per_strategy_summary["momentum"]["net_pnl"] == pytest.approx(8.0)
+        assert snap.per_strategy_summary["momentum"]["fees"] == pytest.approx(1.5)
+        assert snap.per_strategy_summary["momentum"]["funding"] == pytest.approx(3.5)
+        assert snap.per_strategy_summary["momentum"]["realized_R"] == pytest.approx(0.75)
 
     def test_compute_snapshot_resets_accumulators(self):
         from crypto_trader.instrumentation.daily_aggregator import DailyAggregator
@@ -941,6 +953,26 @@ class TestDailyAggregator:
 
         snap2 = agg.compute_snapshot("2025-01-02")
         assert snap2.total_trades == 0  # Reset after first snapshot
+
+    def test_compute_snapshot_is_scoped_to_requested_utc_date(self):
+        from crypto_trader.instrumentation.daily_aggregator import DailyAggregator
+
+        agg = DailyAggregator()
+        day1 = datetime(2025, 1, 1, 23, 59, tzinfo=timezone.utc)
+        day2 = day1 + timedelta(minutes=2)
+        meta1 = EventMetadata.create("test", "momentum", day1, "trade", "t1")
+        meta2 = EventMetadata.create("test", "momentum", day2, "trade", "t2")
+
+        agg.record_trade(InstrumentedTradeEvent(metadata=meta1, pnl=10.0))
+        agg.record_trade(InstrumentedTradeEvent(metadata=meta2, pnl=99.0))
+
+        snap1 = agg.compute_snapshot("2025-01-01")
+        snap2 = agg.compute_snapshot("2025-01-02")
+
+        assert snap1.total_trades == 1
+        assert snap1.net_pnl == pytest.approx(10.0)
+        assert snap2.total_trades == 1
+        assert snap2.net_pnl == pytest.approx(99.0)
 
     def test_compute_snapshot_dedupes_missed_updates_by_event_id(self):
         from crypto_trader.instrumentation.daily_aggregator import DailyAggregator
@@ -1058,6 +1090,41 @@ class TestRelayStore:
 
         result = store.get_events()
         assert len(result) == 1
+        store.close()
+
+    def test_dedup_prefers_top_level_event_id_over_nested_metadata(self, tmp_path):
+        from crypto_trader.relay.store import RelayStore
+        store = RelayStore(tmp_path / "test.db")
+
+        first = {
+            "schema_version": "assistant_event_v1",
+            "event_id": "top_1",
+            "logical_event_id": "logical_1",
+            "event_type": "trade",
+            "metadata": {"event_id": "stale_nested"},
+            "payload": {
+                "metadata": {"event_id": "stale_payload_nested"},
+                "trade_id": "t1",
+            },
+        }
+        duplicate_top = {
+            **first,
+            "metadata": {"event_id": "different_nested"},
+            "payload": {"metadata": {"event_id": "different_payload_nested"}},
+        }
+        second_top_same_nested = {
+            **first,
+            "event_id": "top_2",
+            "logical_event_id": "logical_2",
+        }
+
+        assert store.insert_events("bot1", "trade", [first]) == 1
+        assert store.insert_events("bot1", "trade", [duplicate_top]) == 0
+        assert store.insert_events("bot1", "trade", [second_top_same_nested]) == 1
+
+        result = store.get_events()
+        assert [event["event_id"] for event in result] == ["top_1", "top_2"]
+        assert [event["logical_event_id"] for event in result] == ["logical_1", "logical_2"]
         store.close()
 
     def test_ack_events(self, tmp_path):

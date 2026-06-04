@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 
 import structlog
 
@@ -15,6 +15,7 @@ from crypto_trader.instrumentation.types import (
     InstrumentedTradeEvent,
     MissedOpportunityEvent,
     PipelineFunnelSnapshot,
+    canonical_event_envelope,
 )
 
 log = structlog.get_logger()
@@ -44,10 +45,17 @@ class PostgresSink:
     All methods swallow exceptions — never blocks the engine.
     """
 
-    def __init__(self, dsn: str) -> None:
+    def __init__(
+        self,
+        dsn: str,
+        *,
+        error_callback: Callable[[dict[str, Any]], None] | None = None,
+    ) -> None:
         from psycopg_pool import ConnectionPool
 
         self._pool = ConnectionPool(dsn, min_size=1, max_size=3)
+        self._error_callback = error_callback
+        self._in_error_callback = False
 
     # ------------------------------------------------------------------
     # Sink protocol methods (called via EventEmitter.add_sink)
@@ -112,8 +120,15 @@ class PostgresSink:
                         market_ctx,
                     ),
                 )
-        except Exception:
+        except Exception as exc:
             log.exception("postgres_sink.write_trade_failed")
+            self._emit_error(
+                exc,
+                message="failed to write typed trade row",
+                recovery_action="continue_with_generic_event",
+                event_type="trade",
+            )
+        self.write_event("trade", event)
 
     def write_daily(self, event: DailySnapshot) -> None:
         """UPSERT daily snapshot."""
@@ -154,8 +169,15 @@ class PostgresSink:
                         per_strategy,
                     ),
                 )
-        except Exception:
+        except Exception as exc:
             log.exception("postgres_sink.write_daily_failed")
+            self._emit_error(
+                exc,
+                message="failed to write typed daily snapshot row",
+                recovery_action="continue_with_generic_event",
+                event_type="daily_snapshot",
+            )
+        self.write_event("daily_snapshot", event)
 
     def write_health_report(self, event: HealthReportSnapshot) -> None:
         """INSERT health snapshot."""
@@ -181,20 +203,93 @@ class PostgresSink:
                         report_json,
                     ),
                 )
-        except Exception:
+        except Exception as exc:
             log.exception("postgres_sink.write_health_report_failed")
+            self._emit_error(
+                exc,
+                message="failed to write typed health snapshot row",
+                recovery_action="continue_with_generic_event",
+                event_type="heartbeat",
+            )
+        self.write_event("heartbeat", event)
 
     def write_missed(self, event: MissedOpportunityEvent) -> None:
-        """No-op: missed opportunities stay in JSONL only."""
-        pass
+        """Persist missed opportunities to the generic assistant event table."""
+        self.write_event("missed_opportunity", event)
 
     def write_error(self, event: ErrorEvent) -> None:
-        """No-op: errors stay in JSONL only."""
-        pass
+        """Persist errors to the generic assistant event table."""
+        self.write_event("error", event)
 
     def write_funnel(self, event: PipelineFunnelSnapshot) -> None:
-        """No-op: funnels stay in JSONL only."""
-        pass
+        """Persist funnels to the generic assistant event table."""
+        self.write_event("pipeline_funnel", event)
+
+    def write_event(self, event_type: str, event) -> None:
+        """Best-effort generic event persistence for assistant telemetry."""
+        try:
+            raw_payload = event.to_dict() if hasattr(event, "to_dict") else dict(event)
+            raw_metadata = (
+                raw_payload.get("metadata")
+                if isinstance(raw_payload.get("metadata"), dict)
+                else {}
+            )
+            payload = canonical_event_envelope(
+                event_type,
+                raw_payload,
+                bot_id=str(raw_payload.get("bot_id") or raw_metadata.get("bot_id") or ""),
+                source={"sink": "postgres"},
+            )
+            metadata = (
+                payload.get("payload", {}).get("metadata", {})
+                if isinstance(payload.get("payload"), dict)
+                else {}
+            )
+            lineage = payload.get("lineage") if isinstance(payload.get("lineage"), dict) else {}
+            event_id = payload.get("event_id")
+            logical_event_id = payload.get("logical_event_id")
+            strategy_id = payload.get("strategy_id")
+            exchange_timestamp = payload.get("exchange_timestamp")
+            if not event_id:
+                return
+            with self._pool.connection() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO instrumentation_events (
+                        event_id, logical_event_id, event_type, bot_id,
+                        family_id, portfolio_id, account_alias, strategy_id,
+                        symbol, exchange_timestamp, local_timestamp, payload, lineage
+                    ) VALUES (
+                        %s, %s, %s, %s,
+                        %s, %s, %s, %s,
+                        %s, %s, %s, %s::jsonb, %s::jsonb
+                    )
+                    ON CONFLICT (event_id) DO NOTHING
+                    """,
+                    (
+                        event_id,
+                        logical_event_id,
+                        payload.get("event_type") or event_type,
+                        payload.get("bot_id") or metadata.get("bot_id") or "",
+                        payload.get("family_id") or metadata.get("family_id") or lineage.get("family_id"),
+                        payload.get("portfolio_id") or metadata.get("portfolio_id") or lineage.get("portfolio_id"),
+                        payload.get("account_alias") or metadata.get("account_alias") or lineage.get("account_alias"),
+                        strategy_id,
+                        payload.get("symbol") or payload.get("payload", {}).get("symbol"),
+                        exchange_timestamp,
+                        payload.get("local_timestamp") or metadata.get("local_timestamp"),
+                        json.dumps(payload, default=str),
+                        json.dumps(lineage, default=str),
+                    ),
+                )
+        except Exception as exc:
+            log.exception("postgres_sink.write_event_failed", event_type=event_type)
+            self._emit_error(
+                exc,
+                message=f"failed to write canonical {event_type} event",
+                recovery_action="continue_without_postgres",
+                event_type=event_type,
+            )
 
     # ------------------------------------------------------------------
     # Direct methods (called from engine, NOT part of Sink protocol)
@@ -208,8 +303,14 @@ class PostgresSink:
                     "INSERT INTO equity_snapshots (timestamp, equity) VALUES (%s, %s)",
                     (timestamp, equity),
                 )
-        except Exception:
+        except Exception as exc:
             log.exception("postgres_sink.write_equity_failed")
+            self._emit_error(
+                exc,
+                message="failed to write equity snapshot",
+                recovery_action="continue_without_postgres",
+                event_type="equity_snapshot",
+            )
 
     def upsert_positions(self, positions: list[dict[str, Any]]) -> None:
         """Full-sync open positions: DELETE all then INSERT current.
@@ -240,8 +341,14 @@ class PostgresSink:
                                 pos.get("entry_time"),
                             ),
                         )
-        except Exception:
+        except Exception as exc:
             log.exception("postgres_sink.upsert_positions_failed")
+            self._emit_error(
+                exc,
+                message="failed to upsert open positions",
+                recovery_action="continue_without_postgres",
+                event_type="position_snapshot",
+            )
 
     def close(self) -> None:
         """Close connection pool."""
@@ -249,3 +356,29 @@ class PostgresSink:
             self._pool.close()
         except Exception:
             log.exception("postgres_sink.close_failed")
+
+    def _emit_error(
+        self,
+        exc: Exception,
+        *,
+        message: str,
+        recovery_action: str,
+        event_type: str,
+        severity: str = "medium",
+    ) -> None:
+        if self._error_callback is None or self._in_error_callback:
+            return
+        self._in_error_callback = True
+        try:
+            self._error_callback({
+                "component": "postgres_sink",
+                "error_type": type(exc).__name__,
+                "message": f"{message}: {exc}",
+                "severity": severity,
+                "recovery_action": recovery_action,
+                "event_type": event_type,
+            })
+        except Exception:
+            log.exception("postgres_sink.error_callback_failed", event_type=event_type)
+        finally:
+            self._in_error_callback = False

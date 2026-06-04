@@ -184,7 +184,7 @@ class DecisionEvent:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "decision_id": self.decision_id,
             "strategy_id": self.strategy_id,
             "symbol": self.symbol,
@@ -195,6 +195,9 @@ class DecisionEvent:
             "signal_context": dict(self.signal_context),
             "metadata": dict(self.metadata),
         }
+        if self.metadata.get("bar_id"):
+            payload["bar_id"] = self.metadata["bar_id"]
+        return payload
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,8 +233,14 @@ class OrderIntent:
         strategy_id = str(metadata.get("strategy_id") or (context.strategy_id if context else ""))
         client_order_id = str(metadata.get("client_order_id") or order.order_id or "")
         decision_id = str(metadata.get("decision_id") or (context.decision_id if context else ""))
+        context_intent_id = (
+            _intent_id(strategy_id, order.symbol, decision_id, context)
+            if context is not None
+            else ""
+        )
         intent_id = str(
             metadata.get("intent_id")
+            or context_intent_id
             or client_order_id
             or _intent_id(strategy_id, order.symbol, decision_id, context)
         )

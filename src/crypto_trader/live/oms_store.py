@@ -390,6 +390,12 @@ class OmsStore:
         ).fetchone()
         return _row_to_dict(row)
 
+    def list_fills(self) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            "SELECT * FROM fills ORDER BY timestamp, fill_id"
+        ).fetchall()
+        return [_row_to_dict(row) for row in rows if row is not None]
+
     def get_fill_status(self, fill_id: str) -> str | None:
         row = self._conn.execute(
             "SELECT status FROM fills WHERE fill_id=?",
@@ -816,6 +822,24 @@ class OmsStore:
         status: str = "OPEN",
         metadata: dict[str, Any] | None = None,
     ) -> int:
+        metadata_json = json.dumps(metadata or {}, sort_keys=True)
+        existing = self._conn.execute(
+            """
+            SELECT id FROM reconciliation_discrepancies
+            WHERE status != 'RESOLVED'
+              AND kind=?
+              AND symbol=?
+              AND strategy_id=?
+              AND description=?
+              AND metadata=?
+            ORDER BY created_at, id
+            LIMIT 1
+            """,
+            (kind, symbol, strategy_id, description, metadata_json),
+        ).fetchone()
+        if existing is not None:
+            return int(existing["id"])
+
         cur = self._conn.execute(
             """
             INSERT INTO reconciliation_discrepancies (
@@ -830,7 +854,7 @@ class OmsStore:
                 strategy_id,
                 description,
                 status,
-                json.dumps(metadata or {}, sort_keys=True),
+                metadata_json,
                 _iso(None),
             ),
         )
@@ -846,6 +870,48 @@ class OmsStore:
             """
         ).fetchall()
         return [_row_to_dict(row) for row in rows if row is not None]
+
+    def get_discrepancy(self, discrepancy_id: int) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            "SELECT * FROM reconciliation_discrepancies WHERE id=?",
+            (discrepancy_id,),
+        ).fetchone()
+        return _row_to_dict(row)
+
+    def resolve_discrepancy(
+        self,
+        discrepancy_id: int,
+        *,
+        resolution: str,
+        resolved_by: str = "",
+        metadata: dict[str, Any] | None = None,
+        resolved_at: datetime | None = None,
+    ) -> bool:
+        row = self._conn.execute(
+            "SELECT metadata FROM reconciliation_discrepancies WHERE id=?",
+            (discrepancy_id,),
+        ).fetchone()
+        if row is None:
+            return False
+        existing_metadata = json.loads(row["metadata"] or "{}")
+        existing_metadata.update(metadata or {})
+        existing_metadata["resolution"] = resolution
+        if resolved_by:
+            existing_metadata["resolved_by"] = resolved_by
+        self._conn.execute(
+            """
+            UPDATE reconciliation_discrepancies
+            SET status='RESOLVED', metadata=?, resolved_at=?
+            WHERE id=?
+            """,
+            (
+                json.dumps(existing_metadata, sort_keys=True),
+                _iso(resolved_at),
+                discrepancy_id,
+            ),
+        )
+        self._conn.commit()
+        return True
 
     def record_execution_report(self, report: ExecutionReport) -> None:
         self._conn.execute(
@@ -999,6 +1065,8 @@ class OmsStore:
                 created_at TEXT NOT NULL,
                 resolved_at TEXT
             );
+            CREATE INDEX IF NOT EXISTS idx_reconciliation_discrepancies_identity
+                ON reconciliation_discrepancies(status, kind, symbol, strategy_id);
 
             CREATE TABLE IF NOT EXISTS execution_reports (
                 report_id TEXT PRIMARY KEY,

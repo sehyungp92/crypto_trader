@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 from types import ModuleType
 
@@ -97,7 +98,7 @@ def _make_daily_event(**overrides) -> DailySnapshot:
     return DailySnapshot(**defaults)
 
 
-def _make_sink():
+def _make_sink(error_callback=None):
     """Create PostgresSink with a fresh mock pool and connection."""
     mock_pool = MagicMock()
     mock_conn = MagicMock()
@@ -106,10 +107,21 @@ def _make_sink():
     mock_pool.connection.return_value.__exit__ = MagicMock(return_value=False)
 
     _MockConnectionPool.reset_mock()
+    _MockConnectionPool.side_effect = None
     _MockConnectionPool.return_value = mock_pool
 
-    sink = PostgresSink("postgresql://test:test@localhost/test")
+    sink = PostgresSink(
+        "postgresql://test:test@localhost/test",
+        error_callback=error_callback,
+    )
     return sink, mock_conn, mock_pool
+
+
+def _execute_call(mock_conn, sql_fragment: str):
+    for call in mock_conn.execute.call_args_list:
+        if sql_fragment in call.args[0]:
+            return call
+    raise AssertionError(f"SQL fragment not found: {sql_fragment}")
 
 
 # ---------------------------------------------------------------------------
@@ -123,8 +135,7 @@ class TestWriteTrade:
 
         sink.write_trade(event)
 
-        mock_conn.execute.assert_called_once()
-        sql, params = mock_conn.execute.call_args.args
+        sql, params = _execute_call(mock_conn, "INSERT INTO trades").args
         assert "INSERT INTO trades" in sql
         assert "ON CONFLICT (trade_id) DO NOTHING" in sql
         # Verify key field positions
@@ -142,7 +153,7 @@ class TestWriteTrade:
 
         sink.write_trade(event)
 
-        _, params = mock_conn.execute.call_args.args
+        _, params = _execute_call(mock_conn, "INSERT INTO trades").args
         assert params[10] == 97.5
 
     def test_keeps_zero_realized_net_pnl(self):
@@ -151,7 +162,7 @@ class TestWriteTrade:
 
         sink.write_trade(event)
 
-        _, params = mock_conn.execute.call_args.args
+        _, params = _execute_call(mock_conn, "INSERT INTO trades").args
         assert params[10] == 0.0
 
     def test_legacy_event_without_explicit_economics_falls_back_to_pnl(self):
@@ -166,7 +177,7 @@ class TestWriteTrade:
 
         sink.write_trade(event)
 
-        _, params = mock_conn.execute.call_args.args
+        _, params = _execute_call(mock_conn, "INSERT INTO trades").args
         assert params[10] == 12.0
 
     def test_idempotent_no_exception(self):
@@ -177,7 +188,14 @@ class TestWriteTrade:
         # Call twice — should not raise
         sink.write_trade(event)
         sink.write_trade(event)
-        assert mock_conn.execute.call_count == 2
+        assert len([
+            call for call in mock_conn.execute.call_args_list
+            if "INSERT INTO trades" in call.args[0]
+        ]) == 2
+        assert len([
+            call for call in mock_conn.execute.call_args_list
+            if "INSERT INTO instrumentation_events" in call.args[0]
+        ]) == 2
 
     def test_with_market_context(self):
         sink, mock_conn, _ = _make_sink()
@@ -186,7 +204,7 @@ class TestWriteTrade:
 
         sink.write_trade(event)
 
-        _, params = mock_conn.execute.call_args.args
+        _, params = _execute_call(mock_conn, "INSERT INTO trades").args
         # market_context should be JSON string
         mc_json = params[-1]  # last param
         parsed = json.loads(mc_json)
@@ -201,8 +219,7 @@ class TestWriteDaily:
 
         sink.write_daily(event)
 
-        mock_conn.execute.assert_called_once()
-        sql, params = mock_conn.execute.call_args.args
+        sql, params = _execute_call(mock_conn, "INSERT INTO daily_snapshots").args
         assert "INSERT INTO daily_snapshots" in sql
         assert "ON CONFLICT (trade_date) DO UPDATE" in sql
         assert params[0] == "2026-04-20"
@@ -225,8 +242,7 @@ class TestWriteHealthReport:
 
         sink.write_health_report(event)
 
-        mock_conn.execute.assert_called_once()
-        sql, params = mock_conn.execute.call_args.args
+        sql, params = _execute_call(mock_conn, "INSERT INTO health_snapshots").args
         assert "INSERT INTO health_snapshots" in sql
         assert params[1] == "healthy"  # assessment extracted from report
         assert params[2] == 3600.0  # uptime_sec
@@ -286,16 +302,25 @@ class TestUpsertPositions:
         assert calls[2].args[1][1] == "ETH"
 
 
-class TestNoopMethods:
-    def test_noop_methods_dont_fail(self):
+class TestGenericOnlyMethods:
+    def test_events_without_typed_tables_write_generic_events(self):
         sink, mock_conn, _ = _make_sink()
 
-        # These should be no-ops — no DB calls
         sink.write_missed(MagicMock(spec=MissedOpportunityEvent))
         sink.write_error(MagicMock(spec=ErrorEvent))
         sink.write_funnel(MagicMock(spec=PipelineFunnelSnapshot))
 
-        mock_conn.execute.assert_not_called()
+        assert len([
+            call for call in mock_conn.execute.call_args_list
+            if "INSERT INTO instrumentation_events" in call.args[0]
+        ]) == 3
+
+
+def test_instrumentation_events_indexes_target_canonical_payload_join_keys():
+    migration = Path("infra/postgres/migrations/003_instrumentation_events.sql").read_text(encoding="utf-8")
+
+    assert "payload->'payload'->>'decision_id'" in migration
+    assert "payload->'payload'->>'bar_id'" in migration
 
 
 class TestConnectionErrorHandling:
@@ -305,6 +330,20 @@ class TestConnectionErrorHandling:
 
         # Should not raise
         sink.write_trade(_make_trade_event())
+
+    def test_write_event_emits_structured_error_callback(self):
+        errors: list[dict] = []
+        sink, mock_conn, _ = _make_sink(error_callback=errors.append)
+        mock_conn.execute.side_effect = RuntimeError("connection refused")
+
+        sink.write_event("trade", _make_trade_event())
+
+        assert len(errors) == 1
+        assert errors[0]["component"] == "postgres_sink"
+        assert errors[0]["error_type"] == "RuntimeError"
+        assert errors[0]["event_type"] == "trade"
+        assert errors[0]["recovery_action"] == "continue_without_postgres"
+        assert "connection refused" in errors[0]["message"]
 
     def test_write_equity_swallows_exception(self):
         sink, mock_conn, _ = _make_sink()
@@ -326,3 +365,61 @@ class TestConnectionErrorHandling:
 
         # Should not raise
         sink.close()
+
+    def test_engine_postgres_init_failure_emits_error_event(self, tmp_path):
+        from crypto_trader.live.config import LiveConfig
+        from crypto_trader.live.engine import LiveEngine
+
+        _MockConnectionPool.side_effect = RuntimeError("pool unavailable")
+        engine = None
+        try:
+            engine = LiveEngine(LiveConfig(
+                state_dir=tmp_path,
+                data_dir=tmp_path / "data",
+                bot_id="bot1",
+                postgres_dsn="postgresql://test:test@localhost/test",
+            ))
+
+            row = json.loads((tmp_path / "errors.jsonl").read_text(encoding="utf-8").splitlines()[0])
+            assert row["component"] == "postgres_sink"
+            assert row["error_type"] == "RuntimeError"
+            assert row["recovery_action"] == "disable_postgres_sink"
+            assert "pool unavailable" in row["message"]
+        finally:
+            _MockConnectionPool.side_effect = None
+            if engine is not None:
+                engine._oms.close()
+
+    def test_engine_error_event_has_pre_lineage_startup_fallback(self, tmp_path):
+        from crypto_trader.instrumentation.emitter import EventEmitter
+        from crypto_trader.instrumentation.sinks import JsonlSink
+        from crypto_trader.live.config import LiveConfig
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        engine._config = LiveConfig(
+            state_dir=tmp_path,
+            data_dir=tmp_path / "data",
+            bot_id="bot1",
+            family_id="crypto_perps",
+            portfolio_id="paper",
+            account_alias="acct",
+            symbols=["BTC"],
+        )
+        engine._emitter = EventEmitter()
+        engine._emitter.add_sink(JsonlSink(tmp_path))
+
+        engine._emit_error_event(
+            "postgres_sink",
+            RuntimeError("pool unavailable"),
+            severity="medium",
+            recovery_action="disable_postgres_sink",
+            error_type="RuntimeError",
+        )
+
+        row = json.loads((tmp_path / "errors.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        assert row["component"] == "postgres_sink"
+        assert row["error_type"] == "RuntimeError"
+        assert row["recovery_action"] == "disable_postgres_sink"
+        assert row["metadata"]["portfolio_id"] == "paper"
+        assert row["lineage"]["symbol_universe"] == ["BTC"]

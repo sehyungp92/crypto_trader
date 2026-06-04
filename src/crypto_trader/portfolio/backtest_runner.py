@@ -35,6 +35,12 @@ from crypto_trader.data.historical_feed import HistoricalFeed, _TF_PRIORITY
 from crypto_trader.data.store import ParquetStore
 from crypto_trader.exchange.funding import FundingHelper
 from crypto_trader.exchange.meta import AssetMeta
+from crypto_trader.instrumentation.lineage import (
+    ALLOCATION_CONFIG_KEYS,
+    RISK_CONFIG_KEYS,
+    stable_hash,
+    subset_keys,
+)
 from crypto_trader.portfolio.config import PortfolioConfig
 from crypto_trader.portfolio.coordinator import StrategyCoordinator
 from crypto_trader.portfolio.manager import PortfolioManager
@@ -52,16 +58,184 @@ _STRATEGY_WARMUP = {
 
 @dataclass
 class RuleEvent:
-    """A portfolio rule check event for audit logging."""
+    """Backtest portfolio rule event using the live assistant schema."""
 
     timestamp: datetime
-    strategy_id: str
-    symbol: str
-    direction: str
-    risk_R: float
-    approved: bool
+    event_type: str = "portfolio_rule"
+    strategy_id: str = ""
+    symbol: str = ""
+    direction: str = ""
+    risk_R: float = 0.0
+    approved: bool = False
     denial_reason: str | None = None
     size_multiplier: float = 1.0
+    portfolio_rule_event_id: str = ""
+    rule_event_id: str = ""
+    risk_decision_id: str = ""
+    rule_evaluation_id: str = ""
+    decision_id: str = ""
+    bar_id: str = ""
+    intent_id: str = ""
+    client_order_id: str = ""
+    requested_risk_R: float = 0.0
+    adjusted_risk_R: float = 0.0
+    action: str = "block"
+    blocking_rule: str = ""
+    rule_evaluations: list[dict] = field(default_factory=list)
+    evaluations: list[dict] = field(default_factory=list)
+    state_before: dict = field(default_factory=dict)
+    state_after_preview: dict = field(default_factory=dict)
+    allocation: dict = field(default_factory=dict)
+    request: dict = field(default_factory=dict)
+    portfolio_config: dict = field(default_factory=dict)
+    lineage: dict = field(default_factory=dict)
+    portfolio_config_version: str = ""
+    risk_config_version: str = ""
+    allocation_version: str = ""
+    payload: dict = field(default_factory=dict)
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: dict[str, Any],
+        *,
+        timestamp: datetime,
+        portfolio_config: dict[str, Any],
+        portfolio_config_version: str,
+        risk_config_version: str,
+        allocation_version: str,
+    ) -> "RuleEvent":
+        strategy_id = str(payload.get("strategy_id") or "")
+        requested_risk = float(payload.get("requested_risk_R") or 0.0)
+        lineage = {
+            "source": "portfolio_backtest",
+            "strategy_id": strategy_id,
+            "portfolio_config_version": portfolio_config_version,
+            "risk_config_version": risk_config_version,
+            "allocation_version": allocation_version,
+        }
+        portfolio_rule_event_id = str(payload.get("portfolio_rule_event_id") or payload.get("rule_event_id") or "")
+        return cls(
+            timestamp=timestamp,
+            event_type=str(payload.get("event_type") or "portfolio_rule"),
+            strategy_id=strategy_id,
+            symbol=str(payload.get("symbol") or ""),
+            direction=str(payload.get("direction") or payload.get("side") or ""),
+            risk_R=requested_risk,
+            approved=bool(payload.get("approved")),
+            denial_reason=payload.get("denial_reason"),
+            size_multiplier=float(payload.get("size_multiplier") or 1.0),
+            portfolio_rule_event_id=portfolio_rule_event_id,
+            rule_event_id=portfolio_rule_event_id,
+            risk_decision_id=str(payload.get("risk_decision_id") or ""),
+            rule_evaluation_id=str(payload.get("rule_evaluation_id") or ""),
+            decision_id=str(payload.get("decision_id") or ""),
+            bar_id=str(payload.get("bar_id") or ""),
+            intent_id=str(payload.get("intent_id") or ""),
+            client_order_id=str(payload.get("client_order_id") or ""),
+            requested_risk_R=requested_risk,
+            adjusted_risk_R=float(payload.get("adjusted_risk_R") or 0.0),
+            action=str(payload.get("action") or ("allow" if payload.get("approved") else "block")),
+            blocking_rule=str(payload.get("blocking_rule") or ""),
+            rule_evaluations=list(payload.get("rule_evaluations") or payload.get("evaluations") or []),
+            evaluations=list(payload.get("evaluations") or payload.get("rule_evaluations") or []),
+            state_before=dict(payload.get("state_before") or {}),
+            state_after_preview=dict(payload.get("state_after_preview") or {}),
+            allocation=dict(payload.get("allocation") or {}),
+            request=dict(payload.get("request") or {}),
+            portfolio_config=dict(portfolio_config),
+            lineage=lineage,
+            portfolio_config_version=portfolio_config_version,
+            risk_config_version=risk_config_version,
+            allocation_version=allocation_version,
+            payload={
+                **payload,
+                "portfolio_config": portfolio_config,
+                "lineage": lineage,
+                "portfolio_config_version": portfolio_config_version,
+                "risk_config_version": risk_config_version,
+                "allocation_version": allocation_version,
+            },
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "event_type": self.event_type,
+            "timestamp": self.timestamp.isoformat(),
+            "portfolio_rule_event_id": self.portfolio_rule_event_id,
+            "rule_event_id": self.rule_event_id,
+            "risk_decision_id": self.risk_decision_id,
+            "rule_evaluation_id": self.rule_evaluation_id,
+            "decision_id": self.decision_id,
+            "bar_id": self.bar_id,
+            "intent_id": self.intent_id,
+            "client_order_id": self.client_order_id,
+            "strategy_id": self.strategy_id,
+            "symbol": self.symbol,
+            "direction": self.direction,
+            "requested_risk_R": self.requested_risk_R,
+            "risk_R": self.risk_R,
+            "approved": self.approved,
+            "action": self.action,
+            "denial_reason": self.denial_reason,
+            "blocking_rule": self.blocking_rule,
+            "size_multiplier": self.size_multiplier,
+            "adjusted_risk_R": self.adjusted_risk_R,
+            "state_before": dict(self.state_before),
+            "state_after_preview": dict(self.state_after_preview),
+            "rule_evaluations": list(self.rule_evaluations),
+            "evaluations": list(self.evaluations),
+            "allocation": dict(self.allocation),
+            "request": dict(self.request),
+            "portfolio_config": dict(self.portfolio_config),
+            "lineage": dict(self.lineage),
+            "portfolio_config_version": self.portfolio_config_version,
+            "risk_config_version": self.risk_config_version,
+            "allocation_version": self.allocation_version,
+        }
+
+
+@dataclass
+class BacktestEvidenceEvent:
+    """First-class backtest evidence event using the live assistant payload shape."""
+
+    event_type: str
+    timestamp: datetime
+    payload: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_payload(
+        cls,
+        event_type: str,
+        payload: dict[str, Any],
+        *,
+        timestamp: datetime,
+        portfolio_config: dict[str, Any],
+        portfolio_config_version: str,
+        risk_config_version: str,
+        allocation_version: str,
+    ) -> "BacktestEvidenceEvent":
+        lineage = {
+            "source": "portfolio_backtest",
+            "strategy_id": str(payload.get("strategy_id") or ""),
+            "portfolio_config_version": portfolio_config_version,
+            "risk_config_version": risk_config_version,
+            "allocation_version": allocation_version,
+        }
+        enriched = {
+            **payload,
+            "event_type": event_type,
+            "timestamp": payload.get("timestamp") or timestamp.isoformat(),
+            "portfolio_config": portfolio_config,
+            "lineage": lineage,
+            "portfolio_config_version": portfolio_config_version,
+            "risk_config_version": risk_config_version,
+            "allocation_version": allocation_version,
+        }
+        return cls(event_type=event_type, timestamp=timestamp, payload=enriched)
+
+    def to_dict(self) -> dict[str, Any]:
+        return dict(self.payload)
 
 
 @dataclass
@@ -73,6 +247,8 @@ class PortfolioBacktestResult:
     equity_curve: list[tuple[datetime, float]]
     metrics: PerformanceMetrics
     rule_events: list[RuleEvent]
+    risk_decision_events: list[BacktestEvidenceEvent] = field(default_factory=list)
+    order_events: list[BacktestEvidenceEvent] = field(default_factory=list)
     per_strategy_metrics: dict[str, PerformanceMetrics | None] = field(default_factory=dict)
     config: BacktestConfig | None = None
     portfolio_config: PortfolioConfig | None = None
@@ -174,15 +350,59 @@ def run_portfolio_backtest(
         peak_equity=portfolio_config.initial_equity,
     )
     manager = PortfolioManager(config=portfolio_config, state=state)
+    rule_events: list[RuleEvent] = []
+    risk_decision_events: list[BacktestEvidenceEvent] = []
+    order_events: list[BacktestEvidenceEvent] = []
+    portfolio_config_payload = portfolio_config.to_dict()
+    portfolio_config_version = stable_hash(portfolio_config_payload)
+    risk_config_version = stable_hash(subset_keys(portfolio_config_payload, RISK_CONFIG_KEYS))
+    allocation_version = stable_hash(subset_keys(portfolio_config_payload, ALLOCATION_CONFIG_KEYS))
+
+    def _record_portfolio_event(event_type: str, payload: dict) -> None:
+        timestamp = clock.now()
+        if event_type == "portfolio_rule":
+            rule_events.append(RuleEvent.from_payload(
+                payload,
+                timestamp=timestamp,
+                portfolio_config=portfolio_config_payload,
+                portfolio_config_version=portfolio_config_version,
+                risk_config_version=risk_config_version,
+                allocation_version=allocation_version,
+            ))
+            return
+        if event_type == "risk_decision":
+            risk_decision_events.append(BacktestEvidenceEvent.from_payload(
+                event_type,
+                payload,
+                timestamp=timestamp,
+                portfolio_config=portfolio_config_payload,
+                portfolio_config_version=portfolio_config_version,
+                risk_config_version=risk_config_version,
+                allocation_version=allocation_version,
+            ))
+            return
+        if event_type == "order":
+            order_events.append(BacktestEvidenceEvent.from_payload(
+                event_type,
+                payload,
+                timestamp=timestamp,
+                portfolio_config=portfolio_config_payload,
+                portfolio_config_version=portfolio_config_version,
+                risk_config_version=risk_config_version,
+                allocation_version=allocation_version,
+            ))
 
     # Create a minimal broker reference for coordinator (only used for order owner lookup)
     # Each strategy has its own actual broker
     _coordinator_broker = SimBroker(initial_equity=0)
-    coordinator = StrategyCoordinator(broker=_coordinator_broker, manager=manager)
+    coordinator = StrategyCoordinator(
+        broker=_coordinator_broker,
+        manager=manager,
+        event_callback=_record_portfolio_event,
+    )
 
     # Create strategy slots — each with its own SimBroker
     slots: list[_StrategySlot] = []
-    rule_events: list[RuleEvent] = []
 
     for strategy_id, strategy_config in strategy_configs.items():
         alloc = portfolio_config.get_strategy(strategy_id)
@@ -248,25 +468,6 @@ def run_portfolio_backtest(
             end_date=backtest_config.end_date,
             primary_timeframe=slot.primary_tf,
         )
-
-    # Wire up portfolio rule event logging
-    _orig_check = manager.check_entry
-
-    def _logging_check(strategy_id, symbol, direction, new_risk_R):
-        result = _orig_check(strategy_id, symbol, direction, new_risk_R)
-        rule_events.append(RuleEvent(
-            timestamp=clock.now(),
-            strategy_id=strategy_id,
-            symbol=symbol,
-            direction=direction.value,
-            risk_R=new_risk_R,
-            approved=result.approved,
-            denial_reason=result.denial_reason,
-            size_multiplier=result.size_multiplier,
-        ))
-        return result
-
-    manager.check_entry = _logging_check  # type: ignore[method-assign]
 
     # Set module-level reference for shared-capital equity callbacks.
     global _all_slots_ref
@@ -437,6 +638,8 @@ def run_portfolio_backtest(
         equity_curve=combined_broker._liquidation_equity_history or combined_broker._equity_history,
         metrics=metrics,
         rule_events=rule_events,
+        risk_decision_events=risk_decision_events,
+        order_events=order_events,
         per_strategy_metrics=per_strategy_metrics,
         config=backtest_config,
         portfolio_config=portfolio_config,

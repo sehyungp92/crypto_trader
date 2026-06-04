@@ -90,6 +90,8 @@ def test_strategy_runtime_dispatches_fills_before_bar_and_emits_canonical_events
     assert ctx.clock.now() == _bar().timestamp + timedelta(minutes=15)
     assert [event.stream for event in canonical] == ["execution", "market", "decision"]
     assert canonical[1].timestamp == _bar().timestamp + timedelta(minutes=15)
+    assert canonical[1].payload["bar_id"] == canonical[-1].payload["bar_id"]
+    assert canonical[1].payload["decision_id"] == canonical[-1].payload["decision_id"]
     assert canonical[-1].payload["action"] == "no_order"
 
 
@@ -125,6 +127,7 @@ def test_strategy_runtime_accepts_market_events_without_changing_callbacks() -> 
     assert ctx.clock.now() == event.available_at
     assert bars.latest("BTC", TimeFrame.M15).timestamp == event.open_time
     assert canonical[0].payload["source"] == "historical"
+    assert canonical[0].payload["bar_id"] == canonical[1].payload["bar_id"]
 
 
 def test_higher_timeframe_deferral_stops_when_strategy_raises() -> None:

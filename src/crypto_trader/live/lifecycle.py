@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 from crypto_trader.core.models import Fill, Side, Trade
+from crypto_trader.live.oms_store import fill_identity
 
 
 @dataclass(slots=True)
@@ -22,6 +24,7 @@ class LivePositionLedgerEntry:
     closed_qty: float = 0.0
     realized_price_pnl: float = 0.0
     funding_paid: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class PositionLifecycleLedger:
@@ -72,6 +75,7 @@ class PositionLifecycleLedger:
                 closed_qty=float(raw.get("closed_qty", 0.0)),
                 realized_price_pnl=float(raw.get("realized_price_pnl", 0.0)),
                 funding_paid=float(raw.get("funding_paid", 0.0)),
+                metadata=dict(raw.get("metadata") or {}),
             )
             self._positions[(entry.strategy_id, entry.symbol, entry.direction)] = entry
 
@@ -95,6 +99,7 @@ class PositionLifecycleLedger:
                 avg_entry=fill.fill_price,
                 entry_time=fill.timestamp,
                 entry_commission=fill.commission,
+                metadata=_fill_metadata(fill, "entry"),
             )
             return None
 
@@ -107,6 +112,7 @@ class PositionLifecycleLedger:
         existing.entry_commission += fill.commission
         if fill.timestamp < existing.entry_time:
             existing.entry_time = fill.timestamp
+        _merge_fill_metadata(existing.metadata, fill, "entry")
         return None
 
     def _apply_exit(
@@ -125,6 +131,7 @@ class PositionLifecycleLedger:
         position.exit_commission += fill.commission
         position.closed_qty += close_qty
         position.qty -= close_qty
+        _merge_fill_metadata(position.metadata, fill, "exit")
 
         if position.qty > 1e-12:
             return None
@@ -141,7 +148,7 @@ class PositionLifecycleLedger:
                 avg_exit_price = position.avg_entry - (
                     position.realized_price_pnl / position.closed_qty
                 )
-        return Trade(
+        trade = Trade(
             trade_id=f"live_{position.position_instance_id}:{int(fill.timestamp.timestamp() * 1000)}",
             symbol=position.symbol,
             direction=position.direction,
@@ -163,3 +170,36 @@ class PositionLifecycleLedger:
             mae_r=None,
             mfe_r=None,
         )
+        setattr(trade, "instrumentation_context", {
+            "position_instance_id": position.position_instance_id,
+            "entry_fill_ids": list(position.metadata.get("entry_fill_ids", [])),
+            "exit_fill_ids": list(position.metadata.get("exit_fill_ids", [])),
+            "entry_order_ids": list(position.metadata.get("entry_order_ids", [])),
+            "exit_order_ids": list(position.metadata.get("exit_order_ids", [])),
+        })
+        return trade
+
+
+def _fill_metadata(fill: Fill, role: str) -> dict[str, list[str]]:
+    metadata: dict[str, list[str]] = {
+        "entry_fill_ids": [],
+        "exit_fill_ids": [],
+        "entry_order_ids": [],
+        "exit_order_ids": [],
+    }
+    _merge_fill_metadata(metadata, fill, role)
+    return metadata
+
+
+def _merge_fill_metadata(metadata: dict[str, Any], fill: Fill, role: str) -> None:
+    role_key = "entry" if role == "entry" else "exit"
+    _append_unique(metadata.setdefault(f"{role_key}_fill_ids", []), fill_identity(fill))
+    order_ids = metadata.setdefault(f"{role_key}_order_ids", [])
+    for order_id in (fill.order_id, fill.exchange_order_id):
+        if order_id:
+            _append_unique(order_ids, str(order_id))
+
+
+def _append_unique(values: list[str], value: str) -> None:
+    if value and value not in values:
+        values.append(value)

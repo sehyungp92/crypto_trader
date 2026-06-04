@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, Callable
 
 import structlog
 
 from crypto_trader.core.broker import BrokerAdapter
 from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, Position, Side
+from crypto_trader.instrumentation.lineage import (
+    ALLOCATION_CONFIG_KEYS,
+    RISK_CONFIG_KEYS,
+    stable_hash,
+    subset_keys,
+)
 from crypto_trader.portfolio.manager import PortfolioManager
 
 log = structlog.get_logger()
@@ -33,14 +39,30 @@ class BrokerProxy:
         strategy_id: str,
         coordinator: "StrategyCoordinator | None" = None,
         use_manager_equity: bool = False,
+        event_callback: Callable[[str, dict], None] | None = None,
     ) -> None:
         self._broker = broker
         self._manager = manager
         self.strategy_id = strategy_id
         self._coordinator = coordinator
         self._use_manager_equity = use_manager_equity
+        self._event_callback = event_callback
+        self._decision_context = None
         self._broker_id_by_client_id: dict[str, str] = {}
         self._client_id_by_broker_id: dict[str, str] = {}
+
+    def begin_decision_context(self, context) -> None:
+        self._decision_context = context
+        begin_fn = getattr(self._broker, "begin_decision_context", None)
+        if callable(begin_fn):
+            begin_fn(context)
+
+    def end_decision_context(self, context) -> None:
+        end_fn = getattr(self._broker, "end_decision_context", None)
+        if callable(end_fn):
+            end_fn(context)
+        if self._decision_context is context:
+            self._decision_context = None
 
     def submit_order(self, order: Order) -> str:
         """Submit an order, intercepting entries for portfolio approval."""
@@ -50,8 +72,22 @@ class BrokerProxy:
         order.metadata["strategy_id"] = self.strategy_id
         if client_order_id:
             order.metadata.setdefault("client_order_id", client_order_id)
+        decision_context = self._decision_context
+        if decision_context is not None:
+            order.metadata.setdefault("decision_id", getattr(decision_context, "decision_id", ""))
+            metadata = getattr(decision_context, "metadata", {})
+            if isinstance(metadata, dict):
+                order.metadata.setdefault("bar_id", metadata.get("bar_id", ""))
+            decision_time = getattr(decision_context, "decision_time", None)
+            if hasattr(decision_time, "isoformat"):
+                decision_time = decision_time.isoformat()
+            order.metadata.setdefault("decision_time", decision_time)
 
         if order.tag == "entry":
+            order.metadata.setdefault(
+                "intent_id",
+                self._preview_intent_id(order, decision_context),
+            )
             direction = order.side
             risk_R = order.metadata.get("risk_R", 1.0)
 
@@ -60,6 +96,25 @@ class BrokerProxy:
                 symbol=order.symbol,
                 direction=direction,
                 new_risk_R=risk_R,
+            )
+            portfolio_rule_event_id = self._contextual_decision_event_id(
+                "portfolio_rule",
+                order,
+                result.rule_event_id,
+            )
+            risk_decision_id = self._contextual_decision_event_id(
+                "risk_decision",
+                order,
+                result.risk_decision_id,
+            )
+            order.metadata["portfolio_rule_event_id"] = portfolio_rule_event_id
+            order.metadata["risk_decision_id"] = risk_decision_id
+            order.metadata["rule_evaluation_id"] = result.rule_event_id
+            self._emit_portfolio_rule_event(
+                order,
+                result,
+                portfolio_rule_event_id=portfolio_rule_event_id,
+                risk_decision_id=risk_decision_id,
             )
 
             if not result.approved:
@@ -70,18 +125,44 @@ class BrokerProxy:
                     reason=result.denial_reason,
                 )
                 order.status = OrderStatus.REJECTED
+                if decision_context is not None:
+                    record_order = getattr(decision_context, "record_order", None)
+                    if callable(record_order):
+                        record_order()
+                self._emit_risk_decision_event(
+                    order,
+                    result,
+                    original_risk_R=risk_R,
+                    portfolio_rule_event_id=portfolio_rule_event_id,
+                    risk_decision_id=risk_decision_id,
+                )
+                self._emit_order_rejected_by_portfolio(
+                    order,
+                    result,
+                    portfolio_rule_event_id=portfolio_rule_event_id,
+                    risk_decision_id=risk_decision_id,
+                )
                 return order.order_id
 
             # Apply size multiplier from drawdown tiers
             if result.size_multiplier != 1.0:
+                order.metadata.setdefault("original_qty", order.qty)
                 order.qty = order.qty * result.size_multiplier
                 order.metadata["risk_R"] = risk_R * result.size_multiplier
+                order.metadata["portfolio_size_multiplier"] = result.size_multiplier
                 log.debug(
                     "portfolio.size_adjusted",
                     strategy=self.strategy_id,
                     multiplier=result.size_multiplier,
                     new_qty=order.qty,
                 )
+            self._emit_risk_decision_event(
+                order,
+                result,
+                original_risk_R=risk_R,
+                portfolio_rule_event_id=portfolio_rule_event_id,
+                risk_decision_id=risk_decision_id,
+            )
 
         result_id = self._broker.submit_order(order)
         visible_order_id = client_order_id or result_id
@@ -101,6 +182,182 @@ class BrokerProxy:
             self._client_id_by_broker_id[result_id] = client_order_id
 
         return visible_order_id
+
+    def _emit_portfolio_rule_event(
+        self,
+        order: Order,
+        result,
+        *,
+        portfolio_rule_event_id: str,
+        risk_decision_id: str,
+    ) -> None:
+        portfolio_config = self._portfolio_config_payload()
+        config_versions = self._portfolio_config_versions(portfolio_config)
+        payload = {
+            "event_type": "portfolio_rule",
+            "portfolio_rule_event_id": portfolio_rule_event_id,
+            "rule_event_id": portfolio_rule_event_id,
+            "risk_decision_id": risk_decision_id,
+            "rule_evaluation_id": result.rule_event_id,
+            "strategy_id": self.strategy_id,
+            "symbol": order.symbol,
+            "side": order.side.value,
+            "direction": order.side.value,
+            "decision_id": order.metadata.get("decision_id", ""),
+            "bar_id": order.metadata.get("bar_id", ""),
+            "intent_id": order.metadata.get("intent_id", ""),
+            "client_order_id": order.metadata.get("client_order_id", order.order_id),
+            "requested_risk_R": result.request.get("requested_risk_R"),
+            "approved": result.approved,
+            "action": self._risk_action(result),
+            "denial_reason": result.denial_reason,
+            "blocking_rule": result.blocking_rule,
+            "size_multiplier": result.size_multiplier,
+            "adjusted_risk_R": (result.request.get("requested_risk_R") or 0.0) * result.size_multiplier if result.approved else 0.0,
+            "rule_evaluations": list(result.rule_evaluations),
+            "evaluations": list(result.rule_evaluations),
+            "state_before": dict(result.state_before),
+            "state_after_preview": dict(result.state_after_preview),
+            "allocation": result.allocation,
+            "request": dict(result.request),
+            "portfolio_config": portfolio_config,
+            **config_versions,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self._emit_event("portfolio_rule", payload)
+
+    def _emit_risk_decision_event(
+        self,
+        order: Order,
+        result,
+        *,
+        original_risk_R: float,
+        portfolio_rule_event_id: str,
+        risk_decision_id: str,
+    ) -> None:
+        payload = {
+            "risk_decision_id": risk_decision_id,
+            "portfolio_rule_event_id": portfolio_rule_event_id,
+            "rule_evaluation_id": result.rule_event_id,
+            "strategy_id": self.strategy_id,
+            "symbol": order.symbol,
+            "side": order.side.value,
+            "direction": order.side.value,
+            "decision_id": order.metadata.get("decision_id", ""),
+            "bar_id": order.metadata.get("bar_id", ""),
+            "intent_id": order.metadata.get("intent_id", ""),
+            "order_id": order.metadata.get("client_order_id", order.order_id),
+            "client_order_id": order.metadata.get("client_order_id", order.order_id),
+            "approved": result.approved,
+            "action": self._risk_action(result),
+            "reason": result.denial_reason or "",
+            "original_risk_R": original_risk_R,
+            "effective_risk_R": order.metadata.get("risk_R", original_risk_R),
+            "requested_risk_R": original_risk_R,
+            "approved_risk_R": order.metadata.get("risk_R", original_risk_R) if result.approved else 0.0,
+            "original_qty": order.metadata.get("original_qty"),
+            "effective_qty": order.qty,
+            "requested_qty": order.metadata.get("original_qty", order.qty),
+            "approved_qty": order.qty if result.approved else 0.0,
+            "size_multiplier": result.size_multiplier,
+            "rule_event_id": portfolio_rule_event_id,
+            "portfolio_state_before": dict(result.state_before),
+            "portfolio_state_after_preview": dict(result.state_after_preview),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self._emit_event("risk_decision", payload)
+
+    @staticmethod
+    def _risk_action(result) -> str:
+        if not result.approved:
+            return "block"
+        if result.size_multiplier != 1.0:
+            return "scale"
+        return "allow"
+
+    def _emit_order_rejected_by_portfolio(
+        self,
+        order: Order,
+        result,
+        *,
+        portfolio_rule_event_id: str,
+        risk_decision_id: str,
+    ) -> None:
+        payload = {
+            "order_event_id": stable_hash({
+                "kind": "portfolio_reject",
+                "order_id": order.order_id,
+                "portfolio_rule_event_id": portfolio_rule_event_id,
+                "decision_id": order.metadata.get("decision_id", ""),
+                "intent_id": order.metadata.get("intent_id", ""),
+            }),
+            "event_kind": "rejected",
+            "rejection_stage": "portfolio_rule",
+            "strategy_id": self.strategy_id,
+            "symbol": order.symbol,
+            "side": order.side.value,
+            "client_order_id": order.metadata.get("client_order_id", order.order_id),
+            "decision_id": order.metadata.get("decision_id", ""),
+            "bar_id": order.metadata.get("bar_id", ""),
+            "intent_id": order.metadata.get("intent_id", ""),
+            "portfolio_rule_event_id": portfolio_rule_event_id,
+            "risk_decision_id": risk_decision_id,
+            "reject_reason": result.denial_reason,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        self._emit_event("order", payload)
+
+    def _preview_intent_id(self, order: Order, decision_context: object | None) -> str:
+        existing = str(order.metadata.get("intent_id") or "")
+        if existing:
+            return existing
+        decision_id = str(
+            order.metadata.get("decision_id")
+            or getattr(decision_context, "decision_id", "")
+            or "manual"
+        )
+        if decision_context is not None:
+            seq = int(getattr(decision_context, "order_count", 0) or 0) + 1
+            return f"{self.strategy_id}:{order.symbol}:{decision_id}:intent:{seq}"
+        client_order_id = str(order.metadata.get("client_order_id") or order.order_id or "")
+        if client_order_id:
+            return client_order_id
+        return f"{self.strategy_id}:{order.symbol}:{decision_id}:intent:1"
+
+    @staticmethod
+    def _contextual_decision_event_id(kind: str, order: Order, evaluation_id: str) -> str:
+        seed = {
+            "kind": kind,
+            "evaluation_id": evaluation_id,
+            "decision_id": order.metadata.get("decision_id", ""),
+            "bar_id": order.metadata.get("bar_id", ""),
+            "intent_id": order.metadata.get("intent_id", ""),
+            "client_order_id": order.metadata.get("client_order_id", order.order_id),
+        }
+        return stable_hash(seed)
+
+    def _portfolio_config_payload(self) -> dict:
+        config = getattr(self._manager, "config", None)
+        if config is None:
+            return {}
+        to_dict = getattr(config, "to_dict", None)
+        return to_dict() if callable(to_dict) else dict(getattr(config, "__dict__", {}))
+
+    @staticmethod
+    def _portfolio_config_versions(portfolio_config: dict) -> dict[str, str]:
+        return {
+            "portfolio_config_version": stable_hash(portfolio_config),
+            "risk_config_version": stable_hash(subset_keys(portfolio_config, RISK_CONFIG_KEYS)),
+            "allocation_version": stable_hash(subset_keys(portfolio_config, ALLOCATION_CONFIG_KEYS)),
+        }
+
+    def _emit_event(self, event_type: str, payload: dict) -> None:
+        if self._event_callback is None:
+            return
+        try:
+            self._event_callback(event_type, payload)
+        except Exception:
+            log.exception("portfolio.event_callback_failed", event_type=event_type)
 
     def _tracking_order_ids(self, result_id: str, visible_order_id: str, order: Order) -> list[str]:
         ids = [
@@ -208,9 +465,11 @@ class StrategyCoordinator:
         self,
         broker: BrokerAdapter,
         manager: PortfolioManager,
+        event_callback: Callable[[str, dict], None] | None = None,
     ) -> None:
         self._broker = broker
         self._manager = manager
+        self._event_callback = event_callback
         self._proxies: dict[str, BrokerProxy] = {}
         self._order_metadata: dict[str, dict] = {}
         self._order_owners: dict[str, str] = {}  # order_id → strategy_id
@@ -224,6 +483,7 @@ class StrategyCoordinator:
                 strategy_id=strategy_id,
                 coordinator=self,
                 use_manager_equity=use_manager_equity,
+                event_callback=self._event_callback,
             )
         elif use_manager_equity:
             self._proxies[strategy_id]._use_manager_equity = True

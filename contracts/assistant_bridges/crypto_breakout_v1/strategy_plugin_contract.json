@@ -1,0 +1,41 @@
+{
+  "schema_version": "strategy_plugin_contract_v1",
+  "bridge_id": "crypto_breakout_v1",
+  "source_strategy_id": "breakout",
+  "runtime_package": "crypto_trader",
+  "strategy_family": "crypto_perps",
+  "required_telemetry_schema": "trade_event_v1",
+  "assistant_event_schema": "assistant_event_v1",
+  "required_events": [
+    "deployment",
+    "config_snapshot",
+    "market_snapshot",
+    "decision_event",
+    "order",
+    "portfolio_rule",
+    "risk_decision",
+    "fill",
+    "trade",
+    "position_snapshot",
+    "portfolio_snapshot",
+    "allocation_snapshot",
+    "heartbeat"
+  ],
+  "required_join_keys": [
+    "deployment_id",
+    "config_version",
+    "decision_id",
+    "bar_id",
+    "intent_id",
+    "client_order_id",
+    "portfolio_rule_event_id",
+    "risk_decision_id"
+  ],
+  "validation_tests": [
+    "startup_config_and_deployment_metadata",
+    "decision_order_fill_trade_join",
+    "portfolio_rule_and_risk_decision_join",
+    "snapshot_startup_fill_reconciliation",
+    "sidecar_canonical_delivery"
+  ]
+}

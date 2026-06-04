@@ -34,8 +34,23 @@ def _event_net_pnl(event: InstrumentedTradeEvent) -> float:
 
 def _event_gross_price_pnl(event: InstrumentedTradeEvent) -> float:
     if _has_explicit_economics(event):
-        return event.price_pnl_gross
+        if event.price_pnl_gross != 0.0:
+            return event.price_pnl_gross
+        return event.realized_pnl_net + event.funding_paid + event.total_fees
     return event.pnl + event.commission
+
+
+def _event_total_fees(event: InstrumentedTradeEvent) -> float:
+    if _has_explicit_economics(event):
+        return event.total_fees
+    return event.commission
+
+
+def _event_realized_r(event: InstrumentedTradeEvent) -> float:
+    for value in (event.realized_r_net, event.r_multiple, event.geometric_r):
+        if value is not None:
+            return float(value)
+    return 0.0
 
 
 class DailyAggregator:
@@ -48,15 +63,19 @@ class DailyAggregator:
         self._bot_id = bot_id
         self._today_trades: list[InstrumentedTradeEvent] = []
         self._today_missed: list[MissedOpportunityEvent] = []
+        self._trades_by_date: defaultdict[str, list[InstrumentedTradeEvent]] = defaultdict(list)
+        self._missed_by_date: defaultdict[str, list[MissedOpportunityEvent]] = defaultdict(list)
         self._equity_history: list[tuple[datetime, float]] = []
         self._current_date: str = ""
 
     # --- Sink protocol methods ---
 
     def write_trade(self, event: InstrumentedTradeEvent) -> None:
+        self._trades_by_date[self._event_utc_date(event)].append(event)
         self._today_trades.append(event)
 
     def write_missed(self, event: MissedOpportunityEvent) -> None:
+        self._missed_by_date[self._event_utc_date(event)].append(event)
         self._today_missed.append(event)
 
     def write_daily(self, event: DailySnapshot) -> None:
@@ -71,34 +90,41 @@ class DailyAggregator:
     def write_health_report(self, event: HealthReportSnapshot) -> None:
         pass  # Not tracked by daily aggregator
 
+    def write_event(self, event_type: str, event) -> None:
+        pass  # Generic assistant events are not part of daily trade aggregation
+
     # --- Legacy convenience aliases ---
 
     def record_trade(self, event: InstrumentedTradeEvent) -> None:
-        self._today_trades.append(event)
+        self.write_trade(event)
 
     def record_missed(self, event: MissedOpportunityEvent) -> None:
-        self._today_missed.append(event)
+        self.write_missed(event)
 
     def record_equity(self, timestamp: datetime, equity: float) -> None:
         self._equity_history.append((timestamp, equity))
 
     def compute_snapshot(self, date_str: str) -> DailySnapshot:
-        """Build a DailySnapshot from today's accumulated events."""
-        trades = self._today_trades
+        """Build a DailySnapshot from events whose exchange timestamp is on date_str."""
+        trades = list(self._trades_by_date.pop(date_str, []))
+        missed_for_date = list(self._missed_by_date.pop(date_str, []))
         missed = list({
-            event.metadata.event_id: event
-            for event in self._today_missed
+            (event.logical_event_id or event.opportunity_id or event.metadata.event_id): event
+            for event in missed_for_date
         }.values())
 
         win_count = sum(1 for t in trades if _event_net_pnl(t) > 0)
         loss_count = sum(1 for t in trades if _event_net_pnl(t) <= 0)
         gross_pnl = sum(_event_gross_price_pnl(t) for t in trades)
         net_pnl = sum(_event_net_pnl(t) for t in trades)
+        total_fees = sum(_event_total_fees(t) for t in trades)
+        funding_paid = sum(t.funding_paid for t in trades)
+        realized_R = sum(_event_realized_r(t) for t in trades)
 
         # Max drawdown from equity history
         max_dd = 0.0
         peak = 0.0
-        for _, eq in self._equity_history:
+        for _, eq in self._equity_for_date(date_str):
             if eq > peak:
                 peak = eq
             if peak > 0:
@@ -122,11 +148,27 @@ class DailyAggregator:
         )
 
         # Per-strategy summary
-        per_strat: dict[str, dict] = defaultdict(lambda: {"trades": 0, "pnl": 0.0})
+        per_strat: dict[str, dict] = defaultdict(
+            lambda: {
+                "trades": 0,
+                "pnl": 0.0,
+                "gross_pnl": 0.0,
+                "net_pnl": 0.0,
+                "fees": 0.0,
+                "funding": 0.0,
+                "realized_R": 0.0,
+            }
+        )
         for t in trades:
             sid = t.metadata.strategy_id
             per_strat[sid]["trades"] += 1
-            per_strat[sid]["pnl"] += _event_net_pnl(t)
+            trade_net_pnl = _event_net_pnl(t)
+            per_strat[sid]["gross_pnl"] += _event_gross_price_pnl(t)
+            per_strat[sid]["pnl"] += trade_net_pnl
+            per_strat[sid]["net_pnl"] += trade_net_pnl
+            per_strat[sid]["fees"] += _event_total_fees(t)
+            per_strat[sid]["funding"] += t.funding_paid
+            per_strat[sid]["realized_R"] += _event_realized_r(t)
 
         # Rolling metrics placeholder (need 30d equity history for proper calc)
         sharpe_30d = self._rolling_sharpe(30)
@@ -158,13 +200,43 @@ class DailyAggregator:
             avg_process_quality=avg_quality,
             root_cause_distribution=dict(rc_dist),
             per_strategy_summary=dict(per_strat),
+            family_summary={
+                "family_level_trades": len(trades),
+                "gross_pnl": gross_pnl,
+                "net_pnl": net_pnl,
+                "fees": total_fees,
+                "funding": funding_paid,
+                "realized_R": realized_R,
+            },
         )
 
-        # Reset daily accumulators
-        self._today_trades = []
-        self._today_missed = []
+        # Keep newer-day events buffered if closeout runs late or races ingestion.
+        self._today_trades = [
+            event for event in self._today_trades
+            if self._event_utc_date(event) != date_str
+        ]
+        self._today_missed = [
+            event for event in self._today_missed
+            if self._event_utc_date(event) != date_str
+        ]
 
         return snapshot
+
+    @staticmethod
+    def _event_utc_date(event: InstrumentedTradeEvent | MissedOpportunityEvent) -> str:
+        timestamp = event.metadata.exchange_timestamp
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        return timestamp.astimezone(timezone.utc).date().isoformat()
+
+    def _equity_for_date(self, date_str: str) -> list[tuple[datetime, float]]:
+        return [
+            (timestamp, equity)
+            for timestamp, equity in self._equity_history
+            if (
+                timestamp if timestamp.tzinfo else timestamp.replace(tzinfo=timezone.utc)
+            ).astimezone(timezone.utc).date().isoformat() == date_str
+        ]
 
     def _rolling_sharpe(self, days: int) -> float:
         """Compute rolling Sharpe from equity history."""

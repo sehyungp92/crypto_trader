@@ -9,7 +9,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from crypto_trader.core.events import PositionClosedEvent
-from crypto_trader.core.models import SetupGrade, Side, Trade
+from crypto_trader.core.models import Bar, Fill, Order, OrderType, Position, SetupGrade, Side, TimeFrame, Trade
+from crypto_trader.core.runtime_types import OrderIntent
 from crypto_trader.strategy.momentum.config import MomentumConfig
 from crypto_trader.strategy.momentum.strategy import MomentumStrategy, _PositionMeta
 
@@ -77,3 +78,169 @@ class TestMomentumStrategyClosePath:
             trade.net_pnl,
             trade.exit_time,
         )
+
+
+class TestMomentumManagementOrderIds:
+    def test_protective_stop_uses_deterministic_nonblank_id_without_decision_context(self):
+        strategy = MomentumStrategy(MomentumConfig(symbols=["BTC"]))
+        ctx = _make_ctx()
+        ctx.broker.submit_order.side_effect = lambda order: order.order_id
+        strategy.on_init(ctx)
+        strategy._position_meta["BTC"] = _PositionMeta(stop_level=49_500.0)
+        fill = Fill(
+            order_id="entry_1",
+            exchange_order_id="ex_entry_1",
+            exchange_fill_id="fill_1",
+            symbol="BTC",
+            side=Side.LONG,
+            qty=0.2,
+            fill_price=50_000.0,
+            commission=0.0,
+            timestamp=datetime(2026, 5, 31, 12, 0, tzinfo=timezone.utc),
+            tag="entry",
+        )
+
+        strategy.on_fill(fill, ctx)
+        submitted = ctx.broker.submit_order.call_args.args[0]
+        intent = OrderIntent.from_order(submitted)
+
+        assert submitted.order_id.startswith("mom_stop_BTC_")
+        assert submitted.order_id != "momentum:BTC:manual:intent:1"
+        assert intent.client_order_id == submitted.order_id
+        assert intent.intent_id == submitted.order_id
+        assert strategy._management_order_id("stop", "BTC", {
+            "fill_id": "fill_1",
+            "order_id": "entry_1",
+            "timestamp": "2026-05-31T12:00:00+00:00",
+            "side": "LONG",
+            "qty": 0.2,
+            "stop_price": 49_500.0,
+        }) == submitted.order_id
+
+    def test_tp_replacement_and_trailing_stops_use_distinct_deterministic_ids(self):
+        strategy = MomentumStrategy(MomentumConfig(symbols=["BTC"]))
+        ctx = _make_ctx()
+        submitted: list[Order] = []
+        ctx.broker.submit_order.side_effect = lambda order: submitted.append(order) or order.order_id
+        ctx.broker.cancel_order.return_value = True
+        strategy.on_init(ctx)
+        strategy._position_meta["BTC"] = _PositionMeta(
+            confirmation_type="engulfing",
+            entry_price=50_000.0,
+            stop_level=49_500.0,
+            stop_distance=500.0,
+            entry_bar_index=1,
+        )
+
+        state = SimpleNamespace(
+            current_stop_order_id="old_stop",
+            current_stop_price=49_500.0,
+            current_stop_tag="protective_stop",
+            remaining_qty=0.1,
+            be_moved=False,
+            mfe_r=1.2,
+        )
+        strategy._exit_manager.get_state = MagicMock(return_value=state)
+        fill = Fill(
+            order_id="tp_1",
+            exchange_order_id="ex_tp_1",
+            exchange_fill_id="fill_tp_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            qty=0.1,
+            fill_price=51_000.0,
+            commission=0.0,
+            timestamp=datetime(2026, 5, 31, 13, 0, tzinfo=timezone.utc),
+            tag="tp1",
+        )
+
+        strategy.on_fill(fill, ctx)
+        tp_stop_id = submitted[-1].order_id
+
+        strategy._exit_manager.manage = MagicMock(return_value=[])
+        strategy._trail_manager.update = MagicMock(return_value=50_500.0)
+        strategy._m15_bar_count["BTC"] = 4
+        ctx.broker.get_positions.return_value = [Position("BTC", Side.LONG, 0.1, 50_000.0)]
+        ctx.broker.get_open_orders.return_value = [
+            Order(tp_stop_id, "BTC", Side.SHORT, OrderType.STOP, 0.1, stop_price=49_500.0)
+        ]
+        bar = Bar(
+            timestamp=datetime(2026, 5, 31, 13, 15, tzinfo=timezone.utc),
+            symbol="BTC",
+            open=50_900.0,
+            high=51_100.0,
+            low=50_800.0,
+            close=51_000.0,
+            volume=10.0,
+            timeframe=TimeFrame.M15,
+        )
+
+        strategy._manage_positions(bar, ctx, [bar], MagicMock())
+        trailing_stop_id = submitted[-1].order_id
+
+        assert tp_stop_id.startswith("mom_stop_BTC_")
+        assert trailing_stop_id.startswith("mom_trail_BTC_")
+        assert tp_stop_id != trailing_stop_id
+        assert "manual:intent:1" not in tp_stop_id
+        assert "manual:intent:1" not in trailing_stop_id
+
+    def test_exit_manager_blank_orders_get_deterministic_ids_before_submit(self):
+        strategy = MomentumStrategy(MomentumConfig(symbols=["BTC"]))
+        ctx = _make_ctx()
+        submitted: list[Order] = []
+        ctx.broker.submit_order.side_effect = lambda order: submitted.append(order) or order.order_id
+        ctx.broker.get_positions.return_value = [Position("BTC", Side.LONG, 0.1, 50_000.0)]
+        ctx.broker.get_open_orders.return_value = []
+        strategy.on_init(ctx)
+        strategy._position_meta["BTC"] = _PositionMeta(
+            confirmation_type="engulfing",
+            entry_price=50_000.0,
+            stop_level=49_500.0,
+            stop_distance=500.0,
+            entry_bar_index=1,
+        )
+        state = SimpleNamespace(
+            entry_price=50_000.0,
+            stop_distance=500.0,
+            remaining_qty=0.1,
+            bars_since_entry=4,
+            mfe_r=1.5,
+            mae_r=-0.2,
+            current_stop_order_id="old_stop",
+            current_stop_price=49_500.0,
+            current_stop_tag="protective_stop",
+            tp1_hit=False,
+            tp2_hit=False,
+            be_moved=False,
+            proof_lock_moved=False,
+        )
+        strategy._exit_manager.manage = MagicMock(return_value=[
+            Order("", "BTC", Side.SHORT, OrderType.MARKET, 0.03, tag="tp1"),
+            Order("", "BTC", Side.SHORT, OrderType.STOP, 0.07, stop_price=50_000.0, tag="breakeven_stop"),
+        ])
+        strategy._exit_manager.get_state = MagicMock(return_value=state)
+        strategy._trail_manager.update = MagicMock(return_value=None)
+        strategy._m15_bar_count["BTC"] = 5
+        bar = Bar(
+            timestamp=datetime(2026, 5, 31, 14, 0, tzinfo=timezone.utc),
+            symbol="BTC",
+            open=50_900.0,
+            high=51_100.0,
+            low=50_800.0,
+            close=51_000.0,
+            volume=10.0,
+            timeframe=TimeFrame.M15,
+        )
+
+        strategy._manage_positions(bar, ctx, [bar], MagicMock())
+
+        assert [order.order_id.split("_", 2)[:2] for order in submitted] == [
+            ["mom", "tp1"],
+            ["mom", "breakeven"],
+        ]
+        assert len({order.order_id for order in submitted}) == 2
+        for order in submitted:
+            intent = OrderIntent.from_order(order)
+            assert intent.client_order_id == order.order_id
+            assert intent.intent_id == order.order_id
+            assert "manual:intent:1" not in order.order_id

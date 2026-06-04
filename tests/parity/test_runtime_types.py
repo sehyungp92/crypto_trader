@@ -87,10 +87,12 @@ def test_decision_event_serializes_context() -> None:
         decision_key="momentum|BTC|2026-05-24T12:00",
         action="enter",
         signal_context={"grade": "A"},
+        metadata={"bar_id": "bar-1"},
     )
 
     assert event.to_dict()["signal_context"] == {"grade": "A"}
     assert event.to_dict()["timeframe"] == "15m"
+    assert event.to_dict()["bar_id"] == "bar-1"
 
 
 def test_order_intent_preserves_existing_order_enums() -> None:
@@ -139,6 +141,32 @@ def test_order_intent_from_order_attaches_decision_context() -> None:
     assert intent.intent_id == "momentum:BTC:d1:intent:1"
     assert intent.metadata["tag"] == "entry"
     assert intent.risk_metadata["risk_R"] == pytest.approx(0.7)
+
+
+def test_order_intent_from_order_prefers_context_identity_over_client_order_id() -> None:
+    context = DecisionContext(
+        decision_id="d1",
+        strategy_id="trend",
+        symbol="BTC",
+        timeframe=TimeFrame.M15,
+        decision_time=_ts(),
+        decision_key="k1",
+    )
+    order = Order(
+        order_id="trend_entry_BTC_random1234",
+        symbol="BTC",
+        side=Side.LONG,
+        order_type=OrderType.MARKET,
+        qty=0.1,
+        tag="entry",
+        metadata={"client_order_id": "trend_entry_BTC_random1234"},
+    )
+
+    intent = OrderIntent.from_order(order, context)
+
+    assert intent.client_order_id == "trend_entry_BTC_random1234"
+    assert intent.intent_id == "trend:BTC:d1:intent:1"
+    assert intent.intent_id != intent.client_order_id
 
 
 def test_execution_report_serializes_lifecycle_shapes() -> None:

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 
 from crypto_trader.backtest.config import BacktestConfig
 from crypto_trader.core.events import PositionClosedEvent
-from crypto_trader.core.models import Bar, Fill, SetupGrade, Side, TimeFrame, Trade
+from crypto_trader.core.models import Bar, Fill, Order, OrderType, Position, SetupGrade, Side, TimeFrame, Trade
+from crypto_trader.core.runtime_types import OrderIntent
 from crypto_trader.strategy.breakout.balance import BalanceZone
 from crypto_trader.strategy.breakout.config import BreakoutConfig
 from crypto_trader.strategy.breakout.confirmation import BreakoutConfirmation
@@ -257,6 +259,61 @@ class TestBreakoutStrategyBehavior:
         bar = _make_bar(sym="BTC", tf=TimeFrame.D1)
         ctx = _MockCtx()
         s.on_bar(bar, ctx)
+
+    def test_exit_manager_blank_orders_get_deterministic_ids_before_submit(self):
+        s = self._init_strategy()
+        ctx = _MockCtx()
+        submitted: list[Order] = []
+        ctx.broker = MagicMock()
+        ctx.broker.get_position.return_value = Position("BTC", Side.LONG, 0.1, 100.0)
+        ctx.broker.get_open_orders.return_value = []
+        ctx.broker.submit_order.side_effect = lambda order: submitted.append(order) or order.order_id
+        ctx.broker.cancel_order.return_value = True
+        s._position_meta["BTC"] = _PositionMeta(
+            entry_price=100.0,
+            stop_level=98.0,
+            stop_distance=2.0,
+            original_qty=0.1,
+            entry_bar_index=1,
+        )
+        state = SimpleNamespace(
+            direction=Side.LONG,
+            entry_price=100.0,
+            stop_distance=2.0,
+            remaining_qty=0.05,
+            bars_since_entry=3,
+            current_r=1.2,
+            mfe_r=1.5,
+            mae_r=-0.1,
+            peak_r=1.5,
+            tp1_hit=True,
+            tp2_hit=False,
+            be_moved=False,
+            early_lock_applied=False,
+        )
+        s._exit_manager.process_bar = MagicMock(return_value=[
+            Order("", "BTC", Side.SHORT, OrderType.MARKET, 0.03, tag="tp1"),
+            Order("", "BTC", Side.SHORT, OrderType.MARKET, 0.02, tag="time_stop"),
+            Order("", "BTC", Side.SHORT, OrderType.MARKET, 0.05, tag="invalidation"),
+        ])
+        s._exit_manager.get_state = MagicMock(return_value=state)
+        s._trail_manager.update = MagicMock(return_value=None)
+        s._m30_bar_count["BTC"] = 4
+        bar = _make_bar(ts=datetime(2026, 5, 31, 12, 30, tzinfo=timezone.utc))
+
+        s._manage_positions(bar, "BTC", ctx, [bar], _make_indicator())
+
+        assert [order.order_id.split("_", 2)[:2] for order in submitted] == [
+            ["brk", "tp1"],
+            ["brk", "time"],
+            ["brk", "invalidation"],
+        ]
+        assert len({order.order_id for order in submitted}) == 3
+        for order in submitted:
+            intent = OrderIntent.from_order(order)
+            assert intent.client_order_id == order.order_id
+            assert intent.intent_id == order.order_id
+            assert "manual:intent:1" not in order.order_id
 
     def test_warmup_gate(self):
         """M30 bars before WARMUP_BARS don't trigger entries."""

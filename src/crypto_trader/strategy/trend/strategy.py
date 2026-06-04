@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -22,6 +21,7 @@ from crypto_trader.core.models import (
     TimeFrame,
     Trade,
 )
+from crypto_trader.instrumentation.lineage import stable_hash
 from crypto_trader.strategy.momentum.indicators import (
     IncrementalIndicators,
     IndicatorSnapshot,
@@ -145,6 +145,16 @@ class TrendStrategy:
     @property
     def journal(self) -> TradeJournal:
         return self._journal
+
+    @staticmethod
+    def _management_order_id(purpose: str, symbol: str, seed: dict[str, object]) -> str:
+        order_seed = {
+            "strategy": "trend",
+            "purpose": purpose,
+            "symbol": symbol,
+            **seed,
+        }
+        return f"trend_{purpose}_{symbol}_{stable_hash(order_seed, length=8)}"
 
     def snapshot_state(self) -> dict:
         return {
@@ -591,7 +601,15 @@ class TrendStrategy:
             return
 
         # --- Entry order ---
-        order_id = f"trend_entry_{sym}_{uuid.uuid4().hex[:8]}"
+        order_seed = {
+            "symbol": sym,
+            "timeframe": bar.timeframe.value,
+            "bar_timestamp": bar.timestamp.isoformat(),
+            "direction": setup.direction.value,
+            "grade": setup.grade.value,
+            "is_reentry": is_reentry,
+        }
+        order_id = f"trend_entry_{sym}_{stable_hash(order_seed, length=8)}"
         entry_order = self._entry_generator.generate(
             bar=bar,
             direction=setup.direction,
@@ -792,7 +810,14 @@ class TrendStrategy:
                     cancelled = ctx.broker.cancel_order(meta.stop_order_id)
                     if not cancelled:
                         log.warning("strategy.cancel_failed", symbol=sym, order_id=meta.stop_order_id, context="smart_be")
-                    new_stop_id = f"trend_be_{sym}_{uuid.uuid4().hex[:8]}"
+                    new_stop_id = self._management_order_id("be", sym, {
+                        "bar_timestamp": bar.timestamp.isoformat(),
+                        "timeframe": bar.timeframe.value,
+                        "direction": exit_state.direction.value,
+                        "qty": remaining_qty,
+                        "stop_price": be_price,
+                        "previous_stop_order_id": meta.stop_order_id,
+                    })
                     reverse_side = Side.SHORT if exit_state.direction == Side.LONG else Side.LONG
                     be_order = Order(
                         order_id=new_stop_id,
@@ -826,7 +851,15 @@ class TrendStrategy:
                 cancelled = ctx.broker.cancel_order(meta.stop_order_id)
                 if not cancelled:
                     log.warning("strategy.cancel_failed", symbol=sym, order_id=meta.stop_order_id, context="trail_resubmit")
-                new_stop_id = f"trend_trail_{sym}_{uuid.uuid4().hex[:8]}"
+                new_stop_id = self._management_order_id("trail", sym, {
+                    "bar_timestamp": bar.timestamp.isoformat(),
+                    "timeframe": bar.timeframe.value,
+                    "direction": exit_state.direction.value,
+                    "qty": remaining_qty,
+                    "stop_price": new_stop,
+                    "previous_stop_order_id": meta.stop_order_id,
+                    "bars_since_entry": bars_since,
+                })
                 reverse_side = Side.SHORT if exit_state.direction == Side.LONG else Side.LONG
                 trail_order = Order(
                     order_id=new_stop_id,
@@ -870,7 +903,14 @@ class TrendStrategy:
 
         # Submit protective stop
         reverse_side = Side.SHORT if fill.side == Side.LONG else Side.LONG
-        stop_id = f"trend_stop_{sym}_{uuid.uuid4().hex[:8]}"
+        stop_id = self._management_order_id("stop", sym, {
+            "fill_id": fill.exchange_fill_id or fill.order_id,
+            "order_id": fill.order_id,
+            "timestamp": fill.timestamp.isoformat(),
+            "side": fill.side.value,
+            "qty": meta.original_qty,
+            "stop_price": meta.stop_level,
+        })
         stop_order = Order(
             order_id=stop_id,
             symbol=sym,
@@ -930,7 +970,15 @@ class TrendStrategy:
             if be is not None:
                 stop_price = be
 
-        new_stop_id = f"trend_stop_{sym}_{uuid.uuid4().hex[:8]}"
+        new_stop_id = self._management_order_id("stop", sym, {
+            "fill_id": fill.exchange_fill_id or fill.order_id,
+            "order_id": fill.order_id,
+            "timestamp": fill.timestamp.isoformat(),
+            "side": fill.side.value,
+            "qty": remaining_qty,
+            "stop_price": stop_price,
+            "previous_stop_order_id": meta.stop_order_id,
+        })
         # fill.side is the exit side (opposite of position direction) —
         # the protective stop uses the same side to close the remainder
         stop_order = Order(
