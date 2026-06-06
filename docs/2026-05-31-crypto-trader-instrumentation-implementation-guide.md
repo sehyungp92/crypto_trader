@@ -2236,7 +2236,7 @@ Use the status commands:
 ```bash
 python -m crypto_trader.cli status --state-dir data/live_state
 python -m crypto_trader.cli parity-report --state-dir data/live_state
-python -m crypto_trader.cli parity-gate path/to/parity_report.json
+python -m crypto_trader.cli parity-gate --report path/to/parity_report.json
 ```
 
 ## 12. Acceptance Matrix And Finite Checklist
@@ -2629,3 +2629,83 @@ Priority order:
 
 Once those are done, `crypto_trader` can serve as production-truth telemetry
 for both strategy-level and portfolio-level learning in the new target state.
+
+## 18. Live Hardening Operator Addendum
+
+This addendum records the live hardening gates added after the original
+instrumentation plan: OCA/OCO exit grouping, strategy ownership allocation, and
+async PostgreSQL observability. JSONL remains the local durable recovery source;
+PostgreSQL is optional operator storage.
+
+### Startup Gates
+
+Native OCA is not claimed for Hyperliquid unless the live adapter proves native
+group submit, fill-triggered sibling cancellation, and open-order rehydration.
+The current production-safe path is broker-managed fallback:
+
+- `HyperliquidExecutionAdapter.capabilities.oca` remains `False`.
+- Strategy exits are still stamped with stable OCA group metadata, reduce-only,
+  and exit-only flags.
+- If `require_native_oca=true`, startup emits
+  `native_oca_required_but_unavailable` and blocks strict/mainnet operation.
+- For paper or explicitly accepted fallback operation, leave
+  `require_native_oca=false` and monitor OCA lifecycle/cancellation events.
+
+Do not treat broker-managed OCA as venue-native protection. It cannot close the
+offline/process-failure race because sibling cancellation depends on the bot
+observing the fill.
+
+Live exchange net exposure and strategy ownership are separate read models.
+Startup and reconciliation compare exchange net quantity with summed strategy
+allocations:
+
+- matched allocations continue normally;
+- unknown or residual exposure is emitted as explicit ownership drift;
+- strict/mainnet operation freezes the affected symbol until the residual is
+  resolved or intentionally corrected.
+
+PostgreSQL writes run through the bounded async sink when enabled. Trading and
+JSONL emission are fail-open, while queue size, dropped events, failed writes,
+and last error are surfaced through health payloads and the dashboard.
+
+### Recovery Procedures
+
+For OCA startup inconsistency:
+
+1. Inspect open exchange orders and OMS rows for the affected symbol.
+2. Confirm each grouped exit has the same strategy-scoped `oca_group`,
+   `oca_root`, owner strategy, and reduce-only/exit-only metadata.
+3. Cancel stale or orphaned exit orders before unfreezing the symbol.
+4. Restart and verify OCA lifecycle events no longer report an inconsistent
+   group.
+
+For unknown allocation:
+
+1. Inspect exchange net exposure for the symbol.
+2. Compare it with `position_allocation_snapshot` events and lifecycle entries.
+3. If the exposure is legitimately owned, record an admin allocation correction
+   with the strategy, position instance, quantity, and audit reason.
+4. If the exposure is not owned, reduce or close it through the operator trading
+   procedure, then restart/reconcile and confirm residual drift is zero.
+
+After a PostgreSQL outage or async sink failure, replay local JSONL files into
+PostgreSQL idempotently:
+
+```powershell
+python scripts/backfill_postgres_from_jsonl.py --postgres-dsn $env:POSTGRES_DSN --state-dir data/live_state
+```
+
+Run the audit-relevant suite before enabling strict/mainnet operation:
+
+```powershell
+python -m pytest tests/live tests/portfolio tests/instrumentation tests/parity -q
+python -m compileall -q src/crypto_trader tests
+```
+
+For the dashboard:
+
+```powershell
+cd infra/dashboard
+npm install
+npm run build
+```

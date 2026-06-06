@@ -10,6 +10,12 @@ import structlog
 
 from crypto_trader.core.broker import BrokerAdapter
 from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, Position, Side
+from crypto_trader.core.order_semantics import (
+    entry_position_instance_id,
+    is_entry_order,
+    is_exit_order,
+    stamp_exit_order_oca,
+)
 from crypto_trader.instrumentation.lineage import (
     ALLOCATION_CONFIG_KEYS,
     RISK_CONFIG_KEYS,
@@ -83,7 +89,30 @@ class BrokerProxy:
                 decision_time = decision_time.isoformat()
             order.metadata.setdefault("decision_time", decision_time)
 
-        if order.tag == "entry":
+        order.metadata.setdefault("order_qty", order.qty)
+        if is_exit_order(order):
+            stamp_exit_order_oca(
+                order,
+                strategy_id=self.strategy_id,
+                position_instance_id=self._stable_exit_position_instance_id(order),
+                entry_root_id=self._stable_exit_root(order),
+                native_oca_required=False,
+            )
+            invalid_oca_reason = str(order.metadata.get("oca_group_invalid_reason") or "")
+            if invalid_oca_reason:
+                order.status = OrderStatus.REJECTED
+                canonical_recorded = self._record_order_contract_rejection(
+                    order,
+                    reject_reason=invalid_oca_reason,
+                    metadata={"rejection_stage": "order_semantics"},
+                )
+                if decision_context is not None and not canonical_recorded:
+                    record_order = getattr(decision_context, "record_order", None)
+                    if callable(record_order):
+                        record_order()
+                return order.order_id
+
+        if is_entry_order(order):
             order.metadata.setdefault(
                 "intent_id",
                 self._preview_intent_id(order, decision_context),
@@ -125,7 +154,13 @@ class BrokerProxy:
                     reason=result.denial_reason,
                 )
                 order.status = OrderStatus.REJECTED
-                if decision_context is not None:
+                canonical_recorded = self._record_portfolio_rejection(
+                    order,
+                    result,
+                    portfolio_rule_event_id=portfolio_rule_event_id,
+                    risk_decision_id=risk_decision_id,
+                )
+                if decision_context is not None and not canonical_recorded:
                     record_order = getattr(decision_context, "record_order", None)
                     if callable(record_order):
                         record_order()
@@ -149,6 +184,7 @@ class BrokerProxy:
                 order.metadata.setdefault("original_qty", order.qty)
                 order.qty = order.qty * result.size_multiplier
                 order.metadata["risk_R"] = risk_R * result.size_multiplier
+                order.metadata["order_qty"] = order.qty
                 order.metadata["portfolio_size_multiplier"] = result.size_multiplier
                 log.debug(
                     "portfolio.size_adjusted",
@@ -182,6 +218,89 @@ class BrokerProxy:
             self._client_id_by_broker_id[result_id] = client_order_id
 
         return visible_order_id
+
+    def _record_portfolio_rejection(
+        self,
+        order: Order,
+        result,
+        *,
+        portfolio_rule_event_id: str,
+        risk_decision_id: str,
+    ) -> bool:
+        if getattr(type(self._broker), "record_rejected_order", None) is None:
+            return False
+        record_fn = getattr(self._broker, "record_rejected_order", None)
+        if not callable(record_fn):
+            return False
+        try:
+            record_fn(
+                order,
+                reject_reason=result.denial_reason or "portfolio_rule_rejected",
+                metadata={
+                    "rejection_stage": "portfolio_rule",
+                    "blocking_rule": result.blocking_rule,
+                    "portfolio_rule_event_id": portfolio_rule_event_id,
+                    "risk_decision_id": risk_decision_id,
+                    "rule_evaluation_id": result.rule_event_id,
+                },
+            )
+            return True
+        except Exception:
+            log.exception("portfolio.canonical_rejection_record_failed")
+            return False
+
+    def _record_order_contract_rejection(
+        self,
+        order: Order,
+        *,
+        reject_reason: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> bool:
+        record_fn = getattr(self._broker, "record_rejected_order", None)
+        if not callable(record_fn):
+            return False
+        try:
+            record_fn(
+                order,
+                reject_reason=reject_reason,
+                metadata={
+                    "strategy_id": self.strategy_id,
+                    **dict(metadata or {}),
+                },
+            )
+            return True
+        except Exception:
+            log.exception("portfolio.contract_rejection_record_failed")
+            return False
+
+    def _stable_exit_root(self, order: Order) -> str:
+        for key in ("position_instance_id", "entry_root_id", "entry_intent_id"):
+            value = str(order.metadata.get(key) or "")
+            if value:
+                return value
+        for risk in getattr(self._manager.state, "open_risks", []):
+            if risk.strategy_id != self.strategy_id or risk.symbol != order.symbol:
+                continue
+            for value in (
+                risk.position_instance_id,
+                risk.risk_id,
+                risk.intent_id,
+                risk.client_order_id,
+                risk.order_id,
+                risk.exchange_order_id,
+            ):
+                if value:
+                    return str(value)
+        return ""
+
+    def _stable_exit_position_instance_id(self, order: Order) -> str:
+        value = str(order.metadata.get("position_instance_id") or "")
+        if value:
+            return value
+        for risk in getattr(self._manager.state, "open_risks", []):
+            if risk.strategy_id == self.strategy_id and risk.symbol == order.symbol:
+                return str(risk.position_instance_id or "")
+        return ""
 
     def _emit_portfolio_rule_event(
         self,
@@ -503,6 +622,10 @@ class StrategyCoordinator:
             else dict(self._order_metadata.get(order_id, {}))
         )
         metadata.setdefault("strategy_id", strategy_id)
+        if order is not None:
+            metadata.setdefault("order_qty", order.qty)
+            metadata.setdefault("order_id", order.order_id)
+            metadata.setdefault("client_order_id", order.metadata.get("client_order_id", order.order_id))
         self._order_metadata[order_id] = metadata
 
     def get_strategy_for_order(self, order_id: str) -> str | None:
@@ -532,13 +655,32 @@ class StrategyCoordinator:
             return None
 
         if fill.tag == "entry":
-            risk_R = self._get_fill_risk_R(fill)
+            metadata = self._order_metadata_for_fill(fill)
+            risk_R = self._get_fill_risk_R(fill, metadata)
+            order_qty = _float_or_default(
+                metadata.get("order_qty") or metadata.get("original_qty"),
+                0.0,
+            )
+            risk_id = self._fill_risk_id(fill, metadata)
             self._manager.register_entry(
                 strategy_id=strategy_id,
                 symbol=fill.symbol,
                 direction=fill.side,
                 risk_R=risk_R,
                 entry_time=fill.timestamp,
+                risk_id=risk_id,
+                position_instance_id=str(
+                    metadata.get("position_instance_id")
+                    or fill.raw.get("position_instance_id")
+                    or entry_position_instance_id(strategy_id, fill.symbol, fill.side, fill.timestamp)
+                ),
+                intent_id=str(metadata.get("intent_id") or ""),
+                client_order_id=str(metadata.get("client_order_id") or ""),
+                order_id=str(metadata.get("order_id") or fill.order_id),
+                exchange_order_id=fill.exchange_order_id,
+                order_qty=order_qty,
+                fill_qty=fill.qty,
+                fill_id=_fill_ledger_id(fill),
             )
 
         return strategy_id
@@ -548,26 +690,100 @@ class StrategyCoordinator:
         strategy_id: str,
         symbol: str,
         pnl_R: float,
+        *,
+        trade: Any | None = None,
+        risk_id: str = "",
+        order_refs: set[str] | None = None,
     ) -> None:
         """Called when a complete trade (round-trip) closes."""
+        refs = set(order_refs or set())
+        refs.update(_trade_order_refs(trade))
         self._manager.register_exit(
             strategy_id=strategy_id,
             symbol=symbol,
             pnl_R=pnl_R,
+            risk_id=risk_id,
+            order_refs=refs or None,
         )
 
-    def _get_fill_risk_R(self, fill: Fill) -> float:
+    def _get_fill_risk_R(self, fill: Fill, metadata: dict | None = None) -> float:
         """Extract risk_R from the order that generated a fill."""
+        metadata = metadata if metadata is not None else self._order_metadata_for_fill(fill)
+        risk_R = _float_or_default(metadata.get("risk_R"), 1.0)
+        order_qty = _float_or_default(
+            metadata.get("order_qty") or metadata.get("original_qty"),
+            0.0,
+        )
+        if order_qty > 0:
+            return round(risk_R * min(max(fill.qty, 0.0), order_qty) / order_qty, 12)
+        return risk_R
+
+    def _order_metadata_for_fill(self, fill: Fill) -> dict:
+        """Return metadata for a fill's order id or exchange id."""
+        for order_id in (fill.order_id, fill.exchange_order_id):
+            if order_id and order_id in self._order_metadata:
+                return self._order_metadata[order_id]
         if fill.order_id in self._order_metadata:
-            return self._order_metadata[fill.order_id].get("risk_R", 1.0)
+            return self._order_metadata[fill.order_id]
         # Try HyperliquidBroker's _orders dict
         all_orders = getattr(self._broker, '_orders', {})
         order = all_orders.get(fill.order_id)
         if order:
-            return order.metadata.get("risk_R", 1.0)
+            metadata = dict(order.metadata)
+            metadata.setdefault("order_qty", order.qty)
+            metadata.setdefault("order_id", order.order_id)
+            return metadata
         # Try SimBroker's pending/deferred orders
         for lst_name in ('_pending_orders', '_deferred_orders'):
             for o in getattr(self._broker, lst_name, []):
                 if o.order_id == fill.order_id:
-                    return o.metadata.get("risk_R", 1.0)
-        return 1.0
+                    metadata = dict(o.metadata)
+                    metadata.setdefault("order_qty", o.qty)
+                    metadata.setdefault("order_id", o.order_id)
+                    return metadata
+        return {}
+
+    def _fill_risk_id(self, fill: Fill, metadata: dict) -> str:
+        for key in ("position_instance_id", "intent_id", "client_order_id", "order_id"):
+            value = str(metadata.get(key) or "")
+            if value:
+                return value
+        return fill.order_id or fill.exchange_order_id
+
+
+def _float_or_default(value, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _fill_ledger_id(fill: Fill) -> str:
+    if fill.exchange_fill_id:
+        return fill.exchange_fill_id
+    return "|".join(
+        str(value)
+        for value in (
+            fill.order_id,
+            fill.exchange_order_id,
+            fill.symbol,
+            fill.qty,
+            fill.fill_price,
+            fill.timestamp.isoformat(),
+        )
+        if value
+    )
+
+
+def _trade_order_refs(trade: Any | None) -> set[str]:
+    context = getattr(trade, "instrumentation_context", None)
+    if not isinstance(context, dict):
+        return set()
+    refs: set[str] = set()
+    for key in ("entry_order_ids", "client_order_ids", "exchange_order_ids"):
+        raw = context.get(key)
+        if isinstance(raw, (list, tuple, set)):
+            refs.update(str(value) for value in raw if value)
+        elif raw:
+            refs.add(str(raw))
+    return refs

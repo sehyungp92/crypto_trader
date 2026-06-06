@@ -5,11 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+import structlog
+
 from crypto_trader.core.execution_adapter import (
     ExecutionCapabilities,
     unsupported_order_intent_reasons,
 )
 from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, OrderType, Side
+from crypto_trader.core.order_semantics import EXIT_OCA_POLICY, is_exit_order
 from crypto_trader.core.runtime_types import (
     ExecutionReport,
     ExecutionReportKind,
@@ -17,13 +20,19 @@ from crypto_trader.core.runtime_types import (
 )
 from crypto_trader.live.broker import HyperliquidBroker
 
+log = structlog.get_logger()
+
 
 class HyperliquidExecutionAdapter:
     """Translate canonical intents/reports to the existing live broker."""
 
+    # Hyperliquid native OCO/OCA has not been verified in this adapter: there
+    # is no implemented exchange-side group submit, sibling-cancel report, or
+    # open-order rehydrate contract here. Keep ``oca=False`` and use only the
+    # explicit broker-managed fallback metadata stamped by the coordinator.
     capabilities = ExecutionCapabilities(
         stop_limit=False,
-        reduce_only=False,
+        reduce_only=True,
         oca=False,
         bracket=False,
         ttl=True,
@@ -34,6 +43,23 @@ class HyperliquidExecutionAdapter:
         self._broker = broker
         self._strategy_id = strategy_id
         self._ttl_orders: dict[str, _TrackedTtlOrder] = {}
+
+    @classmethod
+    def probe_oca_capabilities(cls) -> dict[str, object]:
+        """Return the non-trading OCA capability assessment for this adapter."""
+        return {
+            "native_oca": False,
+            "attached_bracket": False,
+            "client_order_ids_on_grouped_orders": False,
+            "group_ids_in_open_orders": False,
+            "sibling_cancellation_reports": False,
+            "reduce_only_with_group_semantics": False,
+            "broker_managed_fallback": True,
+            "reason": (
+                "Hyperliquid adapter has broker-managed sibling cleanup but no "
+                "verified exchange-side OCA/OCO grouping contract."
+            ),
+        }
 
     def submit(self, intent: OrderIntent) -> list[ExecutionReport]:
         unsupported = self._unsupported_reason(intent)
@@ -46,6 +72,9 @@ class HyperliquidExecutionAdapter:
             "strategy_id": intent.strategy_id,
             "client_order_id": client_order_id,
             "decision_id": intent.decision_id,
+            "reduce_only": intent.reduce_only,
+            "oca_group": intent.oca_group,
+            "bracket_group": intent.bracket_group,
             "time_in_force": intent.time_in_force,
             "ttl_bars": intent.ttl_bars,
             **intent.risk_metadata,
@@ -266,7 +295,9 @@ class HyperliquidExecutionAdapter:
         fills = self._broker.get_fills_since(watermark)
         for fill in fills:
             self.clear_ttl_for_fill(fill)
-        return [_fill_report(fill) for fill in fills]
+        reports = [_fill_report(fill) for fill in fills]
+        reports.extend(self._broker_managed_oca_cancel_reports(fills))
+        return reports
 
     def _unsupported_reason(self, intent: OrderIntent) -> str:
         return next(iter(unsupported_order_intent_reasons(intent, self.capabilities)), "")
@@ -336,6 +367,114 @@ class HyperliquidExecutionAdapter:
         order.metadata["ttl_bars_alive"] = tracked.bars_alive
         order.metadata["ttl_remaining_qty"] = tracked.remaining_qty
 
+    def _broker_managed_oca_cancel_reports(self, fills: list[Fill]) -> list[ExecutionReport]:
+        reports: list[ExecutionReport] = []
+        open_orders_fn = getattr(self._broker, "get_open_orders", None)
+        cancel_fn = getattr(self._broker, "cancel_order", None)
+        if not callable(open_orders_fn) or not callable(cancel_fn):
+            return reports
+
+        for fill in fills:
+            filled_order = self._order_for_fill(fill)
+            group = str(
+                (filled_order.oca_group if filled_order is not None else "")
+                or (filled_order.metadata.get("oca_group") if filled_order is not None else "")
+                or fill.raw.get("oca_group")
+                or ""
+            )
+            if not group:
+                continue
+            if (
+                self._uses_terminal_close_oca_policy(filled_order, fill)
+                and not self._oca_fill_is_terminal_close(fill)
+            ):
+                continue
+            try:
+                siblings = list(open_orders_fn(fill.symbol))
+            except TypeError:
+                siblings = list(open_orders_fn())
+            for order in siblings:
+                if self._same_order(order, fill):
+                    continue
+                sibling_group = str(order.oca_group or order.metadata.get("oca_group") or "")
+                if sibling_group != group:
+                    continue
+                if not cancel_fn(order.order_id):
+                    continue
+                exchange_oid = _dict_attr(self._broker, "_local_to_oid").get(order.order_id, "")
+                metadata = dict(order.metadata)
+                metadata.update({
+                    "oca_group": group,
+                    "cancel_reason": "oca_sibling_filled",
+                })
+                reports.append(ExecutionReport(
+                    report_id=f"hl_oca_cancel_{order.order_id}_{int(fill.timestamp.timestamp() * 1000)}",
+                    kind=ExecutionReportKind.CANCELLED,
+                    timestamp=datetime.now(timezone.utc),
+                    symbol=order.symbol,
+                    side=order.side,
+                    client_order_id=order.order_id,
+                    exchange_order_id=exchange_oid,
+                    order_status=OrderStatus.CANCELLED,
+                    qty=order.qty,
+                    metadata=metadata,
+                ))
+        return reports
+
+    def _oca_fill_is_terminal_close(self, fill: Fill) -> bool:
+        for key in ("position_qty_after", "remaining_position_qty"):
+            if key not in fill.raw:
+                continue
+            try:
+                return abs(float(fill.raw.get(key) or 0.0)) <= 1e-12
+            except (TypeError, ValueError):
+                continue
+
+        get_position = getattr(self._broker, "get_position", None)
+        if not callable(get_position):
+            return False
+        try:
+            position = get_position(fill.symbol)
+        except Exception:
+            log.exception("execution_adapter.oca_position_check_failed", symbol=fill.symbol)
+            return False
+        if position is None:
+            return True
+        return abs(float(getattr(position, "qty", 0.0) or 0.0)) <= 1e-12
+
+    @staticmethod
+    def _uses_terminal_close_oca_policy(order: Order | None, fill: Fill) -> bool:
+        metadata = dict(fill.raw or {})
+        if order is not None:
+            metadata.update(order.metadata or {})
+        policy = str(metadata.get("oca_policy") or "")
+        if policy == EXIT_OCA_POLICY:
+            return True
+        if _boolish(metadata.get("reduce_only")) or _boolish(metadata.get("exit_only")):
+            return True
+        return order is not None and is_exit_order(order)
+
+    def _order_for_fill(self, fill: Fill) -> Order | None:
+        broker_orders = getattr(self._broker, "_orders", None)
+        if not isinstance(broker_orders, dict):
+            return None
+        for order_id in (fill.order_id, fill.exchange_order_id):
+            if not order_id:
+                continue
+            if order_id in broker_orders:
+                return broker_orders[order_id]
+            local_id = _dict_attr(self._broker, "_oid_map").get(str(order_id))
+            if local_id in broker_orders:
+                return broker_orders[local_id]
+        return None
+
+    def _same_order(self, order: Order, fill: Fill) -> bool:
+        ids = {order.order_id}
+        exchange_oid = _dict_attr(self._broker, "_local_to_oid").get(order.order_id, "")
+        if exchange_oid:
+            ids.add(exchange_oid)
+        return bool({fill.order_id, fill.exchange_order_id} & ids)
+
 
 @dataclass(slots=True)
 class _TrackedTtlOrder:
@@ -369,6 +508,16 @@ def _float_or_default(value, default: float) -> float:
 def _dict_attr(source, name: str) -> dict:
     value = getattr(source, name, {})
     return value if isinstance(value, dict) else {}
+
+
+def _boolish(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return False
 
 
 def _kind_from_status(status: OrderStatus) -> ExecutionReportKind:

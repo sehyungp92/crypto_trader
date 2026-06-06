@@ -89,13 +89,28 @@ class SimExecutionAdapter:
         return [position.__dict__.copy() for position in self._broker.get_positions()]
 
     def sync_fills(self, watermark: datetime) -> list[ExecutionReport]:
-        return [
+        reports = [
             _fill_report(
                 fill,
                 client_order_id=self._client_id_by_broker_id.get(fill.order_id, fill.order_id),
             )
             for fill in self._broker.get_fills_since(watermark)
         ]
+        drain_cancelled = getattr(self._broker, "drain_cancelled_oca_orders", None)
+        if callable(drain_cancelled):
+            for order in drain_cancelled():
+                client_order_id = (
+                    order.metadata.get("client_order_id")
+                    or self._client_id_by_broker_id.get(order.order_id)
+                    or order.order_id
+                )
+                reports.append(_order_report(
+                    kind=ExecutionReportKind.CANCELLED,
+                    intent=None,
+                    order=order,
+                    client_order_id=str(client_order_id),
+                ))
+        return reports
 
     def _remember_order_ids(self, client_order_id: str, broker_order_id: str) -> None:
         if not client_order_id or not broker_order_id:
@@ -108,6 +123,9 @@ def _order_from_intent(intent: OrderIntent) -> Order:
     metadata = {
         "strategy_id": intent.strategy_id,
         "decision_id": intent.decision_id,
+        "reduce_only": intent.reduce_only,
+        "oca_group": intent.oca_group,
+        "bracket_group": intent.bracket_group,
         **intent.risk_metadata,
         **intent.metadata,
     }

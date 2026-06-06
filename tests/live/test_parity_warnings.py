@@ -123,13 +123,12 @@ def test_order_intent_capability_errors_cover_unsupported_live_surfaces() -> Non
         warning.warning_id
         for warning in validate_order_intent_capabilities(
             intent,
-            capabilities=ExecutionCapabilities(ttl=False),
+            capabilities=ExecutionCapabilities(ttl=False, reduce_only=True),
         )
     }
 
     assert ids == {
         "stop_limit_not_supported_live",
-        "reduce_only_not_enforced_live",
         "ttl_not_supported_live",
         "oca_not_supported_live",
         "bracket_not_supported_live",
@@ -144,6 +143,20 @@ def test_live_startup_policy_blocks_errors_even_on_testnet() -> None:
         mitigation="fix config",
     )]
 
+    assert should_block_live_startup(warnings, LiveConfig(is_testnet=True)) is True
+
+
+def test_native_oca_requirement_blocks_when_live_adapter_has_no_native_support() -> None:
+    warnings = collect_live_parity_warnings(
+        LiveConfig(rate_limit_per_sec=5.0, require_native_oca=True),
+        PortfolioConfig(symbol_collision="block"),
+        durable_oms_available=True,
+        exchange_metadata_enforced=True,
+        capabilities=ExecutionCapabilities(reduce_only=True, ttl=True, oca=False),
+    )
+
+    warning = next(w for w in warnings if w.warning_id == "native_oca_required_but_unavailable")
+    assert warning.severity == "error"
     assert should_block_live_startup(warnings, LiveConfig(is_testnet=True)) is True
 
 

@@ -476,7 +476,7 @@ def run_portfolio_backtest(
     for slot in slots:
         def _on_trade_closed(trade: Trade, strategy_id: str = slot.strategy_id) -> None:
             pnl_R = trade.r_multiple if trade.r_multiple is not None else 0.0
-            coordinator.on_trade_closed(strategy_id, trade.symbol, pnl_R)
+            coordinator.on_trade_closed(strategy_id, trade.symbol, pnl_R, trade=trade)
 
         def _before_strategy_bar(_bar: Bar) -> None:
             total_equity = _portfolio_equity_from_slots(

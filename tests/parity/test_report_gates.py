@@ -94,3 +94,27 @@ def test_parity_report_without_oms_does_not_create_database(tmp_path) -> None:
     assert report.unresolved_oms_discrepancies == []
     assert report.fill_watermark_age_sec is None
     assert not (tmp_path / "live_oms.sqlite3").exists()
+
+
+def test_parity_report_includes_allocation_drift_metrics(tmp_path) -> None:
+    event_path = tmp_path / "parity_events.jsonl"
+    _write_event(event_path, "position_allocation_snapshot", {
+        "position_instance_id": "pos_1",
+        "symbol": "BTC",
+        "unallocated_qty": 0.0,
+        "unknown_allocation": False,
+    })
+    _write_event(event_path, "position_allocation_snapshot", {
+        "symbol": "BTC",
+        "unallocated_qty": 0.2,
+        "unknown_allocation": True,
+    })
+
+    report = build_parity_report(tmp_path)
+    gate = evaluate_promotion_gate(report)
+
+    assert report.allocation_count == 1
+    assert report.unallocated_exposure_count == 1
+    assert report.max_allocation_net_residual == 0.2
+    assert report.position_ownership_drift is True
+    assert "position_ownership_drift" in gate.failures

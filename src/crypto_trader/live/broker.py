@@ -16,6 +16,7 @@ from crypto_trader.core.models import (
     Position,
     Side,
 )
+from crypto_trader.core.order_semantics import STOP_LOSS_TRIGGER_TAGS
 from crypto_trader.exchange.precision import round_price, round_size
 
 log = structlog.get_logger()
@@ -90,6 +91,8 @@ class HyperliquidBroker:
     def submit_order(self, order: Order) -> str:
         """Submit an order to Hyperliquid. Returns local order_id."""
         self._ensure_local_order_id(order)
+        if order.oca_group:
+            order.metadata["oca_group"] = order.oca_group
 
         if self._exchange is None:
             log.warning("broker.read_only", msg="Cannot submit orders without private key")
@@ -226,6 +229,18 @@ class HyperliquidBroker:
                 bars_alive = tracked_order._bars_alive if tracked_order is not None else 0
                 if tracked_order is not None and tracked_order.ttl_bars is not None:
                     metadata.setdefault("ttl_bars_alive", bars_alive)
+                reduce_only = _boolish(raw.get("reduceOnly", raw.get("reduce_only")))
+                if reduce_only:
+                    metadata["reduce_only"] = True
+                oca_group = str(
+                    metadata.get("oca_group")
+                    or raw.get("ocaGroup")
+                    or raw.get("oca_group")
+                    or raw.get("cloidGroup")
+                    or ""
+                )
+                if oca_group:
+                    metadata["oca_group"] = oca_group
 
                 order = Order(
                     order_id=local_id,
@@ -241,12 +256,17 @@ class HyperliquidBroker:
                     stop_price=tracked_order.stop_price if tracked_order is not None else None,
                     status=OrderStatus.WORKING,
                     tag=tracked_order.tag if tracked_order is not None else "",
+                    oca_group=oca_group or (tracked_order.oca_group if tracked_order is not None else None),
                     time_in_force=tracked_order.time_in_force if tracked_order is not None else "GTC",
                     ttl_bars=tracked_order.ttl_bars if tracked_order is not None else None,
                     metadata=metadata,
                     _bars_alive=bars_alive,
                 )
                 orders.append(order)
+                if oid:
+                    self._orders.setdefault(local_id, order)
+                    self._oid_map.setdefault(oid, local_id)
+                    self._local_to_oid.setdefault(local_id, oid)
 
         except Exception:
             log.exception("broker.get_open_orders_failed")
@@ -351,6 +371,7 @@ class HyperliquidBroker:
         return self._exchange.order(
             symbol, is_buy, sz, limit_px,
             {"limit": {"tif": "Ioc"}},
+            reduce_only=bool(order.metadata.get("reduce_only", False)),
         )
 
     def _submit_limit(self, symbol: str, is_buy: bool, sz: float, order: Order) -> dict:
@@ -362,6 +383,7 @@ class HyperliquidBroker:
         return self._exchange.order(
             symbol, is_buy, sz, limit_px,
             {"limit": {"tif": "Gtc"}},
+            reduce_only=bool(order.metadata.get("reduce_only", False)),
         )
 
     def _submit_stop(self, symbol: str, is_buy: bool, sz: float, order: Order) -> dict:
@@ -371,10 +393,11 @@ class HyperliquidBroker:
             self._tick_sizes.get(order.symbol, 0.01),
         )
         # tpsl: "sl" for stop-loss, "tp" for take-profit
-        tpsl = "sl" if order.tag in ("stop", "protective_stop", "trailing_stop") else "tp"
+        tpsl = "sl" if order.tag in STOP_LOSS_TRIGGER_TAGS else "tp"
         return self._exchange.order(
             symbol, is_buy, sz, trigger_px,
             {"trigger": {"triggerPx": str(trigger_px), "tpsl": tpsl, "isMarket": True}},
+            reduce_only=bool(order.metadata.get("reduce_only", False)),
         )
 
     def _process_submit_result(self, result: dict, order: Order) -> None:
@@ -466,3 +489,13 @@ def _safe_float(value: Any) -> float | None:
         return float(value)
     except (ValueError, TypeError):
         return None
+
+
+def _boolish(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return False

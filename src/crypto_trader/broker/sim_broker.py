@@ -28,11 +28,22 @@ from crypto_trader.core.models import (
     TerminalMark,
     Trade,
 )
+from crypto_trader.core.order_semantics import EXIT_OCA_POLICY, STOP_LOSS_TRIGGER_TAGS, is_exit_order
 from crypto_trader.exchange.funding import FundingHelper
 from crypto_trader.exchange.meta import AssetMeta
 
 log = structlog.get_logger()
-EXIT_ONLY_STOP_TAGS = frozenset({"protective_stop", "breakeven_stop", "proof_lock_stop", "trailing_stop"})
+EXIT_ONLY_STOP_TAGS = STOP_LOSS_TRIGGER_TAGS - {"stop"}
+
+
+def _boolish(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y"}
+    return False
 
 
 class SimBroker:
@@ -70,6 +81,7 @@ class SimBroker:
         "_bar_count_per_position",
         "_deferring",
         "_deferred_orders",
+        "_cancelled_oca_orders",
     )
 
     def __init__(
@@ -115,6 +127,7 @@ class SimBroker:
         # Order deferral — prevents higher-TF timing leak (Finding 1)
         self._deferring: bool = False
         self._deferred_orders: list[Order] = []
+        self._cancelled_oca_orders: list[Order] = []
 
     def snapshot_state(self) -> dict[str, Any]:
         """Return an in-memory checkpoint of all mutable broker state."""
@@ -211,6 +224,11 @@ class SimBroker:
 
     def get_fills_since(self, since: datetime) -> list[Fill]:
         return [f for f in self._fills if f.timestamp >= since]
+
+    def drain_cancelled_oca_orders(self) -> list[Order]:
+        cancelled = list(self._cancelled_oca_orders)
+        self._cancelled_oca_orders.clear()
+        return cancelled
 
     def get_funding_rate(self, symbol: str, timestamp_ms: int) -> float:
         """Return the most recent funding rate for a symbol at a given time."""
@@ -576,19 +594,40 @@ class SimBroker:
             # Find the order to get its OCA group
             for order in self._pending_orders:
                 if order.order_id == fill.order_id and order.oca_group:
+                    if not self._should_cancel_oca_siblings_for_fill(fill, order):
+                        continue
                     filled_groups.add(order.oca_group)
 
         if not filled_groups:
             return
 
         for order in self._pending_orders:
-            if order.status not in (OrderStatus.PENDING, OrderStatus.WORKING):
-                continue
             if order.oca_group in filled_groups:
                 # Don't cancel the one that just filled
                 if not any(f.order_id == order.order_id for f in fills):
+                    if order.status not in (OrderStatus.PENDING, OrderStatus.WORKING, OrderStatus.CANCELLED):
+                        continue
                     order.status = OrderStatus.CANCELLED
+                    order.metadata["cancel_reason"] = "oca_sibling_filled"
+                    if not any(cancelled.order_id == order.order_id for cancelled in self._cancelled_oca_orders):
+                        self._cancelled_oca_orders.append(deepcopy(order))
                     log.debug("oca.cancelled", order_id=order.order_id, group=order.oca_group)
+
+    def _should_cancel_oca_siblings_for_fill(self, fill: Fill, order: Order) -> bool:
+        if not self._uses_terminal_close_oca_policy(order):
+            return True
+        position = self._positions.get(fill.symbol)
+        return position is None or abs(float(position.qty or 0.0)) <= 1e-12
+
+    @staticmethod
+    def _uses_terminal_close_oca_policy(order: Order) -> bool:
+        metadata = dict(order.metadata or {})
+        policy = str(metadata.get("oca_policy") or "")
+        if policy == EXIT_OCA_POLICY:
+            return True
+        if _boolish(metadata.get("reduce_only")) or _boolish(metadata.get("exit_only")):
+            return True
+        return is_exit_order(order)
 
     # -------------------------------------------------------------------
     # Funding accrual

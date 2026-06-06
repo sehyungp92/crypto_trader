@@ -248,14 +248,53 @@ class PortfolioManager:
         direction: Side,
         risk_R: float,
         entry_time=None,
+        risk_id: str = "",
+        position_instance_id: str = "",
+        intent_id: str = "",
+        client_order_id: str = "",
+        order_id: str = "",
+        exchange_order_id: str = "",
+        order_qty: float = 0.0,
+        fill_qty: float = 0.0,
+        fill_id: str = "",
     ) -> None:
         """Record a new open risk after entry fill."""
+        if risk_id:
+            existing = self.state.find_risk(risk_id)
+            if existing is not None:
+                if fill_id and fill_id in existing.applied_fill_ids:
+                    return
+                existing.risk_R += risk_R
+                existing.filled_qty += fill_qty
+                existing.order_qty = max(existing.order_qty, order_qty)
+                if fill_id:
+                    existing.applied_fill_ids.append(fill_id)
+                log.debug(
+                    "portfolio.entry_risk_updated",
+                    strategy=strategy_id,
+                    symbol=symbol,
+                    risk_id=risk_id,
+                    risk_R=existing.risk_R,
+                    filled_qty=existing.filled_qty,
+                    total_heat=self.state.total_heat_R(),
+                )
+                return
+
         self.state.add_risk(OpenRisk(
             strategy_id=strategy_id,
             symbol=symbol,
             direction=direction,
             risk_R=risk_R,
             entry_time=entry_time,
+            risk_id=risk_id,
+            position_instance_id=position_instance_id,
+            intent_id=intent_id,
+            client_order_id=client_order_id,
+            order_id=order_id,
+            exchange_order_id=exchange_order_id,
+            order_qty=order_qty,
+            filled_qty=fill_qty,
+            applied_fill_ids=[fill_id] if fill_id else [],
         ))
         log.debug(
             "portfolio.entry_registered",
@@ -271,10 +310,19 @@ class PortfolioManager:
         strategy_id: str,
         symbol: str,
         pnl_R: float,
+        *,
+        risk_id: str = "",
+        order_refs: set[str] | None = None,
     ) -> None:
         """Remove an open risk and record daily P&L."""
-        removed = self.state.remove_risk(strategy_id, symbol)
-        if removed is None:
+        removed = self.state.remove_risks(
+            strategy_id,
+            symbol,
+            risk_id=risk_id,
+            order_refs=order_refs,
+            remove_all=not risk_id and not order_refs,
+        )
+        if not removed:
             log.warning(
                 "portfolio.exit_no_matching_risk",
                 strategy=strategy_id,
@@ -372,6 +420,14 @@ class PortfolioManager:
                     "direction": risk.direction.value,
                     "risk_R": risk.risk_R,
                     "entry_time": str(risk.entry_time) if risk.entry_time else None,
+                    "risk_id": risk.risk_id,
+                    "position_instance_id": risk.position_instance_id,
+                    "intent_id": risk.intent_id,
+                    "client_order_id": risk.client_order_id,
+                    "order_id": risk.order_id,
+                    "exchange_order_id": risk.exchange_order_id,
+                    "order_qty": risk.order_qty,
+                    "filled_qty": risk.filled_qty,
                 }
                 for risk in self.state.open_risks
             ],

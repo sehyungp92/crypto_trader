@@ -132,6 +132,18 @@ class TestRule5DirectionalCap:
         assert not result.approved
         assert "headroom" in result.denial_reason
 
+    def test_default_priority_headroom_does_not_block_priority_zero(self):
+        cfg = _make_config(
+            directional_cap_R=2.5,
+            priority_headroom_R=1.0,
+        )
+        mgr, state = _make_manager(cfg)
+        state.add_risk(OpenRisk("momentum", "BTC", Side.LONG, 2.0))
+
+        result = mgr.check_entry("trend", "ETH", Side.LONG, 0.5)
+
+        assert result.approved
+
 
 class TestRule6SymbolCollision:
     def test_block_mode_denies_same_symbol(self):

@@ -9,6 +9,7 @@ import { TradesTable } from "@/components/TradesTable";
 import { EquityCurve } from "@/components/EquityCurve";
 import { DailyPnlBars } from "@/components/DailyPnlBars";
 import { SystemHealth } from "@/components/SystemHealth";
+import { SafetyEvents } from "@/components/SafetyEvents";
 import { RefreshIndicator } from "@/components/RefreshIndicator";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -136,7 +137,12 @@ export default function DashboardPage() {
 
       {/* Positions */}
       {live ? (
-        <PositionsTable positions={live.positions} />
+        <PositionsTable
+          positions={live.positions}
+          exchangePositions={live.exchange_positions}
+          strategyAllocations={live.strategy_position_allocations}
+          allocationResiduals={live.allocation_residuals}
+        />
       ) : (
         <Skeleton className="h-48 w-full" />
       )}
@@ -150,9 +156,12 @@ export default function DashboardPage() {
             <Skeleton className="h-64 w-full" />
           )}
         </div>
-        <div>
+        <div className="space-y-4">
           {live ? (
-            <SystemHealth data={live.health} />
+            <>
+              <SystemHealth data={live.health} safetyEvents={live.safety_events} />
+              <SafetyEvents events={live.safety_events} />
+            </>
           ) : (
             <Skeleton className="h-64 w-full" />
           )}

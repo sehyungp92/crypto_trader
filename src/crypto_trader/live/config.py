@@ -34,6 +34,7 @@ class LiveConfig:
     reconciliation_policy: str = "block"
     allow_manual_flatten: bool = False
     strict_live_parity: bool = False
+    require_native_oca: bool = False
 
     # Strategy configs
     strategy_configs: dict[str, Path] = field(default_factory=dict)
@@ -58,6 +59,9 @@ class LiveConfig:
 
     # PostgreSQL (optional; empty string = disabled)
     postgres_dsn: str = ""
+    postgres_async_enabled: bool = True
+    postgres_queue_capacity: int = 5000
+    postgres_flush_timeout_sec: float = 5.0
 
     @property
     def base_url(self) -> str:
@@ -100,6 +104,10 @@ class LiveConfig:
             errors.append("allow_manual_flatten=true is required for flatten_unmanaged_positions")
         if not self.is_testnet and self.asset_meta_path is None:
             errors.append("asset_meta_path is required for mainnet parity")
+        if self.postgres_queue_capacity <= 0:
+            errors.append("postgres_queue_capacity must be positive")
+        if self.postgres_flush_timeout_sec <= 0:
+            errors.append("postgres_flush_timeout_sec must be positive")
         return errors
 
     @classmethod
@@ -124,6 +132,7 @@ class LiveConfig:
             reconciliation_policy=d.get("reconciliation_policy", "block"),
             allow_manual_flatten=d.get("allow_manual_flatten", False),
             strict_live_parity=d.get("strict_live_parity", False),
+            require_native_oca=d.get("require_native_oca", False),
             strategy_configs=strategy_configs,
             portfolio_config_path=Path(d["portfolio_config_path"]) if d.get("portfolio_config_path") else None,
             deployment_manifest_path=Path(d["deployment_manifest_path"]) if d.get("deployment_manifest_path") else None,
@@ -138,6 +147,9 @@ class LiveConfig:
             relay_url=d.get("relay_url", ""),
             relay_secret=d.get("relay_secret", ""),
             postgres_dsn=os.environ.get("POSTGRES_DSN") or d.get("postgres_dsn", ""),
+            postgres_async_enabled=d.get("postgres_async_enabled", True),
+            postgres_queue_capacity=int(d.get("postgres_queue_capacity", 5000)),
+            postgres_flush_timeout_sec=float(d.get("postgres_flush_timeout_sec", 5.0)),
         )
 
     def to_dict(self, *, redacted: bool = False) -> dict:
@@ -161,6 +173,7 @@ class LiveConfig:
             "reconciliation_policy": self.reconciliation_policy,
             "allow_manual_flatten": self.allow_manual_flatten,
             "strict_live_parity": self.strict_live_parity,
+            "require_native_oca": self.require_native_oca,
             "strategy_configs": {k: str(v) for k, v in self.strategy_configs.items()},
             "portfolio_config_path": str(self.portfolio_config_path) if self.portfolio_config_path else None,
             "deployment_manifest_path": str(self.deployment_manifest_path) if self.deployment_manifest_path else None,
@@ -175,6 +188,9 @@ class LiveConfig:
             "relay_url": self.relay_url,
             "relay_secret": self.relay_secret,
             "postgres_dsn": self.postgres_dsn,
+            "postgres_async_enabled": self.postgres_async_enabled,
+            "postgres_queue_capacity": self.postgres_queue_capacity,
+            "postgres_flush_timeout_sec": self.postgres_flush_timeout_sec,
         }
         if redacted:
             for key in ("wallet_address", "relay_secret", "postgres_dsn"):

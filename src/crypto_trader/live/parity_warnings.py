@@ -76,9 +76,25 @@ def collect_live_parity_warnings(
             mitigation="Set a positive live rate_limit_per_sec.",
         ))
 
+    caps = capabilities or HyperliquidExecutionAdapter.capabilities
+    if live_config.require_native_oca and not caps.oca:
+        warnings.append(ParityWarning(
+            warning_id="native_oca_required_but_unavailable",
+            severity="error",
+            message=(
+                "Native OCA/OCO was required by live config, but the live adapter "
+                "has not implemented verified exchange-side group submit, sibling "
+                "cancellation reports, and restart sync."
+            ),
+            mitigation=(
+                "Disable require_native_oca for paper broker-managed fallback, "
+                "or implement and test venue-native OCA before mainnet/strict startup."
+            ),
+        ))
+
     warnings.extend(validate_live_capabilities(
         strategy_configs=strategy_configs,
-        capabilities=capabilities,
+        capabilities=caps,
     ))
 
     return warnings

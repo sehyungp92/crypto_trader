@@ -945,6 +945,26 @@ class OmsStore:
         )
         self._conn.commit()
 
+    def record_admin_allocation_correction(
+        self,
+        allocation: dict[str, Any],
+        *,
+        corrected_by: str = "",
+        reason: str = "",
+        timestamp: datetime | None = None,
+    ) -> None:
+        """Audit an operator assignment of unknown exchange exposure."""
+        payload = {
+            "event_kind": "admin_allocation_correction",
+            "position_instance_id": allocation.get("position_instance_id", ""),
+            "strategy_id": allocation.get("strategy_id", ""),
+            "symbol": allocation.get("symbol", ""),
+            "corrected_by": corrected_by,
+            "reason": reason,
+            "allocation": _plain(allocation),
+        }
+        self.append_event("admin_allocation_correction", timestamp or datetime.now(timezone.utc), payload)
+
     def list_events(self, stream: str | None = None) -> list[dict[str, Any]]:
         if stream is None:
             rows = self._conn.execute(

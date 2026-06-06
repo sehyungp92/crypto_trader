@@ -224,3 +224,43 @@ def test_blank_zero_qty_and_unsupported_orders_get_ids_but_are_not_registered() 
     assert broker._local_to_oid == {}
     assert broker._oid_map == {}
     exchange.order.assert_not_called()
+
+
+def test_exit_stop_submits_reduce_only_to_exchange() -> None:
+    broker, _, exchange = _make_broker_with_exchange()
+    exchange.order.return_value = _resting_response("501")
+
+    order = Order(
+        order_id="stop_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        order_type=OrderType.STOP,
+        qty=0.01,
+        stop_price=49000.0,
+        tag="protective_stop",
+        metadata={"strategy_id": "momentum", "reduce_only": True},
+    )
+
+    broker.submit_order(order)
+
+    assert exchange.order.call_args.kwargs["reduce_only"] is True
+
+
+def test_momentum_stop_tags_submit_as_stop_loss_triggers() -> None:
+    broker, _, exchange = _make_broker_with_exchange()
+    exchange.order.side_effect = [_resting_response("601"), _resting_response("602")]
+
+    for tag in ("breakeven_stop", "proof_lock_stop"):
+        broker.submit_order(Order(
+            order_id=f"{tag}_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.01,
+            stop_price=49000.0,
+            tag=tag,
+            metadata={"strategy_id": "momentum", "reduce_only": True},
+        ))
+
+    trigger_payloads = [call.args[4]["trigger"] for call in exchange.order.call_args_list]
+    assert [payload["tpsl"] for payload in trigger_payloads] == ["sl", "sl"]

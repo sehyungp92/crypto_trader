@@ -9,6 +9,7 @@ import structlog
 from crypto_trader.core.models import Position
 
 log = structlog.get_logger()
+_POSITION_EPS = 1e-8
 
 
 @dataclass
@@ -43,20 +44,40 @@ class PositionReconciler:
         """
         discrepancies = []
 
-        actual_by_symbol = {p.symbol: p for p in actual_positions}
+        actual_by_symbol = {
+            p.symbol: p
+            for p in actual_positions
+            if abs(p.qty) > _POSITION_EPS
+        }
 
         # Check for expected positions missing on exchange
         for symbol, expected in expected_positions.items():
+            actual = actual_by_symbol.get(symbol)
             if expected is None:
+                if actual is not None:
+                    discrepancies.append(Discrepancy(
+                        symbol=symbol,
+                        kind="phantom",
+                        expected="flat",
+                        actual=f"{actual.direction.value} {actual.qty}",
+                    ))
                 continue
 
-            actual = actual_by_symbol.get(symbol)
             if actual is None:
                 discrepancies.append(Discrepancy(
                     symbol=symbol,
                     kind="missing",
                     expected=f"{expected.direction.value} {expected.qty}",
                     actual="flat",
+                ))
+                continue
+
+            if expected.metadata.get("direction_conflict"):
+                discrepancies.append(Discrepancy(
+                    symbol=symbol,
+                    kind="direction_mismatch",
+                    expected="mixed local directions",
+                    actual=f"{actual.direction.value} {actual.qty}",
                 ))
                 continue
 
@@ -69,7 +90,8 @@ class PositionReconciler:
                 ))
                 continue
 
-            if abs(expected.qty - actual.qty) > 1e-8:
+            qty_known = bool(expected.metadata.get("qty_known", True))
+            if qty_known and abs(expected.qty - actual.qty) > _POSITION_EPS:
                 discrepancies.append(Discrepancy(
                     symbol=symbol,
                     kind="qty_mismatch",
@@ -80,6 +102,8 @@ class PositionReconciler:
         # Check for phantom positions (on exchange but not expected)
         expected_symbols = set(expected_positions.keys())
         for actual in actual_positions:
+            if abs(actual.qty) <= _POSITION_EPS:
+                continue
             if actual.symbol not in expected_symbols:
                 discrepancies.append(Discrepancy(
                     symbol=actual.symbol,

@@ -53,6 +53,10 @@ htmlcov/
 .mypy_cache/
 tmp/
 
+# Frontend dependencies / build output
+infra/dashboard/node_modules/
+infra/dashboard/.next/
+
 # IDE
 .vscode/
 .idea/

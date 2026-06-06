@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from crypto_trader.broker.sim_broker import SimBroker
 from crypto_trader.broker.sim_execution_adapter import SimExecutionAdapter
-from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, OrderType, Side, TimeFrame
+from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, OrderType, Position, Side, TimeFrame
 from crypto_trader.core.runtime_types import ExecutionReportKind, OrderIntent
 from crypto_trader.live.execution_adapter import HyperliquidExecutionAdapter
 
@@ -80,21 +80,105 @@ def test_live_execution_adapter_rejects_unsupported_stop_limit_before_broker() -
     broker.submit_order.assert_not_called()
 
 
-def test_live_execution_adapter_rejects_reduce_only_oca_and_bracket() -> None:
+def test_live_execution_adapter_accepts_reduce_only_but_rejects_oca_and_bracket() -> None:
     broker = MagicMock()
+    broker.submit_order.side_effect = lambda order: order.order_id
+    broker._local_to_oid = {"client_1": "101"}
     adapter = HyperliquidExecutionAdapter(broker)
 
+    reports = adapter.submit(_intent(reduce_only=True))
+
+    assert reports[0].kind == ExecutionReportKind.ACCEPTED
+    submitted = broker.submit_order.call_args.args[0]
+    assert submitted.metadata["reduce_only"] is True
+
+    broker.reset_mock()
     cases = [
-        (_intent(reduce_only=True), "reduce_only_not_enforced_live"),
         (_intent(oca_group="g1"), "oca_not_supported_live"),
         (_intent(bracket_group="b1"), "bracket_not_supported_live"),
     ]
-
     for intent, reason in cases:
         reports = adapter.submit(intent)
         assert reports[0].kind == ExecutionReportKind.REJECTED
         assert reports[0].reject_reason == reason
     broker.submit_order.assert_not_called()
+
+
+def test_live_execution_adapter_accepts_broker_managed_oca_fallback_without_native_claim() -> None:
+    broker = MagicMock()
+    broker.submit_order.side_effect = lambda order: order.order_id
+    broker._local_to_oid = {"client_1": "101"}
+    adapter = HyperliquidExecutionAdapter(broker)
+
+    reports = adapter.submit(_intent(
+        reduce_only=True,
+        oca_group="momentum:BTC:pos_1:exit_oca",
+        metadata={
+            "tag": "protective_stop",
+            "oca_group": "momentum:BTC:pos_1:exit_oca",
+            "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+            "exit_only": True,
+            "native_oca_required": False,
+        },
+    ))
+
+    assert HyperliquidExecutionAdapter.capabilities.oca is False
+    assert reports[0].kind == ExecutionReportKind.ACCEPTED
+    submitted = broker.submit_order.call_args.args[0]
+    assert submitted.oca_group == "momentum:BTC:pos_1:exit_oca"
+    assert submitted.metadata["oca_group"] == submitted.oca_group
+
+
+def test_live_execution_adapter_rejects_forged_broker_managed_oca_fallback() -> None:
+    broker = MagicMock()
+    adapter = HyperliquidExecutionAdapter(broker)
+
+    for intent in [
+        _intent(
+            oca_group="momentum:BTC:pos_1:exit_oca",
+            metadata={
+                "tag": "protective_stop",
+                "oca_group": "momentum:BTC:pos_1:exit_oca",
+                "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+                "exit_only": True,
+                "native_oca_required": False,
+            },
+        ),
+        _intent(
+            reduce_only=True,
+            oca_group="g1",
+            metadata={
+                "tag": "protective_stop",
+                "oca_group": "g1",
+                "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+                "exit_only": True,
+                "native_oca_required": False,
+            },
+        ),
+        _intent(
+            reduce_only=True,
+            oca_group="momentum:BTC:pos_1:exit_oca",
+            metadata={
+                "tag": "entry",
+                "oca_group": "momentum:BTC:pos_1:exit_oca",
+                "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+                "exit_only": True,
+                "native_oca_required": False,
+            },
+        ),
+    ]:
+        reports = adapter.submit(intent)
+        assert reports[0].kind == ExecutionReportKind.REJECTED
+        assert reports[0].reject_reason == "oca_not_supported_live"
+
+    broker.submit_order.assert_not_called()
+
+
+def test_hyperliquid_oca_probe_documents_no_native_support() -> None:
+    probe = HyperliquidExecutionAdapter.probe_oca_capabilities()
+
+    assert probe["native_oca"] is False
+    assert probe["broker_managed_fallback"] is True
 
 
 def test_sim_execution_adapter_accepts_stop_limit_oca_and_ttl_intent() -> None:
@@ -110,6 +194,234 @@ def test_sim_execution_adapter_accepts_stop_limit_oca_and_ttl_intent() -> None:
 
     assert reports[0].kind == ExecutionReportKind.ACCEPTED
     assert reports[0].order_status == OrderStatus.PENDING
+
+
+def test_sim_execution_adapter_reports_oca_sibling_cancellation() -> None:
+    broker = SimBroker(initial_equity=10_000.0)
+    adapter = SimExecutionAdapter(broker)
+    ts = datetime(2026, 5, 24, tzinfo=timezone.utc)
+    broker._pending_orders = [
+        Order(
+            order_id="tp_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.LIMIT,
+            qty=0.1,
+            limit_price=52_000.0,
+            tag="tp1",
+            oca_group="momentum:BTC:pos_1:exit_oca",
+            metadata={"client_order_id": "tp_client", "oca_group": "momentum:BTC:pos_1:exit_oca"},
+        ),
+        Order(
+            order_id="stop_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49_000.0,
+            tag="protective_stop",
+            oca_group="momentum:BTC:pos_1:exit_oca",
+            metadata={"client_order_id": "stop_client", "oca_group": "momentum:BTC:pos_1:exit_oca"},
+        ),
+    ]
+    broker._process_oca_cancels([Fill(
+        order_id="tp_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        qty=0.1,
+        fill_price=52_000.0,
+        commission=1.0,
+        timestamp=ts,
+        tag="tp1",
+    )])
+
+    reports = adapter.sync_fills(ts)
+
+    cancelled = [report for report in reports if report.kind == ExecutionReportKind.CANCELLED]
+    assert len(cancelled) == 1
+    assert cancelled[0].client_order_id == "stop_client"
+    assert cancelled[0].metadata["cancel_reason"] == "oca_sibling_filled"
+
+
+def test_sim_broker_keeps_residual_protective_stop_after_partial_tp() -> None:
+    broker = SimBroker(initial_equity=10_000.0)
+    group = "momentum:BTC:pos_1:exit_oca"
+    ts = datetime(2026, 5, 24, tzinfo=timezone.utc)
+    broker._positions["BTC"] = Position(
+        symbol="BTC",
+        direction=Side.LONG,
+        qty=0.1,
+        avg_entry=50_000.0,
+    )
+    stop = Order(
+        order_id="stop_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        order_type=OrderType.STOP,
+        qty=0.1,
+        stop_price=49_000.0,
+        tag="protective_stop",
+        oca_group=group,
+        metadata={
+            "oca_group": group,
+            "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+            "reduce_only": True,
+        },
+    )
+    broker._pending_orders = [
+        Order(
+            order_id="tp_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.LIMIT,
+            qty=0.1,
+            limit_price=52_000.0,
+            tag="tp1",
+            oca_group=group,
+            metadata={
+                "oca_group": group,
+                "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+                "reduce_only": True,
+            },
+        ),
+        stop,
+    ]
+
+    broker._process_oca_cancels([Fill(
+        order_id="tp_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        qty=0.1,
+        fill_price=52_000.0,
+        commission=1.0,
+        timestamp=ts,
+        tag="tp1",
+    )])
+
+    assert stop.status == OrderStatus.PENDING
+    assert broker.drain_cancelled_oca_orders() == []
+
+
+def test_live_adapter_keeps_residual_protective_stop_after_partial_tp() -> None:
+    group = "momentum:BTC:pos_1:exit_oca"
+    ts = datetime(2026, 5, 24, tzinfo=timezone.utc)
+    tp = Order(
+        order_id="tp_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        order_type=OrderType.LIMIT,
+        qty=0.1,
+        limit_price=52_000.0,
+        tag="tp1",
+        oca_group=group,
+        metadata={
+            "oca_group": group,
+            "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+            "reduce_only": True,
+        },
+    )
+    stop = Order(
+        order_id="stop_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        order_type=OrderType.STOP,
+        qty=0.1,
+        stop_price=49_000.0,
+        tag="protective_stop",
+        oca_group=group,
+        metadata={
+            "oca_group": group,
+            "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+            "reduce_only": True,
+        },
+    )
+    fill = Fill(
+        order_id="tp_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        qty=0.1,
+        fill_price=52_000.0,
+        commission=1.0,
+        timestamp=ts,
+        tag="tp1",
+        raw={"remaining_qty": 0.0},
+    )
+    broker = MagicMock()
+    broker._orders = {"tp_1": tp}
+    broker.get_fills_since.return_value = [fill]
+    broker.get_position.return_value = Position(
+        symbol="BTC",
+        direction=Side.LONG,
+        qty=0.1,
+        avg_entry=50_000.0,
+    )
+    broker.get_open_orders.return_value = [stop]
+    adapter = HyperliquidExecutionAdapter(broker)
+
+    reports = adapter.sync_fills(ts)
+
+    assert [report.kind for report in reports] == [ExecutionReportKind.FILL]
+    broker.cancel_order.assert_not_called()
+
+
+def test_live_adapter_cancels_oca_sibling_after_terminal_exit_fill() -> None:
+    group = "momentum:BTC:pos_1:exit_oca"
+    ts = datetime(2026, 5, 24, tzinfo=timezone.utc)
+    tp = Order(
+        order_id="tp_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        order_type=OrderType.LIMIT,
+        qty=0.1,
+        limit_price=52_000.0,
+        tag="tp1",
+        oca_group=group,
+        metadata={
+            "oca_group": group,
+            "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+            "reduce_only": True,
+        },
+    )
+    stop = Order(
+        order_id="stop_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        order_type=OrderType.STOP,
+        qty=0.1,
+        stop_price=49_000.0,
+        tag="protective_stop",
+        oca_group=group,
+        metadata={
+            "client_order_id": "stop_client",
+            "oca_group": group,
+            "oca_policy": "broker_managed_cancel_siblings_on_terminal_close",
+            "reduce_only": True,
+        },
+    )
+    fill = Fill(
+        order_id="tp_1",
+        symbol="BTC",
+        side=Side.SHORT,
+        qty=0.1,
+        fill_price=52_000.0,
+        commission=1.0,
+        timestamp=ts,
+        tag="tp1",
+    )
+    broker = MagicMock()
+    broker._orders = {"tp_1": tp}
+    broker.get_fills_since.return_value = [fill]
+    broker.get_position.return_value = None
+    broker.get_open_orders.return_value = [stop]
+    broker.cancel_order.return_value = True
+    adapter = HyperliquidExecutionAdapter(broker)
+
+    reports = adapter.sync_fills(ts)
+
+    cancelled = [report for report in reports if report.kind == ExecutionReportKind.CANCELLED]
+    assert len(cancelled) == 1
+    assert cancelled[0].client_order_id == "stop_1"
+    assert cancelled[0].metadata["cancel_reason"] == "oca_sibling_filled"
 
 
 def test_live_execution_adapter_sync_fills_maps_fill_report() -> None:

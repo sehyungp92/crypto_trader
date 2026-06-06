@@ -22,6 +22,10 @@ class ParityReport:
     stale_fill_watermark: bool = False
     unprotected_entry_fills: list[dict[str, Any]] = field(default_factory=list)
     accounting_mismatch_count: int = 0
+    allocation_count: int = 0
+    unallocated_exposure_count: int = 0
+    max_allocation_net_residual: float = 0.0
+    position_ownership_drift: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -33,6 +37,10 @@ class ParityReport:
             "stale_fill_watermark": self.stale_fill_watermark,
             "unprotected_entry_fills": list(self.unprotected_entry_fills),
             "accounting_mismatch_count": self.accounting_mismatch_count,
+            "allocation_count": self.allocation_count,
+            "unallocated_exposure_count": self.unallocated_exposure_count,
+            "max_allocation_net_residual": self.max_allocation_net_residual,
+            "position_ownership_drift": self.position_ownership_drift,
         }
 
 
@@ -100,6 +108,7 @@ def build_parity_report(
             oms.close()
 
     stale = watermark_age is not None and watermark_age > max_watermark_age_sec
+    allocation_metrics = _allocation_metrics(state, events)
     return ParityReport(
         stream_counts=stream_counts,
         decision_drift_count=decision_drift_count,
@@ -108,6 +117,10 @@ def build_parity_report(
         fill_watermark_age_sec=watermark_age,
         stale_fill_watermark=stale,
         unprotected_entry_fills=_unprotected_entry_fills(events),
+        allocation_count=allocation_metrics["allocation_count"],
+        unallocated_exposure_count=allocation_metrics["unallocated_exposure_count"],
+        max_allocation_net_residual=allocation_metrics["max_allocation_net_residual"],
+        position_ownership_drift=allocation_metrics["position_ownership_drift"],
     )
 
 
@@ -125,6 +138,8 @@ def evaluate_promotion_gate(report: ParityReport) -> PromotionGateResult:
         failures.append("order_intent_drift")
     if report.accounting_mismatch_count > 0:
         failures.append("accounting_mismatch")
+    if report.position_ownership_drift:
+        failures.append("position_ownership_drift")
     return PromotionGateResult(passed=not failures, failures=failures)
 
 
@@ -164,3 +179,43 @@ def _unprotected_entry_fills(events: list[dict[str, Any]]) -> list[dict[str, Any
         fill for fill in entry_fills
         if (fill.get("metadata", {}).get("strategy_id", ""), fill.get("symbol", "")) not in stop_order_decisions
     ]
+
+
+def _allocation_metrics(state_dir: Path, parity_events: list[dict[str, Any]]) -> dict[str, Any]:
+    payloads = [
+        event.get("payload", {})
+        for event in parity_events
+        if event.get("stream") == "position_allocation_snapshot"
+    ]
+    event_dir = state_dir / "instrumentation" / "events" / "position_allocation_snapshot"
+    if event_dir.exists():
+        for path in sorted(event_dir.glob("*.jsonl")):
+            with path.open(encoding="utf-8") as handle:
+                for line in handle:
+                    if not line.strip():
+                        continue
+                    try:
+                        row = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    payload = row.get("payload") if isinstance(row.get("payload"), dict) else row
+                    payloads.append(payload)
+
+    allocation_ids = {
+        str(payload.get("position_instance_id") or "")
+        for payload in payloads
+        if payload.get("position_instance_id")
+    }
+    residuals = [
+        payload for payload in payloads
+        if payload.get("unknown_allocation") or abs(float(payload.get("unallocated_qty") or 0.0)) > 1e-8
+    ]
+    return {
+        "allocation_count": len(allocation_ids),
+        "unallocated_exposure_count": len(residuals),
+        "max_allocation_net_residual": max(
+            (abs(float(payload.get("unallocated_qty") or 0.0)) for payload in residuals),
+            default=0.0,
+        ),
+        "position_ownership_drift": bool(residuals),
+    }

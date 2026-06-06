@@ -1,6 +1,6 @@
-/** Format R-multiple with sign and color class. */
+/** Format R-multiple with sign. */
 export function fmtR(r: number | null): string {
-  if (r == null) return "—";
+  if (r == null) return "--";
   const sign = r >= 0 ? "+" : "";
   return `${sign}${r.toFixed(2)}R`;
 }
@@ -16,7 +16,7 @@ export function fmtUSD(v: number): string {
 
 /** Format date as short UTC string. */
 export function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "--";
   const d = new Date(iso);
   return d.toLocaleString("en-US", {
     month: "short",

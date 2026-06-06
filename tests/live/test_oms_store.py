@@ -441,6 +441,27 @@ def test_live_engine_shutdown_persists_before_closing_oms(tmp_path) -> None:
     reopened.close()
 
 
+def test_admin_allocation_correction_is_audited(tmp_path) -> None:
+    store = OmsStore(tmp_path)
+
+    store.record_admin_allocation_correction(
+        {
+            "position_instance_id": "admin_pos_1",
+            "strategy_id": "momentum",
+            "symbol": "BTC",
+            "allocated_qty": 0.1,
+        },
+        corrected_by="operator",
+        reason="matched exchange residual",
+    )
+    events = store.list_events("admin_allocation_correction")
+    store.close()
+
+    assert len(events) == 1
+    assert events[0]["payload"]["position_instance_id"] == "admin_pos_1"
+    assert events[0]["payload"]["corrected_by"] == "operator"
+
+
 def _ttl_bar() -> Bar:
     return Bar(
         timestamp=datetime(2026, 5, 24, 12, 15, tzinfo=timezone.utc),

@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from crypto_trader.core.models import Fill, Side, Trade
+from crypto_trader.core.order_semantics import entry_position_instance_id
 from crypto_trader.live.oms_store import fill_identity
 
 
@@ -91,9 +92,9 @@ class PositionLifecycleLedger:
                 strategy_id=strategy_id,
                 symbol=fill.symbol,
                 direction=fill.side,
-                position_instance_id=(
-                    f"{strategy_id}:{fill.symbol}:{fill.side.value}:"
-                    f"{int(fill.timestamp.timestamp() * 1000)}"
+                position_instance_id=str(
+                    fill.raw.get("position_instance_id")
+                    or entry_position_instance_id(strategy_id, fill.symbol, fill.side, fill.timestamp)
                 ),
                 qty=fill.qty,
                 avg_entry=fill.fill_price,

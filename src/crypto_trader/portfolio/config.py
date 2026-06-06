@@ -49,7 +49,7 @@ class PortfolioConfig:
 
     # Priority reservation
     priority_headroom_R: float = 0.0
-    priority_reserve_threshold: int = 0  # priority >= this gets blocked when headroom binds
+    priority_reserve_threshold: int = 1  # priority >= this gets blocked when headroom binds
 
     def get_strategy(self, strategy_id: str) -> StrategyAllocation | None:
         """Look up allocation by strategy_id."""

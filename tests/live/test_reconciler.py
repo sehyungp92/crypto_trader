@@ -64,12 +64,63 @@ class TestPositionReconciler:
         assert len(discrepancies) == 1
         assert discrepancies[0].kind == "direction_mismatch"
 
-    def test_expected_none_is_skipped(self):
+    def test_expected_none_is_clean_when_actual_flat(self):
         r = PositionReconciler()
         expected = {"BTC": None, "ETH": Position("ETH", Side.LONG, 1.0, 3000.0)}
         actual = [Position("ETH", Side.LONG, 1.0, 3000.0)]
         discrepancies = r.reconcile(expected, actual)
         assert len(discrepancies) == 0
+
+    def test_expected_none_flags_configured_symbol_phantom(self):
+        r = PositionReconciler()
+        expected = {"BTC": None}
+        actual = [Position("BTC", Side.LONG, 0.1, 50000.0)]
+
+        discrepancies = r.reconcile(expected, actual)
+
+        assert len(discrepancies) == 1
+        assert discrepancies[0].kind == "phantom"
+        assert discrepancies[0].symbol == "BTC"
+
+    def test_expected_unknown_qty_checks_direction_without_qty_mismatch(self):
+        r = PositionReconciler()
+        expected = {
+            "BTC": Position(
+                "BTC",
+                Side.LONG,
+                0.0,
+                0.0,
+                metadata={"qty_known": False},
+            ),
+        }
+        actual = [Position("BTC", Side.LONG, 0.1, 50000.0)]
+
+        assert r.reconcile(expected, actual) == []
+
+    def test_expected_unknown_qty_still_requires_nonzero_actual_position(self):
+        r = PositionReconciler()
+        expected = {
+            "BTC": Position(
+                "BTC",
+                Side.LONG,
+                0.0,
+                0.0,
+                metadata={"qty_known": False},
+            ),
+        }
+        actual = [Position("BTC", Side.LONG, 0.0, 50000.0)]
+
+        discrepancies = r.reconcile(expected, actual)
+
+        assert len(discrepancies) == 1
+        assert discrepancies[0].kind == "missing"
+
+    def test_flat_unexpected_exchange_rows_are_ignored(self):
+        r = PositionReconciler()
+
+        discrepancies = r.reconcile({}, [Position("BTC", Side.LONG, 0.0, 50000.0)])
+
+        assert discrepancies == []
 
     def test_multiple_discrepancies(self):
         r = PositionReconciler()

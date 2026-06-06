@@ -302,6 +302,54 @@ class TestUpsertPositions:
         assert calls[2].args[1][1] == "ETH"
 
 
+class TestAllocationTables:
+    def test_upserts_strategy_position_allocations_without_touching_legacy_positions(self):
+        sink, mock_conn, _ = _make_sink()
+
+        sink.upsert_strategy_position_allocations([{
+            "position_instance_id": "pos_1",
+            "strategy_id": "momentum",
+            "symbol": "BTC",
+            "direction": "LONG",
+            "allocated_qty": 0.1,
+            "avg_entry": 90_000.0,
+            "risk_r": 0.5,
+            "entry_time": "2026-06-04T00:00:00+00:00",
+            "status": "OPEN",
+            "confidence": "exact",
+            "source": "lifecycle",
+            "entry_order_ids": ["entry_1"],
+            "entry_fill_ids": ["fill_1"],
+            "exit_order_ids": [],
+            "exit_fill_ids": [],
+            "metadata": {},
+        }])
+
+        calls = mock_conn.execute.call_args_list
+        assert "DELETE FROM strategy_position_allocations" in calls[0].args[0]
+        assert "INSERT INTO strategy_position_allocations" in calls[1].args[0]
+        assert all("DELETE FROM positions" not in call.args[0] for call in calls)
+
+    def test_upserts_exchange_positions_separately_from_strategy_rows(self):
+        sink, mock_conn, _ = _make_sink()
+
+        sink.upsert_exchange_positions([{
+            "symbol": "BTC",
+            "direction": "LONG",
+            "qty": 0.2,
+            "avg_entry": 90_000.0,
+            "unrealized_pnl": 50.0,
+            "liquidation_price": None,
+            "observed_at": "2026-06-04T00:00:00+00:00",
+            "metadata": {},
+        }])
+
+        calls = mock_conn.execute.call_args_list
+        assert "DELETE FROM exchange_positions" in calls[0].args[0]
+        assert "INSERT INTO exchange_positions" in calls[1].args[0]
+        assert all("INSERT INTO positions" not in call.args[0] for call in calls)
+
+
 class TestGenericOnlyMethods:
     def test_events_without_typed_tables_write_generic_events(self):
         sink, mock_conn, _ = _make_sink()
@@ -321,6 +369,15 @@ def test_instrumentation_events_indexes_target_canonical_payload_join_keys():
 
     assert "payload->'payload'->>'decision_id'" in migration
     assert "payload->'payload'->>'bar_id'" in migration
+
+
+def test_position_allocation_migration_is_additive():
+    migration = Path("infra/postgres/migrations/004_position_allocations.sql").read_text(encoding="utf-8")
+
+    assert "CREATE TABLE IF NOT EXISTS strategy_position_allocations" in migration
+    assert "CREATE TABLE IF NOT EXISTS exchange_positions" in migration
+    assert "DROP TABLE positions" not in migration
+    assert "CREATE OR REPLACE VIEW positions" not in migration
 
 
 class TestConnectionErrorHandling:
@@ -378,6 +435,7 @@ class TestConnectionErrorHandling:
                 data_dir=tmp_path / "data",
                 bot_id="bot1",
                 postgres_dsn="postgresql://test:test@localhost/test",
+                postgres_async_enabled=False,
             ))
 
             row = json.loads((tmp_path / "errors.jsonl").read_text(encoding="utf-8").splitlines()[0])
@@ -423,3 +481,44 @@ class TestConnectionErrorHandling:
         assert row["recovery_action"] == "disable_postgres_sink"
         assert row["metadata"]["portfolio_id"] == "paper"
         assert row["lineage"]["symbol_universe"] == ["BTC"]
+
+    def test_engine_postgres_error_callback_skips_postgres_sink_recursion(self, tmp_path):
+        from crypto_trader.instrumentation.emitter import EventEmitter
+        from crypto_trader.instrumentation.sinks import JsonlSink
+        from crypto_trader.live.config import LiveConfig
+        from crypto_trader.live.engine import LiveEngine
+
+        class FakePostgresSink:
+            def __init__(self) -> None:
+                self.errors: list[ErrorEvent] = []
+
+            def write_error(self, event: ErrorEvent) -> None:
+                self.errors.append(event)
+
+        engine = object.__new__(LiveEngine)
+        engine._config = LiveConfig(
+            state_dir=tmp_path,
+            data_dir=tmp_path / "data",
+            bot_id="bot1",
+            portfolio_id="paper",
+            symbols=["BTC"],
+        )
+        engine._emitter = EventEmitter()
+        engine._emitter.add_sink(JsonlSink(tmp_path))
+        pg_sink = FakePostgresSink()
+        engine._pg_sink = pg_sink
+        engine._emitter.add_sink(pg_sink)
+
+        engine._emit_postgres_error_event({
+            "component": "postgres_sink",
+            "message": "queue full",
+            "error_type": "QueueFull",
+            "recovery_action": "jsonl_backfill_required",
+            "severity": "critical",
+        })
+
+        row = json.loads((tmp_path / "errors.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        assert row["component"] == "postgres_sink"
+        assert row["error_type"] == "QueueFull"
+        assert row["recovery_action"] == "jsonl_backfill_required"
+        assert pg_sink.errors == []

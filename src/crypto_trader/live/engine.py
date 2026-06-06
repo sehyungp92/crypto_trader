@@ -24,7 +24,15 @@ from crypto_trader.core.engine import MultiTimeFrameBars, StrategyContext
 from crypto_trader.core.events import CanonicalRuntimeEvent, EventBus, PositionClosedEvent
 from crypto_trader.core.execution_gateway import ExecutionGateway
 from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, OrderType, Position, SetupGrade, Side, TimeFrame, Trade
+from crypto_trader.core.order_semantics import (
+    EXIT_OCA_POLICY,
+    NATIVE_OCA_POLICY,
+    entry_position_instance_id,
+    is_exit_order,
+    validate_strategy_scoped_oca_group,
+)
 from crypto_trader.core.runtime_types import MarketEvent
+from crypto_trader.core.runtime_types import ExecutionReport, ExecutionReportKind
 from crypto_trader.core.strategy_runtime import StrategySlotRuntime
 from crypto_trader.exchange.meta import AssetMeta
 from crypto_trader.live.broker import HyperliquidBroker
@@ -41,9 +49,14 @@ from crypto_trader.live.oms_store import (
     OmsStore,
     fill_identity,
 )
-from crypto_trader.live.reconciler import PositionReconciler
+from crypto_trader.live.reconciler import Discrepancy, PositionReconciler
 from crypto_trader.live.state import PersistentState
 from crypto_trader.portfolio.config import PortfolioConfig
+from crypto_trader.portfolio.allocation import (
+    allocation_residuals,
+    derive_strategy_position_allocations,
+    exchange_net_positions,
+)
 from crypto_trader.portfolio.coordinator import StrategyCoordinator
 from crypto_trader.portfolio.manager import PortfolioManager
 from crypto_trader.portfolio.state import PortfolioState
@@ -211,6 +224,7 @@ class LiveEngine:
         self._running = False
         self._slots: list[_StrategySlot] = []
         self._broker: HyperliquidBroker | None = None
+        self._execution_adapter: HyperliquidExecutionAdapter | None = None
         self._coordinator: StrategyCoordinator | None = None
         self._manager: PortfolioManager | None = None
         self._feed: LiveFeed | None = None
@@ -257,11 +271,19 @@ class LiveEngine:
         self._pg_sink = None
         if config.postgres_dsn:
             try:
-                from crypto_trader.instrumentation.postgres_sink import PostgresSink
-                self._pg_sink = PostgresSink(
-                    config.postgres_dsn,
-                    error_callback=self._emit_postgres_error_event,
-                )
+                if getattr(config, "postgres_async_enabled", True):
+                    from crypto_trader.instrumentation.async_postgres_sink import AsyncPostgresSink
+                    self._pg_sink = AsyncPostgresSink(
+                        config.postgres_dsn,
+                        queue_capacity=getattr(config, "postgres_queue_capacity", 5000),
+                        error_callback=self._emit_postgres_error_event,
+                    )
+                else:
+                    from crypto_trader.instrumentation.postgres_sink import PostgresSink
+                    self._pg_sink = PostgresSink(
+                        config.postgres_dsn,
+                        error_callback=self._emit_postgres_error_event,
+                    )
                 self._emitter.add_sink(self._pg_sink)
                 log.info("engine.postgres_sink_enabled")
             except Exception as exc:
@@ -289,6 +311,7 @@ class LiveEngine:
             rate_limit_per_sec=self._config.rate_limit_per_sec,
             **asset_meta_kwargs,
         )
+        self._execution_adapter = HyperliquidExecutionAdapter(self._broker)
 
         # Load portfolio config
         portfolio_config = self._load_portfolio_config()
@@ -314,8 +337,21 @@ class LiveEngine:
         # Try to restore from persistent state
         saved_state = self._persistent.load_portfolio_state()
         if saved_state:
-            state.peak_equity = max(state.equity, saved_state.get("peak_equity", state.equity))
-            log.info("engine.state_restored", peak_equity=state.peak_equity)
+            restored = PortfolioState.from_dict(saved_state)
+            state.open_risks = restored.open_risks
+            state.daily_pnl_R = restored.daily_pnl_R
+            state.portfolio_daily_pnl_R = restored.portfolio_daily_pnl_R
+            state.current_day = restored.current_day
+            state.peak_equity = max(state.equity, restored.peak_equity or state.equity)
+            today = datetime.now(timezone.utc).date()
+            if state.current_day != today:
+                state.reset_daily(today)
+            log.info(
+                "engine.state_restored",
+                peak_equity=state.peak_equity,
+                open_risks=len(state.open_risks),
+                current_day=str(state.current_day) if state.current_day else None,
+            )
 
         self._manager = PortfolioManager(config=portfolio_config, state=state)
         self._coordinator = StrategyCoordinator(
@@ -458,19 +494,16 @@ class LiveEngine:
         reconciler = PositionReconciler()
         actual = self._broker.get_positions()
         # On fresh start, no positions expected; on restart, portfolio state has open_risks
-        expected: dict[str, Position | None] = {}
-        for risk in self._manager.state.open_risks:
-            expected[risk.symbol] = Position(
-                symbol=risk.symbol,
-                direction=risk.direction,
-                qty=0.0,  # qty unknown from risk tracking; direction check is key
-                avg_entry=0.0,
-            )
+        expected = self._expected_positions_from_portfolio_state()
         # Also mark symbols with no expected position
         for sym in self._config.symbols:
             if sym not in expected:
                 expected[sym] = None
-        self._handle_startup_reconciliation(reconciler.reconcile(expected, actual))
+        startup_discrepancies = reconciler.reconcile(expected, actual)
+        startup_discrepancies.extend(self._allocation_drift_discrepancies(actual))
+        startup_discrepancies.extend(self._cleanup_flat_symbol_exit_orders(open_orders, actual))
+        startup_discrepancies.extend(self._reconcile_open_oca_groups(open_orders))
+        self._handle_startup_reconciliation(startup_discrepancies)
         self._seed_ttl_trackers_from_open_orders(open_orders)
 
         # Start sidecar forwarder if relay is configured
@@ -531,7 +564,12 @@ class LiveEngine:
 
         # Close PostgreSQL connection pool
         if self._pg_sink is not None:
-            self._pg_sink.close()
+            try:
+                self._pg_sink.close(
+                    flush_timeout_sec=getattr(self._config, "postgres_flush_timeout_sec", 5.0),
+                )
+            except TypeError:
+                self._pg_sink.close()
 
         # Persist final state before closing the durable store.
         try:
@@ -594,8 +632,9 @@ class LiveEngine:
         if self._broker is None:
             return []
         since = self._last_fill_check - timedelta(seconds=self._fill_query_overlap_sec())
-        fills = self._broker.get_fills_since(since)
+        fills, reports = self._poll_fill_reports(since)
         result = self._process_fills(fills)
+        self._record_fill_poll_reports(reports)
 
         latest_ts = max((fill.timestamp for fill in result.safe_watermark_fills), default=None)
         if latest_ts is not None:
@@ -605,6 +644,86 @@ class LiveEngine:
             oms.set_watermark("fills_since", self._last_fill_check.isoformat())
             oms.set_watermark("fills_last_poll_at", datetime.now(timezone.utc).isoformat())
         return result.processed
+
+    def _poll_fill_reports(self, since: datetime) -> tuple[list[Fill], list[ExecutionReport]]:
+        adapter = getattr(self, "_execution_adapter", None)
+        sync_fills = getattr(adapter, "sync_fills", None)
+        if callable(sync_fills):
+            reports = list(sync_fills(since))
+            fills = [
+                fill for report in reports
+                if (fill := self._fill_from_execution_report(report)) is not None
+            ]
+            non_fill_reports = [
+                report for report in reports
+                if report.kind not in {ExecutionReportKind.FILL, ExecutionReportKind.PARTIAL_FILL}
+            ]
+            return fills, non_fill_reports
+        broker = getattr(self, "_broker", None)
+        if broker is None:
+            return [], []
+        return list(broker.get_fills_since(since)), []
+
+    def _fill_from_execution_report(self, report: ExecutionReport) -> Fill | None:
+        if report.kind not in {ExecutionReportKind.FILL, ExecutionReportKind.PARTIAL_FILL}:
+            return None
+        if report.side is None:
+            return None
+        filled_qty = report.filled_qty if report.filled_qty else report.qty
+        if filled_qty <= 0:
+            return None
+        metadata = dict(report.metadata or {})
+        return Fill(
+            order_id=report.client_order_id,
+            exchange_order_id=report.exchange_order_id,
+            exchange_fill_id=report.fill_id or "",
+            symbol=report.symbol,
+            side=report.side,
+            qty=filled_qty,
+            fill_price=report.fill_price or 0.0,
+            commission=report.commission,
+            timestamp=report.timestamp,
+            tag=str(metadata.get("tag") or ""),
+            raw=metadata,
+        )
+
+    def _record_fill_poll_reports(self, reports: list[ExecutionReport]) -> None:
+        for report in reports:
+            self._record_execution_report(report)
+            self._record_canonical_event(CanonicalRuntimeEvent(
+                timestamp=report.timestamp,
+                stream="execution",
+                payload=report.to_dict(),
+            ))
+
+    def _record_execution_report(self, report: ExecutionReport) -> None:
+        oms = getattr(self, "_oms", None)
+        if oms is None:
+            return
+        record_fn = getattr(oms, "record_execution_report", None)
+        if callable(record_fn):
+            record_fn(report)
+        upsert_fn = getattr(oms, "upsert_order", None)
+        if not callable(upsert_fn) or not report.client_order_id:
+            return
+        metadata = dict(report.metadata or {})
+        order_metadata = {**report.to_dict(), **metadata}
+        upsert_fn(
+            client_order_id=report.client_order_id,
+            exchange_order_id=report.exchange_order_id,
+            strategy_id=str(metadata.get("strategy_id") or ""),
+            symbol=report.symbol,
+            side=report.side.value if report.side is not None else "",
+            order_type=str(metadata.get("order_type") or ""),
+            status=report.order_status.value if report.order_status is not None else report.kind.value.upper(),
+            role=str(metadata.get("role") or metadata.get("tag") or ""),
+            decision_id=str(metadata.get("decision_id") or ""),
+            position_instance_id=str(metadata.get("position_instance_id") or ""),
+            reduce_only=bool(metadata.get("reduce_only", False)),
+            oca_group=metadata.get("oca_group"),
+            bracket_group=metadata.get("bracket_group"),
+            metadata=order_metadata,
+        )
 
     def _process_fills(self, fills: list[Fill]) -> _FillProcessingResult:
         processed_fills: list[Fill] = []
@@ -1135,6 +1254,11 @@ class LiveEngine:
         exchange_order_ids = list(dict.fromkeys(str(order.get("exchange_order_id") or "") for order in orders if order.get("exchange_order_id")))
         entry_fill_ids = [str(fill.get("fill_id")) for fill in entry_fills if fill.get("fill_id")]
         exit_fill_ids = [str(fill.get("fill_id")) for fill in exit_fills if fill.get("fill_id")]
+        position_instance_id = self._resolve_trade_position_instance_id(
+            strategy_id,
+            trade,
+            order_metadata=order_metadata,
+        )
         artifact_inputs = {
             "trade": self._trade_payload(trade),
             "orders": client_order_ids,
@@ -1161,6 +1285,7 @@ class LiveEngine:
             "exit_order_ids": sorted(exit_order_ids),
             "entry_fill_ids": entry_fill_ids,
             "exit_fill_ids": exit_fill_ids,
+            "position_instance_id": position_instance_id,
             "client_order_ids": client_order_ids,
             "exchange_order_ids": exchange_order_ids,
             "decision_ref": {
@@ -1306,6 +1431,10 @@ class LiveEngine:
 
     @staticmethod
     def _trade_position_instance_id(trade: Trade) -> str:
+        context = LiveEngine._trade_existing_context(trade)
+        context_position_id = str(context.get("position_instance_id") or "")
+        if context_position_id:
+            return context_position_id
         prefix = "live_"
         if not trade.trade_id.startswith(prefix):
             return ""
@@ -1313,6 +1442,47 @@ class LiveEngine:
         if ":" not in body:
             return ""
         return body.rsplit(":", 1)[0]
+
+    def _resolve_trade_position_instance_id(
+        self,
+        strategy_id: str,
+        trade: Trade,
+        *,
+        order_metadata: list[dict[str, Any]] | None = None,
+    ) -> str:
+        position_instance_id = self._trade_position_instance_id(trade)
+        if position_instance_id:
+            return position_instance_id
+
+        for metadata in order_metadata or []:
+            position_instance_id = str(metadata.get("position_instance_id") or "")
+            if position_instance_id:
+                return position_instance_id
+
+        tracked = self._tracked_positions.get(trade.symbol, {})
+        position_instance_id = str(tracked.get("position_instance_id") or "")
+        if position_instance_id:
+            return position_instance_id
+
+        position_instance_id = self._open_lifecycle_position_instance_id(
+            strategy_id,
+            trade.symbol,
+            trade.direction,
+        )
+        if position_instance_id:
+            return position_instance_id
+
+        manager = getattr(self, "_manager", None)
+        open_risks = getattr(getattr(manager, "state", None), "open_risks", [])
+        for risk in open_risks:
+            if risk.strategy_id != strategy_id or risk.symbol != trade.symbol:
+                continue
+            if risk.direction != trade.direction:
+                continue
+            position_instance_id = str(risk.position_instance_id or "")
+            if position_instance_id:
+                return position_instance_id
+        return ""
 
     def _order_in_trade_window(self, order: dict[str, Any], trade: Trade) -> bool:
         metadata = self._order_metadata(order)
@@ -1833,6 +2003,7 @@ class LiveEngine:
     def _track_entry_fill(self, strategy_id: str, fill: Fill) -> None:
         if fill.tag != "entry":
             return
+        position_instance_id = self._entry_fill_position_instance_id(strategy_id, fill)
         tracked = self._tracked_positions.get(fill.symbol)
         if (
             tracked is not None
@@ -1849,12 +2020,15 @@ class LiveEngine:
             tracked["qty"] = total_qty
             tracked["entry_time"] = min(tracked["entry_time"], fill.timestamp)
             tracked["entry_commission"] = tracked.get("entry_commission", 0.0) + fill.commission
+            if position_instance_id:
+                tracked.setdefault("position_instance_id", position_instance_id)
             self._append_tracked_fill_refs(tracked, fill, prefix="entry")
             return
 
         self._tracked_positions[fill.symbol] = {
             "strategy_id": strategy_id,
             "direction": fill.side,
+            "position_instance_id": position_instance_id,
             "entry_price": fill.fill_price,
             "entry_time": fill.timestamp,
             "qty": fill.qty,
@@ -1862,6 +2036,57 @@ class LiveEngine:
             "entry_fill_ids": [fill_identity(fill)],
             "entry_order_ids": self._fill_order_ids(fill),
         }
+
+    def _entry_fill_position_instance_id(self, strategy_id: str, fill: Fill) -> str:
+        raw = dict(fill.raw or {})
+        explicit = str(raw.get("position_instance_id") or "")
+        if explicit:
+            return explicit
+        lifecycle_id = self._open_lifecycle_position_instance_id(
+            strategy_id,
+            fill.symbol,
+            fill.side,
+        )
+        if lifecycle_id:
+            return lifecycle_id
+        return entry_position_instance_id(strategy_id, fill.symbol, fill.side, fill.timestamp)
+
+    def _open_lifecycle_position_instance_id(
+        self,
+        strategy_id: str,
+        symbol: str,
+        direction: Side | str | None,
+    ) -> str:
+        direction_value = direction.value if isinstance(direction, Side) else str(direction or "")
+        for entry in self._lifecycle_snapshot():
+            entry_strategy = str(self._entry_value(entry, "strategy_id") or "")
+            entry_symbol = str(self._entry_value(entry, "symbol") or "")
+            entry_direction = self._entry_value(entry, "direction")
+            entry_direction_value = (
+                entry_direction.value
+                if isinstance(entry_direction, Side)
+                else str(entry_direction or "")
+            )
+            try:
+                qty = float(self._entry_value(entry, "qty") or 0.0)
+            except (TypeError, ValueError):
+                qty = 0.0
+            if (
+                entry_strategy == strategy_id
+                and entry_symbol == symbol
+                and entry_direction_value == direction_value
+                and abs(qty) > 1e-12
+            ):
+                position_instance_id = str(self._entry_value(entry, "position_instance_id") or "")
+                if position_instance_id:
+                    return position_instance_id
+        return ""
+
+    @staticmethod
+    def _entry_value(entry: Any, key: str) -> Any:
+        if isinstance(entry, dict):
+            return entry.get(key)
+        return getattr(entry, key, None)
 
     def _append_tracked_fill_refs(self, tracked: dict[str, Any], fill: Fill, *, prefix: str) -> None:
         fill_ids = tracked.setdefault(f"{prefix}_fill_ids", [])
@@ -1889,6 +2114,13 @@ class LiveEngine:
                 if self._pg_sink is not None:
                     self._pg_sink.write_equity(equity, datetime.now(timezone.utc))
                     self._pg_sink.upsert_positions(self._build_positions_snapshot())
+                    ownership = self._allocation_ownership_payload()
+                    upsert_allocations = getattr(self._pg_sink, "upsert_strategy_position_allocations", None)
+                    if callable(upsert_allocations):
+                        upsert_allocations(ownership["strategy_allocations"])
+                    upsert_exchange_positions = getattr(self._pg_sink, "upsert_exchange_positions", None)
+                    if callable(upsert_exchange_positions):
+                        upsert_exchange_positions(ownership["exchange_positions"])
             except Exception as exc:
                 self._health.on_error("equity_snapshot")
                 self._emit_error_event("equity_snapshot", exc, severity="low", recovery_action="continue")
@@ -2542,6 +2774,7 @@ class LiveEngine:
                         context=context,
                     ),
                 )
+            self._emit_position_ownership_snapshots(source=source, timestamp=now, context=context)
             self._emit_assistant_payload("correlation_exposure", {
                 "timestamp": now,
                 "source": source,
@@ -2582,6 +2815,16 @@ class LiveEngine:
             and self._unknown_strategy_id(position.get("strategy_id"))
         ):
             payload["strategy_id"] = fill_strategy_id
+        unknown_allocation = self._unknown_strategy_id(payload.get("strategy_id"))
+        payload.setdefault("position_instance_id", "")
+        payload.setdefault("allocated_qty", 0.0 if unknown_allocation else payload.get("qty", 0.0))
+        payload.setdefault("net_exchange_qty", payload.get("qty", 0.0))
+        payload.setdefault("allocation_confidence", "unknown" if unknown_allocation else "inferred")
+        payload.setdefault("allocation_source", payload.get("source", "broker"))
+        payload.setdefault("unknown_allocation", unknown_allocation)
+        payload.setdefault("unallocated_qty", payload.get("qty", 0.0) if unknown_allocation else 0.0)
+        payload.setdefault("entry_order_ids", [])
+        payload.setdefault("entry_fill_ids", [])
         return payload
 
     @staticmethod
@@ -2628,6 +2871,101 @@ class LiveEngine:
         payload.update(context or {})
         self._emit_assistant_payload("allocation_snapshot", payload)
 
+    def _emit_position_ownership_snapshots(
+        self,
+        *,
+        source: str,
+        timestamp: str,
+        context: dict[str, Any] | None = None,
+    ) -> None:
+        ownership = self._allocation_ownership_payload(timestamp=timestamp)
+        base = {
+            "timestamp": timestamp,
+            "source": source,
+            "snapshot_kind": "position_ownership",
+            "schema_version": 1,
+            **dict(context or {}),
+        }
+        for allocation in ownership["strategy_allocations"]:
+            self._emit_assistant_payload("position_allocation_snapshot", {
+                **base,
+                **allocation,
+                "unknown_allocation": False,
+                "unallocated_qty": 0.0,
+                "allocation_confidence": allocation.get("confidence"),
+                "allocation_source": allocation.get("source"),
+            })
+        for residual in ownership["residuals"]:
+            self._emit_assistant_payload("position_allocation_snapshot", {
+                **base,
+                **residual,
+                "position_instance_id": "",
+                "strategy_id": "",
+                "allocation_confidence": "unknown",
+                "allocation_source": "exchange_residual",
+            })
+
+    def _allocation_ownership_payload(self, *, timestamp: str | None = None) -> dict[str, Any]:
+        observed_at = _parse_datetime_or_now(timestamp)
+        lifecycle_entries = self._lifecycle_snapshot()
+        manager = getattr(self, "_manager", None)
+        open_risks = list(manager.state.open_risks) if manager is not None else []
+        allocations = derive_strategy_position_allocations(
+            lifecycle_entries,
+            open_risks,
+            observed_at=observed_at,
+        )
+        broker_positions = self._broker.get_positions() if getattr(self, "_broker", None) else []
+        exchange_positions = exchange_net_positions(broker_positions, observed_at=observed_at)
+        residuals = allocation_residuals(exchange_positions, allocations)
+        return {
+            "timestamp": observed_at.isoformat(),
+            "exchange_positions": [position.to_dict() for position in exchange_positions],
+            "strategy_allocations": [allocation.to_dict() for allocation in allocations],
+            "residuals": [residual.to_dict() for residual in residuals],
+            "allocation_count": len(allocations),
+            "unallocated_exposure_count": len(residuals),
+            "max_allocation_net_residual": max(
+                (abs(residual.unallocated_qty) for residual in residuals),
+                default=0.0,
+            ),
+            "position_ownership_drift": bool(residuals),
+        }
+
+    def _allocation_drift_discrepancies(
+        self,
+        actual_positions: list[Position] | None = None,
+    ) -> list[Discrepancy]:
+        observed_at = datetime.now(timezone.utc)
+        manager = getattr(self, "_manager", None)
+        open_risks = list(manager.state.open_risks) if manager is not None else []
+        allocations = derive_strategy_position_allocations(
+            self._lifecycle_snapshot(),
+            open_risks,
+            observed_at=observed_at,
+        )
+        exchange_positions = exchange_net_positions(
+            list(actual_positions or []),
+            observed_at=observed_at,
+        )
+        residuals = allocation_residuals(exchange_positions, allocations)
+        return [
+            Discrepancy(
+                symbol=residual.symbol,
+                kind="position_ownership_drift",
+                expected=(
+                    f"{residual.direction.value} allocated_qty="
+                    f"{residual.allocated_qty}"
+                ),
+                actual=(
+                    f"exchange_qty={residual.net_exchange_qty} "
+                    f"residual={residual.unallocated_qty} "
+                    f"unknown_allocation={residual.unknown_allocation}"
+                ),
+            )
+            for residual in residuals
+        ]
+
     def _portfolio_snapshot_payload(self, *, source: str, timestamp: str) -> dict:
         manager = getattr(self, "_manager", None)
         state = manager.state if manager else None
@@ -2641,6 +2979,7 @@ class LiveEngine:
                 open_orders = list_open_orders()
             except Exception:
                 open_orders = []
+        ownership = self._allocation_ownership_payload(timestamp=timestamp)
         return {
             "timestamp": timestamp,
             "source": source,
@@ -2666,6 +3005,10 @@ class LiveEngine:
             "open_risks": state.to_dict().get("open_risks", []) if state else [],
             "positions_count": len(positions),
             "pending_orders_count": len(open_orders),
+            "allocation_count": ownership["allocation_count"],
+            "unallocated_exposure_count": ownership["unallocated_exposure_count"],
+            "max_allocation_net_residual": ownership["max_allocation_net_residual"],
+            "position_ownership_drift": ownership["position_ownership_drift"],
             "risk_config_version": self._lineage.risk_config_version,
             "allocation_version": self._lineage.allocation_version,
         }
@@ -2737,11 +3080,15 @@ class LiveEngine:
         )
         entry_commission = float(tracked.get("entry_commission", 0.0))
         realized_pnl = float(getattr(closed_trade, "pnl", 0.0) or 0.0)
+        position_instance_id = self._closed_position_instance_id(
+            strategy_id,
+            fill,
+            tracked=tracked,
+            closed_trade=closed_trade,
+            entry_time=entry_time,
+        )
         return {
-            "position_instance_id": (
-                f"{strategy_id}:{fill.symbol}:"
-                f"{entry_time.isoformat() if hasattr(entry_time, 'isoformat') else ''}"
-            ),
+            "position_instance_id": position_instance_id,
             "strategy_id": strategy_id,
             "symbol": fill.symbol,
             "direction": direction_value,
@@ -2767,6 +3114,66 @@ class LiveEngine:
             "exit_time": fill.timestamp,
             "position_status": "closed",
         }
+
+    def _closed_position_instance_id(
+        self,
+        strategy_id: str,
+        fill: Fill,
+        *,
+        tracked: dict[str, Any],
+        closed_trade: Trade | None,
+        entry_time: Any,
+    ) -> str:
+        if closed_trade is not None:
+            position_instance_id = self._trade_position_instance_id(closed_trade)
+            if position_instance_id:
+                return position_instance_id
+        position_instance_id = str(tracked.get("position_instance_id") or "")
+        if position_instance_id:
+            return position_instance_id
+        raw = dict(fill.raw or {})
+        position_instance_id = str(raw.get("position_instance_id") or "")
+        if position_instance_id:
+            return position_instance_id
+        position_instance_id = self._position_instance_id_from_fill_order(fill)
+        if position_instance_id:
+            return position_instance_id
+        if closed_trade is not None:
+            position_instance_id = self._resolve_trade_position_instance_id(
+                strategy_id,
+                closed_trade,
+            )
+            if position_instance_id:
+                return position_instance_id
+        if hasattr(entry_time, "timestamp"):
+            direction = getattr(closed_trade, "direction", None) or tracked.get("direction") or fill.side
+            return entry_position_instance_id(strategy_id, fill.symbol, direction, entry_time)
+        return ""
+
+    def _position_instance_id_from_fill_order(self, fill: Fill) -> str:
+        oms = getattr(self, "_oms", None)
+        get_order = getattr(oms, "get_order", None)
+        if not callable(get_order):
+            return ""
+        for order_id in (fill.order_id, fill.exchange_order_id):
+            if not order_id:
+                continue
+            try:
+                order = get_order(order_id)
+            except Exception:
+                log.exception("engine.fill_order_position_id_lookup_failed", order_id=order_id)
+                continue
+            if not order:
+                continue
+            metadata = dict(order.get("metadata") or {})
+            position_instance_id = str(
+                order.get("position_instance_id")
+                or metadata.get("position_instance_id")
+                or ""
+            )
+            if position_instance_id:
+                return position_instance_id
+        return ""
 
     def _emit_unresolved_fill_snapshots(
         self,
@@ -3250,6 +3657,7 @@ class LiveEngine:
         recovery_action: str = "",
         error_type: str | None = None,
         stack_trace: str = "",
+        skip_postgres_sink: bool = False,
     ) -> None:
         try:
             if not hasattr(self, "_emitter"):
@@ -3289,7 +3697,7 @@ class LiveEngine:
                 deployment_id=lineage_context.deployment_id,
                 code_sha=lineage_context.code_sha,
             )
-            self._emitter.emit_error(ErrorEvent(
+            event = ErrorEvent(
                 metadata=metadata,
                 lineage=lineage,
                 error_type=error_type or (
@@ -3301,9 +3709,29 @@ class LiveEngine:
                 component=component,
                 symbol=symbol,
                 recovery_action=recovery_action,
-            ))
+            )
+            if skip_postgres_sink:
+                self._emit_error_without_postgres_sink(event)
+            else:
+                self._emitter.emit_error(event)
         except Exception:
             log.exception("engine.error_event_emit_failed", component=component)
+
+    def _emit_error_without_postgres_sink(self, event: ErrorEvent) -> None:
+        emitter = getattr(self, "_emitter", None)
+        pg_sink = getattr(self, "_pg_sink", None)
+        sinks = list(getattr(emitter, "_sinks", []))
+        failures = getattr(emitter, "_sink_failures", None)
+        for sink in sinks:
+            if sink is pg_sink:
+                continue
+            sink_name = type(sink).__name__
+            try:
+                sink.write_error(event)
+            except Exception:
+                if isinstance(failures, dict):
+                    failures[sink_name] = failures.get(sink_name, 0) + 1
+                log.exception("emitter.error_failed", sink=sink_name)
 
     def _emit_sidecar_error_event(self, payload: dict[str, Any]) -> None:
         self._emit_error_event(
@@ -3321,6 +3749,7 @@ class LiveEngine:
             severity=str(payload.get("severity") or "medium"),
             recovery_action=str(payload.get("recovery_action") or "continue_without_postgres"),
             error_type=str(payload.get("error_type") or "runtime_error"),
+            skip_postgres_sink=True,
         )
 
     def _dispatch_bar(self, bar: Bar | MarketEvent) -> None:
@@ -3432,15 +3861,25 @@ class LiveEngine:
         ))
         pnl_R = trade.r_multiple if trade.r_multiple is not None else 0.0
         if self._coordinator is not None:
-            self._coordinator.on_trade_closed(strategy_id, trade.symbol, pnl_R)
+            self._record_coordinator_trade_closed(strategy_id, trade.symbol, pnl_R, trade)
+        self._cancel_strategy_open_orders_for_closed_symbol(slot, trade.symbol)
         self._tracked_positions.pop(trade.symbol, None)
         self._emit_runtime_snapshots(source="trade_closed")
 
     def _record_lifecycle_trade_position(self, strategy_id: str, trade: Trade) -> None:
         oms = getattr(self, "_oms", None)
         if oms is not None:
+            position_instance_id = (
+                self._resolve_trade_position_instance_id(strategy_id, trade)
+                or entry_position_instance_id(
+                    strategy_id,
+                    trade.symbol,
+                    trade.direction,
+                    trade.entry_time,
+                )
+            )
             oms.upsert_position(
-                position_instance_id=f"{strategy_id}:{trade.symbol}:{trade.entry_time.isoformat()}",
+                position_instance_id=position_instance_id,
                 strategy_id=strategy_id,
                 symbol=trade.symbol,
                 direction=trade.direction.value,
@@ -3513,6 +3952,7 @@ class LiveEngine:
                 mfe_r=None,
             )
             setattr(trade, "instrumentation_context", {
+                "position_instance_id": str(tracked.get("position_instance_id") or ""),
                 "entry_fill_ids": list(tracked.get("entry_fill_ids", [])),
                 "exit_fill_ids": [fill_identity(exit_fill)],
                 "entry_order_ids": list(tracked.get("entry_order_ids", [])),
@@ -3531,7 +3971,8 @@ class LiveEngine:
 
             # Fire coordinator for portfolio heat release (AFTER strategy enrichment)
             pnl_R = trade.r_multiple if trade.r_multiple is not None else 0.0
-            self._coordinator.on_trade_closed(tracked["strategy_id"], sym, pnl_R)
+            self._record_coordinator_trade_closed(tracked["strategy_id"], sym, pnl_R, trade)
+            self._cancel_strategy_open_orders_for_closed_symbol(slot, sym)
 
             del self._tracked_positions[sym]
             log.info(
@@ -3541,6 +3982,72 @@ class LiveEngine:
                 pnl=f"{trade.pnl:.2f}",
                 r=f"{trade.r_multiple:.2f}" if trade.r_multiple else "N/A",
             )
+
+    def _record_coordinator_trade_closed(
+        self,
+        strategy_id: str,
+        symbol: str,
+        pnl_R: float,
+        trade: Trade,
+    ) -> None:
+        if isinstance(self._coordinator, StrategyCoordinator):
+            self._coordinator.on_trade_closed(strategy_id, symbol, pnl_R, trade=trade)
+        elif self._coordinator is not None:
+            self._coordinator.on_trade_closed(strategy_id, symbol, pnl_R)
+
+    def _cancel_strategy_open_orders_for_closed_symbol(self, slot: _StrategySlot, symbol: str) -> int:
+        """Cancel remaining strategy-owned orders after a terminal close."""
+        broker = getattr(slot.ctx, "broker", None)
+        if broker is None:
+            return 0
+        cancelled = 0
+        failures: list[Discrepancy] = []
+        try:
+            open_orders = list(broker.get_open_orders(symbol))
+        except Exception:
+            log.exception(
+                "engine.closed_symbol_open_order_query_failed",
+                strategy=slot.strategy_id,
+                symbol=symbol,
+            )
+            return 0
+
+        for order in open_orders:
+            try:
+                if broker.cancel_order(order.order_id):
+                    cancelled += 1
+                    continue
+            except Exception:
+                log.exception(
+                    "engine.closed_symbol_order_cancel_failed",
+                    strategy=slot.strategy_id,
+                    symbol=symbol,
+                    order_id=order.order_id,
+                )
+            failures.append(Discrepancy(
+                symbol=symbol,
+                kind="stale_exit_order",
+                expected="no strategy-owned open orders after terminal close",
+                actual=f"{order.order_id} {order.tag or order.order_type.value}",
+            ))
+
+        if failures:
+            self._freeze_entries_for_reconciliation(
+                discrepancies=failures,
+                description=(
+                    "A terminal close left strategy-owned open orders that could not be "
+                    "cancelled; new entries are blocked."
+                ),
+                reconciliation_status="stale_exit_cleanup_failed",
+            )
+        if cancelled:
+            log.info(
+                "engine.closed_symbol_orders_cancelled",
+                strategy=slot.strategy_id,
+                symbol=symbol,
+                count=cancelled,
+            )
+        return cancelled
 
     async def _funnel_report_loop(self) -> None:
         """Periodic pipeline funnel snapshots."""
@@ -3654,6 +4161,7 @@ class LiveEngine:
                     "last_trade_event_at": self._last_assistant_event_at.get("trade"),
                 }
                 report_payload["emitter_sink_failures"] = self._emitter.sink_failures
+                report_payload["postgres_sink"] = self._postgres_sink_health_payload()
 
                 self._emitter.emit_health_report(HealthReportSnapshot(
                     timestamp=report.timestamp,
@@ -3718,6 +4226,28 @@ class LiveEngine:
             "consecutive_send_failures": status.get("consecutive_send_failures", 0),
             "last_error": status.get("last_error"),
         }
+
+    def _postgres_sink_health_payload(self) -> dict:
+        sink = getattr(self, "_pg_sink", None)
+        if sink is None:
+            return {"enabled": False}
+        metrics = getattr(sink, "metrics", None)
+        if callable(metrics):
+            payload = metrics()
+        else:
+            payload = {"enabled": True, "worker_alive": True, "mode": "sync"}
+        queue_depth = float(payload.get("queue_depth", 0.0) or 0.0)
+        queue_capacity = float(payload.get("queue_capacity", 0.0) or 0.0)
+        if queue_capacity > 0 and queue_depth / queue_capacity >= 0.8:
+            self._emit_postgres_error_event({
+                "component": "postgres_sink",
+                "event_type": "postgres_sink",
+                "error_type": "QueueHighWatermark",
+                "message": "postgres sink queue is above 80 percent capacity",
+                "severity": "medium",
+                "recovery_action": "monitor_and_backfill_from_jsonl_if_needed",
+            })
+        return payload
 
     def _funnel_report_interval(self) -> float:
         return max(60.0, self._config.funnel_report_interval_sec)
@@ -3903,18 +4433,47 @@ class LiveEngine:
         local_to_oid = getattr(self._broker, "_local_to_oid", {})
         open_orders = self._broker.get_open_orders()
         for order in open_orders:
+            exchange_oid = str(local_to_oid.get(order.order_id, ""))
+            existing = self._oms.get_order(order.order_id)
+            if existing is None and exchange_oid:
+                existing = self._oms.get_order(exchange_oid)
+            if existing is not None:
+                exchange_oid = exchange_oid or str(existing.get("exchange_order_id") or "")
+                existing_metadata = dict(existing.get("metadata") or {})
+                metadata = {**existing_metadata, **dict(order.metadata)}
+                for key in ("strategy_id", "position_instance_id", "oca_group"):
+                    value = existing.get(key)
+                    if value and not metadata.get(key):
+                        metadata[key] = value
+                if metadata.get("oca_group") and not order.oca_group:
+                    order.oca_group = str(metadata["oca_group"])
+                if existing.get("reduce_only") and not metadata.get("reduce_only"):
+                    metadata["reduce_only"] = True
+                order.metadata = metadata
+
             strategy_id = ""
             if self._coordinator is not None:
                 strategy_id = self._coordinator.get_strategy_for_order(order.order_id) or ""
+            owner = ""
+            owner_fn = getattr(self._broker, "get_order_owner", None)
+            if callable(owner_fn):
+                owner = str(owner_fn(order.order_id) or "")
             strategy_id = (
                 strategy_id
                 or str(order.metadata.get("strategy_id") or "")
-                or (self._broker.get_order_owner(order.order_id) or "")
+                or owner
+                or (str(existing.get("strategy_id") or "") if existing is not None else "")
                 or "unknown"
             )
-            exchange_oid = str(local_to_oid.get(order.order_id, ""))
+            client_order_id = (
+                str(existing.get("client_order_id") or "")
+                if existing is not None
+                else ""
+            ) or order.order_id
+            order.metadata.setdefault("client_order_id", client_order_id)
+            order.metadata.setdefault("strategy_id", strategy_id)
             self._oms.upsert_order(
-                client_order_id=order.order_id,
+                client_order_id=client_order_id,
                 exchange_order_id=exchange_oid,
                 strategy_id=strategy_id,
                 symbol=order.symbol,
@@ -3922,15 +4481,311 @@ class LiveEngine:
                 order_type=order.order_type.value,
                 status=order.status.value,
                 role=order.tag,
+                position_instance_id=str(order.metadata.get("position_instance_id") or ""),
                 reduce_only=bool(order.metadata.get("reduce_only", False)),
-                oca_group=order.oca_group,
+                oca_group=order.oca_group or order.metadata.get("oca_group"),
                 metadata=dict(order.metadata),
             )
             if self._coordinator is not None and strategy_id != "unknown":
                 self._coordinator.register_order(order.order_id, strategy_id, order)
+                if client_order_id != order.order_id:
+                    self._coordinator.register_order(client_order_id, strategy_id, order)
                 if exchange_oid:
                     self._coordinator.register_order(exchange_oid, strategy_id, order)
         return open_orders
+
+    def _expected_positions_from_portfolio_state(self) -> dict[str, Position]:
+        """Aggregate restored portfolio risks into exchange-net expected positions."""
+        expected: dict[str, Position] = {}
+        manager = getattr(self, "_manager", None)
+        if manager is None:
+            return expected
+
+        for risk in manager.state.open_risks:
+            existing = expected.get(risk.symbol)
+            risk_qty_known = risk.filled_qty > 0
+            if existing is None:
+                expected[risk.symbol] = Position(
+                    symbol=risk.symbol,
+                    direction=risk.direction,
+                    qty=risk.filled_qty if risk_qty_known else 0.0,
+                    avg_entry=0.0,
+                    metadata={"qty_known": risk_qty_known},
+                )
+                continue
+
+            existing.metadata["qty_known"] = bool(existing.metadata.get("qty_known", True)) and risk_qty_known
+            if existing.metadata["qty_known"]:
+                existing.qty += risk.filled_qty
+            else:
+                existing.qty = 0.0
+            if existing.direction != risk.direction:
+                existing.metadata["direction_conflict"] = True
+        return expected
+
+    def _cleanup_flat_symbol_exit_orders(
+        self,
+        open_orders: list[Order],
+        actual_positions: list[Position],
+    ) -> list[Discrepancy]:
+        """Cancel exit-only open orders for symbols currently flat on exchange."""
+        if self._broker is None:
+            return []
+        live_symbols = {
+            pos.symbol
+            for pos in actual_positions
+            if abs(pos.qty) > 1e-8
+        }
+        discrepancies: list[Discrepancy] = []
+        remaining_orders: list[Order] = []
+        for order in open_orders:
+            if order.symbol in live_symbols:
+                remaining_orders.append(order)
+                continue
+            if not (is_exit_order(order) or bool(order.metadata.get("reduce_only", False))):
+                remaining_orders.append(order)
+                continue
+            try:
+                cancelled = self._broker.cancel_order(order.order_id)
+            except Exception:
+                log.exception(
+                    "engine.startup_flat_exit_cancel_failed",
+                    order_id=order.order_id,
+                    symbol=order.symbol,
+                    tag=order.tag,
+                )
+                cancelled = False
+            if cancelled:
+                self._mark_oms_order_cancelled(order)
+                log.warning(
+                    "engine.startup_cancelled_flat_exit_order",
+                    order_id=order.order_id,
+                    symbol=order.symbol,
+                    tag=order.tag,
+                )
+                continue
+            remaining_orders.append(order)
+            discrepancies.append(Discrepancy(
+                symbol=order.symbol,
+                kind="stale_exit_order",
+                expected="no open exit orders while flat",
+                actual=f"{order.order_id} {order.tag or order.order_type.value}",
+            ))
+        open_orders[:] = remaining_orders
+        return discrepancies
+
+    def _mark_oms_order_cancelled(self, order: Order) -> None:
+        update_fn = getattr(getattr(self, "_oms", None), "update_order_metadata", None)
+        if not callable(update_fn):
+            return
+        updates = {
+            "startup_flat_exit_cancelled": True,
+            "startup_flat_exit_cancelled_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if order.metadata.get("cancel_reason"):
+            updates["cancel_reason"] = order.metadata.get("cancel_reason")
+        if update_fn(order.order_id, metadata_updates=updates, status=OrderStatus.CANCELLED.value):
+            return
+        exchange_order_id = str(order.metadata.get("exchange_order_id") or "")
+        if exchange_order_id:
+            update_fn(exchange_order_id, metadata_updates=updates, status=OrderStatus.CANCELLED.value)
+
+    def _reconcile_open_oca_groups(self, open_orders: list[Order]) -> list[Discrepancy]:
+        """Recover broker-managed OCA groups from OMS plus exchange open orders."""
+        oms = getattr(self, "_oms", None)
+        list_orders = getattr(oms, "list_orders", None)
+        if not callable(list_orders):
+            return []
+
+        try:
+            oms_orders = list_orders()
+        except Exception:
+            log.exception("engine.oca_reconcile_oms_query_failed")
+            return []
+
+        terminal_by_group: dict[str, list[dict[str, Any]]] = {}
+        for record in oms_orders:
+            group = str(record.get("oca_group") or record.get("metadata", {}).get("oca_group") or "")
+            if not group:
+                continue
+            status = str(record.get("status") or "")
+            if status in {OrderStatus.FILLED.value, OrderStatus.CANCELLED.value, OrderStatus.REJECTED.value, OrderStatus.EXPIRED.value}:
+                terminal_by_group.setdefault(group, []).append(record)
+
+        discrepancies: list[Discrepancy] = []
+        remaining: list[Order] = []
+        for order in open_orders:
+            group = str(order.oca_group or order.metadata.get("oca_group") or "")
+            if not group:
+                remaining.append(order)
+                continue
+
+            strategy_id = str(order.metadata.get("strategy_id") or "")
+            oca_root = self._oca_root_for_open_order(order, group, strategy_id)
+            if not strategy_id or not oca_root:
+                discrepancies.append(Discrepancy(
+                    symbol=order.symbol,
+                    kind="oca_group_inconsistent",
+                    expected="open OCA member mapped to strategy and stable position/entry root",
+                    actual=f"{order.order_id} group={group}",
+                ))
+                self._append_oca_event("oca_group_inconsistent", order, group, {
+                    "reason": "missing_strategy_or_valid_stable_root",
+                })
+                remaining.append(order)
+                continue
+
+            filled_members = [
+                record for record in terminal_by_group.get(group, [])
+                if str(record.get("status") or "") == OrderStatus.FILLED.value
+            ]
+            if not filled_members:
+                self._append_oca_event("oca_member_accepted", order, group)
+                remaining.append(order)
+                continue
+
+            should_cancel, cancel_block_reason = self._startup_oca_sibling_cancel_decision(order)
+            if not should_cancel:
+                if cancel_block_reason == "residual_position_open":
+                    self._append_oca_event("oca_member_accepted", order, group, {
+                        "reason": "filled_member_but_residual_position_open",
+                    })
+                else:
+                    discrepancies.append(Discrepancy(
+                        symbol=order.symbol,
+                        kind="oca_group_inconsistent",
+                        expected="broker position state known before cancelling OCA sibling",
+                        actual=f"{order.order_id} group={group} reason={cancel_block_reason}",
+                    ))
+                    self._append_oca_event("oca_group_inconsistent", order, group, {
+                        "reason": cancel_block_reason,
+                    })
+                remaining.append(order)
+                continue
+
+            cancelled = False
+            try:
+                cancelled = bool(self._broker.cancel_order(order.order_id)) if self._broker is not None else False
+            except Exception:
+                log.exception(
+                    "engine.oca_sibling_cancel_failed",
+                    order_id=order.order_id,
+                    symbol=order.symbol,
+                    oca_group=group,
+                )
+            if cancelled:
+                order.metadata["cancel_reason"] = "oca_sibling_filled"
+                self._mark_oms_order_cancelled(order)
+                self._append_oca_event("oca_member_cancelled", order, group, {
+                    "cancel_reason": "oca_sibling_filled",
+                })
+                continue
+
+            discrepancies.append(Discrepancy(
+                symbol=order.symbol,
+                kind="oca_group_inconsistent",
+                expected="open sibling cancelled after OCA member filled",
+                actual=f"{order.order_id} group={group}",
+            ))
+            remaining.append(order)
+
+        open_orders[:] = remaining
+        completed_groups = {
+            str(record.get("oca_group") or record.get("metadata", {}).get("oca_group") or "")
+            for members in terminal_by_group.values()
+            for record in members
+            if str(record.get("status") or "") == OrderStatus.CANCELLED.value
+        }
+        for group in completed_groups:
+            if group:
+                self._append_oca_event("oca_group_completed", None, group)
+        return discrepancies
+
+    def _startup_oca_sibling_cancel_decision(self, order: Order) -> tuple[bool, str]:
+        if not self._uses_terminal_close_oca_policy(order):
+            return True, "cancel_siblings_on_any_fill"
+        flat = self._startup_symbol_position_flat(order.symbol)
+        if flat is True:
+            return True, "terminal_close"
+        if flat is False:
+            return False, "residual_position_open"
+        return False, "unknown_position_state"
+
+    @staticmethod
+    def _uses_terminal_close_oca_policy(order: Order) -> bool:
+        metadata = dict(order.metadata or {})
+        policy = str(metadata.get("oca_policy") or "")
+        if policy in {EXIT_OCA_POLICY, NATIVE_OCA_POLICY}:
+            return True
+        if _metadata_truthy(metadata.get("reduce_only")) or _metadata_truthy(metadata.get("exit_only")):
+            return True
+        return is_exit_order(order)
+
+    def _startup_symbol_position_flat(self, symbol: str) -> bool | None:
+        broker = getattr(self, "_broker", None)
+        get_positions = getattr(broker, "get_positions", None)
+        if not callable(get_positions):
+            return None
+        try:
+            positions = list(get_positions())
+        except Exception:
+            log.exception("engine.oca_reconcile_position_query_failed", symbol=symbol)
+            return None
+        for position in positions:
+            if getattr(position, "symbol", None) != symbol:
+                continue
+            try:
+                qty = float(getattr(position, "qty", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                return None
+            if abs(qty) > 1e-12:
+                return False
+        return True
+
+    def _oca_root_for_open_order(self, order: Order, group: str, strategy_id: str) -> str:
+        if not strategy_id:
+            return ""
+        invalid_reason = validate_strategy_scoped_oca_group(
+            group,
+            strategy_id=strategy_id,
+            symbol=order.symbol,
+        )
+        if invalid_reason:
+            return ""
+        metadata = dict(order.metadata or {})
+        explicit_root = str(
+            metadata.get("position_instance_id")
+            or metadata.get("oca_root")
+            or metadata.get("entry_root_id")
+            or metadata.get("entry_intent_id")
+            or ""
+        )
+        if explicit_root:
+            return explicit_root
+        prefix = f"{strategy_id}:{order.symbol}:"
+        if group.startswith(prefix) and group.endswith(":exit_oca"):
+            return group.removeprefix(prefix).removesuffix(":exit_oca")
+        return ""
+
+    def _append_oca_event(
+        self,
+        event_kind: str,
+        order: Order | None,
+        oca_group: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        append_fn = getattr(getattr(self, "_oms", None), "append_event", None)
+        if not callable(append_fn):
+            return
+        payload = {
+            "event_kind": event_kind,
+            "oca_group": oca_group,
+            "symbol": order.symbol if order is not None else "",
+            "order_id": order.order_id if order is not None else "",
+            "strategy_id": str(order.metadata.get("strategy_id") or "") if order is not None else "",
+            "metadata": dict(metadata or {}),
+        }
+        append_fn(event_kind, datetime.now(timezone.utc), payload)
 
     def _seed_ttl_trackers_from_open_orders(self, open_orders: list[Order] | None = None) -> None:
         """Seed per-strategy live TTL adapters after durable and exchange state sync."""
@@ -4106,21 +4961,46 @@ class LiveEngine:
                         open_orders_by_symbol.setdefault(symbol, []).append(order_id)
             except Exception:
                 open_orders_by_symbol = {}
+        manager = getattr(self, "_manager", None)
+        open_risks = list(manager.state.open_risks) if manager is not None else []
+        allocations = derive_strategy_position_allocations(
+            self._lifecycle_snapshot(),
+            open_risks,
+            observed_at=datetime.now(timezone.utc),
+        )
         for pos in self._broker.get_positions():
             if pos.qty == 0:
                 continue
             tracked = self._tracked_positions.get(pos.symbol, {})
             strategy_id = tracked.get("strategy_id", "unknown")
+            allocation = self._allocation_for_broker_position(pos, allocations, strategy_id)
+            if allocation is not None and self._unknown_strategy_id(strategy_id):
+                strategy_id = allocation.strategy_id
             risk_r = 0.0
             stop_price = None
             entry_time = tracked.get("entry_time") or getattr(pos, "open_time", None)
-            if self._manager:
-                for risk in self._manager.state.open_risks:
+            position_instance_id = str(tracked.get("position_instance_id") or "")
+            if allocation is not None:
+                position_instance_id = position_instance_id or allocation.position_instance_id
+                risk_r = allocation.open_risk_R
+                entry_time = allocation.entry_time or entry_time
+            if manager:
+                for risk in manager.state.open_risks:
                     if risk.symbol == pos.symbol:
-                        risk_r = risk.risk_R
+                        risk_r = risk_r or risk.risk_R
                         stop_price = getattr(risk, "stop_price", None)
                         entry_time = entry_time or risk.entry_time
+                        position_instance_id = position_instance_id or str(risk.position_instance_id or "")
                         break
+            position_instance_id = (
+                position_instance_id
+                or self._open_lifecycle_position_instance_id(strategy_id, pos.symbol, pos.direction)
+                or (
+                    entry_position_instance_id(strategy_id, pos.symbol, pos.direction, entry_time)
+                    if hasattr(entry_time, "timestamp") and not self._unknown_strategy_id(strategy_id)
+                    else ""
+                )
+            )
             mark_price = pos.avg_entry
             notional_usd = abs(pos.qty * mark_price)
             liquidation_price = getattr(pos, "liquidation_price", None)
@@ -4128,7 +5008,7 @@ class LiveEngine:
             if liquidation_price and mark_price:
                 liquidation_distance_pct = abs(mark_price - liquidation_price) / mark_price * 100
             result.append({
-                "position_instance_id": f"{strategy_id}:{pos.symbol}:{entry_time.isoformat() if hasattr(entry_time, 'isoformat') else ''}",
+                "position_instance_id": position_instance_id,
                 "strategy_id": strategy_id,
                 "symbol": pos.symbol,
                 "direction": pos.direction.value if pos.direction else "unknown",
@@ -4153,6 +5033,26 @@ class LiveEngine:
             })
         return result
 
+    def _allocation_for_broker_position(
+        self,
+        position: Position,
+        allocations: list[Any],
+        strategy_id: str,
+    ) -> Any | None:
+        direction = position.direction
+        matches = [
+            allocation for allocation in allocations
+            if allocation.symbol == position.symbol and allocation.direction == direction
+        ]
+        if not matches:
+            return None
+        if not self._unknown_strategy_id(strategy_id):
+            for allocation in matches:
+                if allocation.strategy_id == strategy_id:
+                    return allocation
+            return None
+        return matches[0] if len(matches) == 1 else None
+
     def _default_strategy_config(self, strategy_id: str) -> Any:
         """Create default config for a strategy."""
         if strategy_id == "momentum":
@@ -4166,3 +5066,22 @@ class LiveEngine:
             return BreakoutConfig()
         else:
             raise ValueError(f"Unknown strategy: {strategy_id}")
+
+
+def _parse_datetime_or_now(value: str | None) -> datetime:
+    if value:
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc)
+
+
+def _metadata_truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+    return bool(value)

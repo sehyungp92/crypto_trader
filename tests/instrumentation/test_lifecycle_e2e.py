@@ -668,6 +668,10 @@ def _trade(entry_ts: datetime, exit_ts: datetime) -> Trade:
     )
 
 
+def _position_instance_id(ts: datetime) -> str:
+    return f"momentum:BTC:LONG:{int(ts.timestamp() * 1000)}"
+
+
 def _entry_fill(ts: datetime) -> Fill:
     return Fill(
         order_id="entry_o",
@@ -833,6 +837,7 @@ def _seed_stale_trade_join(engine: LiveEngine, entry_ts: datetime, exit_ts: date
 def test_fill_triggers_position_allocation_and_portfolio_snapshots(tmp_path) -> None:
     engine, memory, broker = _make_engine(tmp_path)
     ts = datetime(2026, 5, 31, 10, 0, tzinfo=timezone.utc)
+    position_instance_id = _position_instance_id(ts)
 
     try:
         broker.positions = [
@@ -849,7 +854,7 @@ def test_fill_triggers_position_allocation_and_portfolio_snapshots(tmp_path) -> 
         assert portfolio["source"] == "entry_fill"
         assert portfolio["fill_id"] == "entry_fill"
         assert position["source"] == "entry_fill"
-        assert position["position_instance_id"].startswith("momentum:BTC:")
+        assert position["position_instance_id"] == position_instance_id
         assert position["open_order_ids"] == []
         assert allocation["source"] == "entry_fill"
         assert allocation["allocation_version"] == "alloc1"
@@ -891,12 +896,14 @@ def test_exit_fill_emits_flat_position_snapshot_after_full_close(tmp_path) -> No
     engine, memory, broker = _make_engine(tmp_path)
     entry_ts = datetime(2026, 5, 31, 10, 0, tzinfo=timezone.utc)
     exit_ts = entry_ts + timedelta(hours=2)
+    position_instance_id = _position_instance_id(entry_ts)
 
     try:
         broker.positions = []
         engine._tracked_positions["BTC"] = {
             "strategy_id": "momentum",
             "direction": Side.LONG,
+            "position_instance_id": position_instance_id,
             "entry_price": 100.0,
             "entry_time": entry_ts,
             "qty": 0.1,
@@ -918,7 +925,30 @@ def test_exit_fill_emits_flat_position_snapshot_after_full_close(tmp_path) -> No
         assert flat["symbol"] == "BTC"
         assert flat["qty"] == 0.0
         assert flat["risk_R"] == 0.0
+        assert flat["position_instance_id"] == position_instance_id
         assert flat["position_status"] == "closed"
+    finally:
+        engine._oms.close()
+
+
+def test_closed_oms_position_row_reuses_lifecycle_position_instance_id(tmp_path) -> None:
+    engine, _memory, _broker = _make_engine(tmp_path)
+    entry_ts = datetime(2026, 5, 31, 10, 0, tzinfo=timezone.utc)
+    exit_ts = entry_ts + timedelta(hours=2)
+    position_instance_id = _position_instance_id(entry_ts)
+    trade = _trade(entry_ts, exit_ts)
+    trade.trade_id = f"live_{position_instance_id}:{int(exit_ts.timestamp() * 1000)}"
+
+    try:
+        engine._record_lifecycle_trade_position("momentum", trade)
+        row = engine._oms._conn.execute(
+            "SELECT * FROM positions WHERE position_instance_id=?",
+            (position_instance_id,),
+        ).fetchone()
+
+        assert row is not None
+        assert row["position_instance_id"] == position_instance_id
+        assert row["status"] == "CLOSED"
     finally:
         engine._oms.close()
 

@@ -7,13 +7,91 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from crypto_trader.core.engine import MultiTimeFrameBars
-from crypto_trader.core.models import Fill, Side, TimeFrame
+from crypto_trader.core.models import Fill, OrderStatus, Side, TimeFrame
+from crypto_trader.core.runtime_types import ExecutionReport, ExecutionReportKind
 from crypto_trader.live.engine import LiveEngine, _StrategySlot
 from crypto_trader.live.oms_store import OmsStore
 from crypto_trader.portfolio.config import PortfolioConfig
 from crypto_trader.portfolio.coordinator import StrategyCoordinator
 from crypto_trader.portfolio.manager import PortfolioManager
 from crypto_trader.portfolio.state import PortfolioState
+
+
+def test_fill_poll_uses_adapter_reports_for_broker_managed_oca_cancellations(tmp_path) -> None:
+    engine = object.__new__(LiveEngine)
+    engine._last_fill_check = datetime(2026, 5, 24, 11, 59, tzinfo=timezone.utc)
+    engine._config = SimpleNamespace(
+        state_dir=tmp_path,
+        fill_query_overlap_sec=300,
+    )
+    engine._oms = OmsStore(tmp_path)
+    engine._last_assistant_event_at = {}
+    engine._emit_assistant_from_canonical_event = MagicMock()
+    engine._broker = MagicMock()
+    engine._broker.get_fills_since.side_effect = AssertionError("raw broker fill poll bypassed adapter")
+    fill_report = ExecutionReport(
+        report_id="hl_fill_entry_1",
+        kind=ExecutionReportKind.FILL,
+        timestamp=datetime(2026, 5, 24, 12, 0, tzinfo=timezone.utc),
+        symbol="BTC",
+        side=Side.LONG,
+        client_order_id="entry_1",
+        exchange_order_id="101",
+        fill_id="fill_101",
+        order_status=OrderStatus.FILLED,
+        filled_qty=0.1,
+        fill_price=50_000.0,
+        commission=1.0,
+        metadata={"tag": "entry", "strategy_id": "momentum"},
+    )
+    cancel_report = ExecutionReport(
+        report_id="hl_oca_cancel_stop_1",
+        kind=ExecutionReportKind.CANCELLED,
+        timestamp=datetime(2026, 5, 24, 12, 0, 1, tzinfo=timezone.utc),
+        symbol="BTC",
+        side=Side.SHORT,
+        client_order_id="stop_1",
+        exchange_order_id="102",
+        order_status=OrderStatus.CANCELLED,
+        qty=0.1,
+        metadata={
+            "tag": "protective_stop",
+            "strategy_id": "momentum",
+            "position_instance_id": "pos_1",
+            "reduce_only": True,
+            "oca_group": "momentum:BTC:pos_1:exit_oca",
+            "cancel_reason": "oca_sibling_filled",
+        },
+    )
+    engine._execution_adapter = SimpleNamespace(
+        sync_fills=MagicMock(return_value=[fill_report, cancel_report]),
+    )
+
+    def process_fills(fills):
+        assert len(fills) == 1
+        assert fills[0].order_id == "entry_1"
+        assert fills[0].exchange_fill_id == "fill_101"
+        return SimpleNamespace(processed=fills, safe_watermark_fills=fills)
+
+    engine._process_fills = MagicMock(side_effect=process_fills)
+
+    processed = engine._poll_and_process_fills()
+    row = engine._oms.get_order("stop_1")
+    reports = engine._oms._conn.execute(
+        "SELECT kind FROM execution_reports WHERE report_id=?",
+        ("hl_oca_cancel_stop_1",),
+    ).fetchall()
+    parity_rows = (tmp_path / "parity_events.jsonl").read_text(encoding="utf-8").splitlines()
+    engine._oms.close()
+
+    assert processed[0].order_id == "entry_1"
+    engine._execution_adapter.sync_fills.assert_called_once()
+    engine._broker.get_fills_since.assert_not_called()
+    assert row is not None
+    assert row["status"] == OrderStatus.CANCELLED.value
+    assert row["metadata"]["cancel_reason"] == "oca_sibling_filled"
+    assert [r["kind"] for r in reports] == [ExecutionReportKind.CANCELLED.value]
+    assert any("hl_oca_cancel_stop_1" in line for line in parity_rows)
 
 
 async def _poll_one_fill(

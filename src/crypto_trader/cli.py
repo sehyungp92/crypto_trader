@@ -1006,6 +1006,10 @@ def parity_gate(report_path: str) -> None:
         stale_fill_watermark=payload.get("stale_fill_watermark", False),
         unprotected_entry_fills=payload.get("unprotected_entry_fills", []),
         accounting_mismatch_count=payload.get("accounting_mismatch_count", 0),
+        allocation_count=payload.get("allocation_count", 0),
+        unallocated_exposure_count=payload.get("unallocated_exposure_count", 0),
+        max_allocation_net_residual=payload.get("max_allocation_net_residual", 0.0),
+        position_ownership_drift=payload.get("position_ownership_drift", False),
     )
     result = evaluate_promotion_gate(report)
     click.echo(json.dumps(result.to_dict(), indent=2, sort_keys=True))
@@ -1061,3 +1065,7 @@ def paper_status(address: str, testnet: bool) -> None:
         print("\nNo open orders.")
 
     print()
+
+
+if __name__ == "__main__":
+    cli()

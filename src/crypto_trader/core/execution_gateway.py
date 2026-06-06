@@ -8,7 +8,12 @@ from typing import Any, Callable
 from crypto_trader.core.events import CanonicalRuntimeEvent, EventBus
 from crypto_trader.core.execution_adapter import ExecutionAdapter
 from crypto_trader.core.models import Bar, Fill, Order, OrderStatus, OrderType
-from crypto_trader.core.runtime_types import DecisionContext, ExecutionReport, OrderIntent
+from crypto_trader.core.runtime_types import (
+    DecisionContext,
+    ExecutionReport,
+    ExecutionReportKind,
+    OrderIntent,
+)
 
 
 class ExecutionGateway:
@@ -75,6 +80,61 @@ class ExecutionGateway:
         if _should_sync_immediate_fill(order, reports) and self._immediate_fill_sync is not None:
             self._pending_immediate_fill_syncs.append(visible_id)
         return visible_id
+
+    def record_rejected_order(
+        self,
+        order: Order,
+        *,
+        reject_reason: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> str:
+        """Record a locally rejected order in canonical streams and the OMS."""
+        context = self._decision_context
+        submitted_at = _now()
+        if context is not None:
+            order.metadata.setdefault("decision_id", context.decision_id)
+            order.metadata.setdefault("bar_id", context.metadata.get("bar_id"))
+            order.metadata.setdefault("decision_time", context.decision_time.isoformat())
+        if metadata:
+            order.metadata.update(metadata)
+        order.status = OrderStatus.REJECTED
+        order.metadata.setdefault("submitted_at", submitted_at.isoformat())
+        intent = OrderIntent.from_order(order, context)
+        order.metadata.setdefault("intent_id", intent.intent_id)
+        if context is not None:
+            context.record_order()
+        self._emit("order_intent", intent.to_dict(), submitted_at)
+
+        client_order_id = intent.client_order_id or intent.intent_id or order.order_id
+        report = ExecutionReport(
+            report_id=f"local_reject_{client_order_id}",
+            kind=ExecutionReportKind.REJECTED,
+            timestamp=submitted_at,
+            symbol=order.symbol,
+            side=order.side,
+            client_order_id=client_order_id,
+            order_status=OrderStatus.REJECTED,
+            qty=order.qty,
+            reject_reason=reject_reason,
+            metadata={
+                **intent.metadata,
+                **dict(metadata or {}),
+                "intent_id": intent.intent_id,
+                "strategy_id": intent.strategy_id,
+                "decision_id": intent.decision_id,
+                "order_type": intent.order_type.value,
+                "reduce_only": intent.reduce_only,
+                "time_in_force": intent.time_in_force,
+                "ttl_bars": intent.ttl_bars,
+                "oca_group": intent.oca_group,
+                "bracket_group": intent.bracket_group,
+            },
+        )
+        self._last_reports = [report]
+        self._apply_report_to_order(order, report)
+        self._record_report(report)
+        self._emit("execution", report.to_dict(), report.timestamp)
+        return client_order_id
 
     def drain_immediate_fill_syncs(self) -> None:
         """Run queued immediate fill syncs after strategy state has settled."""
@@ -185,7 +245,7 @@ class ExecutionGateway:
         upsert_fn = getattr(self._oms, "upsert_order", None)
         if upsert_fn is not None and report.client_order_id:
             metadata = report.metadata
-            order_metadata = report.to_dict()
+            order_metadata = {**report.to_dict(), **metadata}
             ttl_report = any(
                 key in metadata
                 for key in ("ttl_bars", "ttl_bars_alive", "ttl_remaining_qty", "ttl_cancel_failed")
@@ -210,6 +270,7 @@ class ExecutionGateway:
                 status=report.order_status.value if report.order_status is not None else report.kind.value.upper(),
                 role=str(metadata.get("role") or metadata.get("tag") or ""),
                 decision_id=str(metadata.get("decision_id") or ""),
+                position_instance_id=str(metadata.get("position_instance_id") or ""),
                 reduce_only=bool(metadata.get("reduce_only", False)),
                 oca_group=metadata.get("oca_group"),
                 bracket_group=metadata.get("bracket_group"),

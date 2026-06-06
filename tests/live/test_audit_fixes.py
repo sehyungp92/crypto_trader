@@ -13,10 +13,12 @@ import pytest
 
 from crypto_trader.core.engine import MultiTimeFrameBars, StrategyContext
 from crypto_trader.core.events import EventBus
-from crypto_trader.core.models import Bar, Order, OrderType, SetupGrade, Side, TimeFrame
+from crypto_trader.core.models import Bar, Order, OrderStatus, OrderType, Position, SetupGrade, Side, TimeFrame
 from crypto_trader.instrumentation.collector import InstrumentationCollector
 from crypto_trader.instrumentation.types import EventMetadata, MissedOpportunityEvent
 from crypto_trader.live.config import LiveConfig
+from crypto_trader.live.oms_store import OmsStore
+from crypto_trader.portfolio.state import PortfolioState, OpenRisk
 
 
 def _indicator_snapshot():
@@ -181,6 +183,66 @@ class TestLiveWarmupBehavior:
         assert kwargs["tick_sizes"] == {"BTC": 0.5}
         assert kwargs["lot_sizes"] == {"BTC": 0.001}
 
+    @pytest.mark.asyncio
+    async def test_start_restores_persisted_open_risks_and_daily_state(self, tmp_path, monkeypatch):
+        from crypto_trader.live.engine import LiveEngine
+
+        monkeypatch.setenv("CRYPTO_TRADER_BRIDGE_CONTRACT_ROOT", str(tmp_path / "contracts"))
+        state_dir = tmp_path / "state"
+        state_dir.mkdir()
+        today = datetime.now(timezone.utc).date()
+        saved = PortfolioState(
+            equity=9_900.0,
+            peak_equity=10_500.0,
+            daily_pnl_R={"momentum": -0.25},
+            portfolio_daily_pnl_R=-0.25,
+            current_day=today,
+        )
+        saved.add_risk(OpenRisk(
+            strategy_id="momentum",
+            symbol="BTC",
+            direction=Side.LONG,
+            risk_R=0.75,
+            risk_id="intent_1",
+            filled_qty=0.1,
+        ))
+        (state_dir / "portfolio_state.json").write_text(
+            json.dumps(saved.to_dict()),
+            encoding="utf-8",
+        )
+
+        broker = MagicMock()
+        broker.get_equity.return_value = 10_000.0
+        broker.get_positions.return_value = [
+            Position("BTC", Side.LONG, 0.1, 50000.0),
+        ]
+        broker.get_open_orders.return_value = []
+        feed = MagicMock()
+        feed.load_warmup_bars.return_value = []
+        strategy = _WarmupGateStrategy()
+        strategy_cfg = SimpleNamespace(symbols=["BTC"])
+        config = LiveConfig(
+            wallet_address="0xabc",
+            private_key="0xdef",
+            symbols=["BTC"],
+            state_dir=state_dir,
+            strategy_configs={"momentum": tmp_path / "momentum.json"},
+        )
+
+        with (
+            patch("crypto_trader.live.engine.HyperliquidBroker", return_value=broker),
+            patch("crypto_trader.live.engine.LiveFeed", return_value=feed),
+            patch("crypto_trader.live.engine._create_strategy", return_value=(strategy, [TimeFrame.M15], TimeFrame.M15)),
+            patch("hyperliquid.info.Info", return_value=MagicMock()),
+            patch.object(LiveEngine, "_load_strategy_config", return_value=strategy_cfg),
+        ):
+            engine = LiveEngine(config)
+            await engine.start()
+
+        assert engine._manager.state.peak_equity == pytest.approx(10_500.0)
+        assert engine._manager.state.total_heat_R() == pytest.approx(0.75)
+        assert engine._manager.state.strategy_daily_pnl_R("momentum") == pytest.approx(-0.25)
+
 
 class TestLiveConfigRelayPlumbing:
     def test_round_trips_optional_bot_and_relay_fields(self, tmp_path):
@@ -221,6 +283,376 @@ class TestLiveConfigRelayPlumbing:
         )
 
         assert cfg.validate() == []
+
+
+class TestLiveStartupSafety:
+    def test_expected_positions_from_portfolio_state_aggregates_same_symbol_risks(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        state = PortfolioState()
+        state.add_risk(OpenRisk(
+            strategy_id="momentum",
+            symbol="BTC",
+            direction=Side.LONG,
+            risk_R=0.4,
+            filled_qty=0.4,
+        ))
+        state.add_risk(OpenRisk(
+            strategy_id="trend",
+            symbol="BTC",
+            direction=Side.LONG,
+            risk_R=0.6,
+            filled_qty=0.6,
+        ))
+        engine = object.__new__(LiveEngine)
+        engine._manager = SimpleNamespace(state=state)
+
+        expected = engine._expected_positions_from_portfolio_state()
+
+        assert expected["BTC"].direction == Side.LONG
+        assert expected["BTC"].qty == pytest.approx(1.0)
+        assert expected["BTC"].metadata["qty_known"] is True
+
+    def test_cleanup_flat_symbol_exit_orders_cancels_and_removes_from_snapshot(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        broker = MagicMock()
+        broker.cancel_order.return_value = True
+        engine._broker = broker
+        exit_order = Order(
+            order_id="stop_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49000.0,
+            tag="protective_stop",
+            metadata={"reduce_only": True},
+        )
+        entry_order = Order(
+            order_id="entry_1",
+            symbol="ETH",
+            side=Side.LONG,
+            order_type=OrderType.LIMIT,
+            qty=0.1,
+            limit_price=3000.0,
+            tag="entry",
+        )
+        open_orders = [exit_order, entry_order]
+
+        discrepancies = engine._cleanup_flat_symbol_exit_orders(open_orders, [])
+
+        assert discrepancies == []
+        broker.cancel_order.assert_called_once_with("stop_1")
+        assert open_orders == [entry_order]
+
+    def test_cleanup_flat_symbol_exit_orders_marks_oms_cancelled(self, tmp_path):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        broker = MagicMock()
+        broker.cancel_order.return_value = True
+        engine._broker = broker
+        engine._oms = OmsStore(tmp_path)
+        engine._oms.upsert_order(
+            client_order_id="stop_1",
+            strategy_id="momentum",
+            symbol="BTC",
+            side=Side.SHORT.value,
+            order_type=OrderType.STOP.value,
+            status=OrderStatus.WORKING.value,
+            role="protective_stop",
+            reduce_only=True,
+            metadata={"tag": "protective_stop", "reduce_only": True},
+        )
+        exit_order = Order(
+            order_id="stop_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49000.0,
+            tag="protective_stop",
+            metadata={"reduce_only": True},
+        )
+
+        discrepancies = engine._cleanup_flat_symbol_exit_orders([exit_order], [])
+        row = engine._oms.get_order("stop_1")
+        engine._oms.close()
+
+        assert discrepancies == []
+        assert row is not None
+        assert row["status"] == OrderStatus.CANCELLED.value
+        assert row["metadata"]["startup_flat_exit_cancelled"] is True
+
+    def test_startup_oca_reconciliation_cancels_open_sibling_after_filled_member_when_flat(self, tmp_path):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        broker = MagicMock()
+        broker.cancel_order.return_value = True
+        broker.get_positions.return_value = []
+        engine._broker = broker
+        engine._oms = OmsStore(tmp_path)
+        group = "momentum:BTC:pos_1:exit_oca"
+        engine._oms.upsert_order(
+            client_order_id="tp_1",
+            strategy_id="momentum",
+            symbol="BTC",
+            side=Side.SHORT.value,
+            order_type=OrderType.LIMIT.value,
+            status=OrderStatus.FILLED.value,
+            role="tp1",
+            position_instance_id="pos_1",
+            reduce_only=True,
+            oca_group=group,
+            metadata={"tag": "tp1", "oca_group": group, "position_instance_id": "pos_1"},
+        )
+        engine._oms.upsert_order(
+            client_order_id="stop_1",
+            strategy_id="momentum",
+            symbol="BTC",
+            side=Side.SHORT.value,
+            order_type=OrderType.STOP.value,
+            status=OrderStatus.WORKING.value,
+            role="protective_stop",
+            position_instance_id="pos_1",
+            reduce_only=True,
+            oca_group=group,
+            metadata={"tag": "protective_stop", "oca_group": group, "position_instance_id": "pos_1"},
+        )
+        open_order = Order(
+            order_id="stop_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49_000.0,
+            tag="protective_stop",
+            oca_group=group,
+            metadata={"strategy_id": "momentum", "position_instance_id": "pos_1", "oca_group": group},
+        )
+        open_orders = [open_order]
+
+        discrepancies = engine._reconcile_open_oca_groups(open_orders)
+        row = engine._oms.get_order("stop_1")
+        events = engine._oms.list_events("oca_member_cancelled")
+        engine._oms.close()
+
+        assert discrepancies == []
+        assert open_orders == []
+        broker.cancel_order.assert_called_once_with("stop_1")
+        assert row is not None
+        assert row["status"] == OrderStatus.CANCELLED.value
+        assert row["metadata"]["cancel_reason"] == "oca_sibling_filled"
+        assert events[0]["payload"]["oca_group"] == group
+
+    def test_startup_oca_reconciliation_preserves_sibling_after_partial_exit(self, tmp_path):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        broker = MagicMock()
+        broker.get_positions.return_value = [
+            Position("BTC", Side.LONG, 0.05, 50_000.0),
+        ]
+        engine._broker = broker
+        engine._oms = OmsStore(tmp_path)
+        group = "momentum:BTC:pos_1:exit_oca"
+        engine._oms.upsert_order(
+            client_order_id="tp_1",
+            strategy_id="momentum",
+            symbol="BTC",
+            side=Side.SHORT.value,
+            order_type=OrderType.LIMIT.value,
+            status=OrderStatus.FILLED.value,
+            role="tp1",
+            position_instance_id="pos_1",
+            reduce_only=True,
+            oca_group=group,
+            metadata={"tag": "tp1", "oca_group": group, "position_instance_id": "pos_1"},
+        )
+        engine._oms.upsert_order(
+            client_order_id="stop_1",
+            strategy_id="momentum",
+            symbol="BTC",
+            side=Side.SHORT.value,
+            order_type=OrderType.STOP.value,
+            status=OrderStatus.WORKING.value,
+            role="protective_stop",
+            position_instance_id="pos_1",
+            reduce_only=True,
+            oca_group=group,
+            metadata={
+                "tag": "protective_stop",
+                "oca_group": group,
+                "position_instance_id": "pos_1",
+                "reduce_only": True,
+            },
+        )
+        open_order = Order(
+            order_id="stop_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.05,
+            stop_price=49_000.0,
+            tag="protective_stop",
+            oca_group=group,
+            metadata={
+                "strategy_id": "momentum",
+                "position_instance_id": "pos_1",
+                "oca_group": group,
+                "reduce_only": True,
+            },
+        )
+        open_orders = [open_order]
+
+        discrepancies = engine._reconcile_open_oca_groups(open_orders)
+        row = engine._oms.get_order("stop_1")
+        events = engine._oms.list_events("oca_member_accepted")
+        engine._oms.close()
+
+        assert discrepancies == []
+        assert open_orders == [open_order]
+        broker.cancel_order.assert_not_called()
+        assert row is not None
+        assert row["status"] == OrderStatus.WORKING.value
+        assert events[-1]["payload"]["metadata"]["reason"] == "filled_member_but_residual_position_open"
+
+    def test_startup_oca_reconciliation_accepts_entry_root_fallback_group(self, tmp_path):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        engine._broker = MagicMock()
+        engine._oms = OmsStore(tmp_path)
+        group = "momentum:BTC:entry_intent_1:exit_oca"
+        open_order = Order(
+            order_id="stop_1",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49_000.0,
+            tag="protective_stop",
+            oca_group=group,
+            metadata={"strategy_id": "momentum", "oca_group": group},
+        )
+        open_orders = [open_order]
+
+        discrepancies = engine._reconcile_open_oca_groups(open_orders)
+        events = engine._oms.list_events("oca_member_accepted")
+        engine._oms.close()
+
+        assert discrepancies == []
+        assert open_orders == [open_order]
+        engine._broker.cancel_order.assert_not_called()
+        assert events[0]["payload"]["oca_group"] == group
+
+    def test_startup_open_order_sync_rehydrates_oms_identity_for_exchange_only_order(self, tmp_path):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        group = "momentum:BTC:pos_1:exit_oca"
+        engine._oms = OmsStore(tmp_path)
+        engine._oms.upsert_order(
+            client_order_id="stop_client",
+            exchange_order_id="101",
+            strategy_id="momentum",
+            symbol="BTC",
+            side=Side.SHORT.value,
+            order_type=OrderType.STOP.value,
+            status=OrderStatus.WORKING.value,
+            role="protective_stop",
+            position_instance_id="pos_1",
+            reduce_only=True,
+            oca_group=group,
+            metadata={
+                "tag": "protective_stop",
+                "position_instance_id": "pos_1",
+                "oca_group": group,
+                "reduce_only": True,
+            },
+        )
+        exchange_order = Order(
+            order_id="101",
+            symbol="BTC",
+            side=Side.SHORT,
+            order_type=OrderType.STOP,
+            qty=0.1,
+            stop_price=49_000.0,
+            tag="protective_stop",
+            metadata={},
+        )
+        engine._broker = SimpleNamespace(
+            _local_to_oid={"101": "101"},
+            get_open_orders=lambda: [exchange_order],
+            get_order_owner=lambda _order_id: "",
+        )
+        engine._coordinator = None
+
+        open_orders = engine._sync_open_orders_to_oms()
+        rows = engine._oms.list_orders()
+        row = engine._oms.get_order("stop_client")
+        engine._oms.close()
+
+        assert len(rows) == 1
+        assert row is not None
+        assert row["client_order_id"] == "stop_client"
+        assert row["exchange_order_id"] == "101"
+        assert row["strategy_id"] == "momentum"
+        assert row["position_instance_id"] == "pos_1"
+        assert row["oca_group"] == group
+        assert open_orders[0].order_id == "101"
+        assert open_orders[0].oca_group == group
+        assert open_orders[0].metadata["client_order_id"] == "stop_client"
+        assert open_orders[0].metadata["position_instance_id"] == "pos_1"
+
+    def test_startup_allocation_drift_reports_strategy_allocation_without_exchange_position(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        engine._manager = SimpleNamespace(state=SimpleNamespace(open_risks=[]))
+        engine._lifecycle = SimpleNamespace(snapshot=lambda: [{
+            "position_instance_id": "pos_1",
+            "strategy_id": "momentum",
+            "symbol": "BTC",
+            "direction": Side.LONG.value,
+            "qty": 0.1,
+            "avg_entry": 50_000.0,
+            "entry_time": datetime(2026, 6, 4, tzinfo=timezone.utc).isoformat(),
+            "metadata": {},
+        }])
+
+        discrepancies = engine._allocation_drift_discrepancies([])
+
+        assert len(discrepancies) == 1
+        assert discrepancies[0].kind == "position_ownership_drift"
+        assert discrepancies[0].symbol == "BTC"
+        assert "residual=-0.1" in discrepancies[0].actual
+
+    def test_closed_symbol_cleanup_cancels_strategy_owned_orders(self):
+        from crypto_trader.live.engine import LiveEngine
+
+        engine = object.__new__(LiveEngine)
+        broker = MagicMock()
+        broker.get_open_orders.return_value = [
+            Order(
+                order_id="tp_1",
+                symbol="BTC",
+                side=Side.SHORT,
+                order_type=OrderType.LIMIT,
+                qty=0.1,
+                limit_price=51000.0,
+                tag="tp1",
+            )
+        ]
+        broker.cancel_order.return_value = True
+        slot = SimpleNamespace(strategy_id="momentum", ctx=SimpleNamespace(broker=broker))
+
+        assert engine._cancel_strategy_open_orders_for_closed_symbol(slot, "BTC") == 1
+        broker.get_open_orders.assert_called_once_with("BTC")
+        broker.cancel_order.assert_called_once_with("tp_1")
 
 
 class TestLiveHealthRelayStatus:

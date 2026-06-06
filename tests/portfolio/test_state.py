@@ -1,6 +1,6 @@
 """Tests for portfolio state."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -127,3 +127,35 @@ class TestPortfolioState:
         assert d["equity"] == 10000.0
         assert len(d["open_risks"]) == 1
         assert d["open_risks"][0]["direction"] == "LONG"
+
+    def test_from_dict_restores_open_risks_and_daily_state(self):
+        entry_time = datetime(2026, 6, 4, 12, tzinfo=timezone.utc)
+        payload = {
+            "equity": 10000.0,
+            "peak_equity": 10500.0,
+            "daily_pnl_R": {"momentum": -0.25},
+            "portfolio_daily_pnl_R": -0.25,
+            "current_day": "2026-06-04",
+            "open_risks": [{
+                "strategy_id": "momentum",
+                "symbol": "BTC",
+                "direction": "LONG",
+                "risk_R": 0.4,
+                "entry_time": entry_time.isoformat(),
+                "risk_id": "intent_1",
+                "intent_id": "intent_1",
+                "client_order_id": "client_1",
+                "order_qty": 1.0,
+                "filled_qty": 0.4,
+                "applied_fill_ids": ["fill_1"],
+            }],
+        }
+
+        restored = PortfolioState.from_dict(payload)
+
+        assert restored.peak_equity == 10500.0
+        assert restored.strategy_daily_pnl_R("momentum") == -0.25
+        assert restored.current_day == date(2026, 6, 4)
+        assert len(restored.open_risks) == 1
+        assert restored.open_risks[0].risk_id == "intent_1"
+        assert restored.open_risks[0].filled_qty == pytest.approx(0.4)
