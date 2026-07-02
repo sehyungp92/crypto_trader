@@ -2039,6 +2039,55 @@ async def test_synthetic_day_writes_complete_lifecycle_chain_and_relay_can_inges
             assert row["schema_version"] == "assistant_event_v1"
             assert row["event_type"]
             assert isinstance(row["lineage"], dict)
+            payload = row["payload"]
+            for key in (
+                "event_id",
+                "logical_event_id",
+                "event_type",
+                "bot_id",
+                "family_id",
+                "portfolio_id",
+                "account_alias",
+                "strategy_id",
+                "assistant_strategy_id",
+                "deployment_id",
+                "config_version",
+                "code_sha",
+            ):
+                assert payload[key]
+            for key in (
+                "event_id",
+                "logical_event_id",
+                "event_type",
+                "bot_id",
+                "family_id",
+                "portfolio_id",
+                "account_alias",
+                "strategy_id",
+                "assistant_strategy_id",
+                "deployment_id",
+                "code_sha",
+            ):
+                assert payload[key] == row[key]
+            if row["event_type"] == "config_snapshot":
+                assert payload["metadata"]["config_version"] == row["config_version"]
+            else:
+                assert payload["config_version"] == row["config_version"]
+            if row["event_type"] in {"portfolio_rule", "risk_decision"}:
+                for key in (
+                    "portfolio_rule_event_id",
+                    "risk_decision_id",
+                    "intent_id",
+                    "client_order_id",
+                    "order_id",
+                ):
+                    assert payload[key]
+            if row["event_type"] == "order" and payload.get("client_order_id"):
+                assert payload["order_id"]
+            if row["event_type"] == "fill":
+                assert payload["fill_id"]
+                assert payload["client_order_id"]
+                assert payload["order_id"]
             assert "private_key" not in encoded
             assert "relay_secret" not in encoded
             assert "postgres_dsn" not in encoded

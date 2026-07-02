@@ -33,6 +33,11 @@ def test_canonical_envelope_wraps_legacy_payload() -> None:
     assert wrapped["event_id"] == "e1"
     assert wrapped["symbol"] == "BTC"
     assert wrapped["payload"]["pair"] == "BTC"
+    assert wrapped["payload"]["event_id"] == "e1"
+    assert wrapped["payload"]["event_type"] == "trade"
+    assert wrapped["payload"]["bot_id"] == "bot1"
+    assert wrapped["payload"]["strategy_id"] == "momentum"
+    assert wrapped["payload"]["assistant_strategy_id"] == "MomentumPullback_M15"
 
 
 def test_canonical_envelope_merges_source_for_existing_canonical_payload() -> None:
@@ -57,7 +62,65 @@ def test_canonical_envelope_merges_source_for_existing_canonical_payload() -> No
         "sink": "jsonl",
         "file_event_type": "portfolio_snapshot",
     }
+    assert wrapped["payload"]["event_id"] == "e1"
+    assert wrapped["payload"]["event_type"] == "portfolio_snapshot"
+    assert wrapped["payload"]["bot_id"] == "bot1"
     assert payload["source"] == {"sink": "jsonl"}
+    assert payload["payload"] == {"event_id": "e1"}
+
+
+def test_existing_canonical_envelope_duplicates_replay_keys_into_payload() -> None:
+    payload = {
+        "schema_version": "assistant_event_v1",
+        "event_id": "risk_evt_1",
+        "logical_event_id": "risk_evt_1",
+        "event_type": "risk_decision",
+        "bot_id": "bot1",
+        "family_id": "crypto_perps",
+        "portfolio_id": "paper_portfolio",
+        "account_alias": "paper",
+        "strategy_id": "momentum",
+        "assistant_strategy_id": "MomentumPullback_M15",
+        "exchange_timestamp": "2026-05-31T00:00:00+00:00",
+        "local_timestamp": "2026-05-31T00:00:01+00:00",
+        "deployment_id": "deploy1",
+        "config_version": "cfg1",
+        "code_sha": "sha1",
+        "portfolio_rule_event_id": "rule1",
+        "risk_decision_id": "risk1",
+        "intent_id": "intent1",
+        "client_order_id": "client1",
+        "order_id": "order1",
+        "fill_id": "fill1",
+        "payload": {"action": "block"},
+    }
+
+    wrapped = canonical_event_envelope("risk_decision", payload)
+
+    for key in (
+        "event_id",
+        "event_type",
+        "bot_id",
+        "family_id",
+        "portfolio_id",
+        "account_alias",
+        "strategy_id",
+        "assistant_strategy_id",
+        "exchange_timestamp",
+        "local_timestamp",
+        "deployment_id",
+        "config_version",
+        "code_sha",
+        "portfolio_rule_event_id",
+        "risk_decision_id",
+        "intent_id",
+        "client_order_id",
+        "order_id",
+        "fill_id",
+    ):
+        assert wrapped["payload"][key] == payload[key]
+    assert wrapped["payload_hash"]
+    assert payload["payload"] == {"action": "block"}
 
 
 def test_event_metadata_id_includes_strategy_id() -> None:
@@ -93,7 +156,19 @@ def test_generic_event_writes_to_canonical_type_file(tmp_path) -> None:
     sink = JsonlSink(tmp_path)
     ts = datetime(2026, 5, 31, tzinfo=timezone.utc)
     event = GenericInstrumentationEvent(
-        metadata=EventMetadata.create("bot1", "portfolio", ts, "portfolio_snapshot", "p1"),
+        metadata=EventMetadata.create(
+            "bot1",
+            "portfolio",
+            ts,
+            "portfolio_snapshot",
+            "p1",
+            family_id="crypto_perps",
+            portfolio_id="paper_portfolio",
+            account_alias="paper",
+            config_version="cfg1",
+            deployment_id="deploy1",
+            code_sha="sha1",
+        ),
         payload={"portfolio_id": "p1", "timestamp": ts.isoformat()},
     )
 
@@ -103,7 +178,63 @@ def test_generic_event_writes_to_canonical_type_file(tmp_path) -> None:
     row = json.loads(path.read_text(encoding="utf-8").splitlines()[0])
     assert row["event_type"] == "portfolio_snapshot"
     assert row["payload"]["portfolio_id"] == "p1"
+    assert row["deployment_id"] == "deploy1"
+    assert row["config_version"] == "cfg1"
+    assert row["code_sha"] == "sha1"
+    assert row["payload"]["deployment_id"] == "deploy1"
+    assert row["payload"]["config_version"] == "cfg1"
+    assert row["payload"]["code_sha"] == "sha1"
     assert row["source"]["sink"] == "jsonl"
+
+
+def test_generic_order_event_payload_can_stand_alone_for_replay() -> None:
+    ts = datetime(2026, 5, 31, tzinfo=timezone.utc)
+    event = GenericInstrumentationEvent(
+        metadata=EventMetadata.create(
+            "bot1",
+            "momentum",
+            ts,
+            "order",
+            "order_1",
+            family_id="crypto_perps",
+            portfolio_id="paper_portfolio",
+            account_alias="paper",
+            config_version="cfg1",
+            deployment_id="deploy1",
+            code_sha="sha1",
+        ),
+        payload={
+            "intent_id": "intent1",
+            "client_order_id": "client1",
+            "portfolio_rule_event_id": "rule1",
+            "risk_decision_id": "risk1",
+        },
+    )
+
+    row = event.to_dict()
+
+    payload = row["payload"]
+    assert payload["event_id"] == row["event_id"]
+    assert payload["event_type"] == "order"
+    assert payload["bot_id"] == "bot1"
+    assert payload["family_id"] == "crypto_perps"
+    assert payload["portfolio_id"] == "paper_portfolio"
+    assert payload["account_alias"] == "paper"
+    assert payload["strategy_id"] == "momentum"
+    assert payload["assistant_strategy_id"] == "MomentumPullback_M15"
+    assert payload["deployment_id"] == "deploy1"
+    assert payload["config_version"] == "cfg1"
+    assert payload["code_sha"] == "sha1"
+    assert payload["intent_id"] == "intent1"
+    assert payload["client_order_id"] == "client1"
+    assert payload["order_id"] == "client1"
+    assert payload["portfolio_rule_event_id"] == "rule1"
+    assert payload["risk_decision_id"] == "risk1"
+    assert row["intent_id"] == "intent1"
+    assert row["client_order_id"] == "client1"
+    assert row["order_id"] == "client1"
+    assert row["portfolio_rule_event_id"] == "rule1"
+    assert row["risk_decision_id"] == "risk1"
 
 
 def test_sidecar_keeps_unread_legacy_file_when_canonical_copy_exists(tmp_path) -> None:

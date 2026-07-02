@@ -19,6 +19,179 @@ def _event_payload_hash(payload: dict[str, Any]) -> str:
     return stable_hash(payload, length=32)
 
 
+_CORE_CONTEXT_FIELDS = (
+    "bot_id",
+    "family_id",
+    "portfolio_id",
+    "account_alias",
+    "strategy_id",
+    "assistant_strategy_id",
+    "exchange_timestamp",
+    "local_timestamp",
+    "deployment_id",
+    "config_version",
+    "code_sha",
+)
+_DIRECT_JOIN_FIELDS = (
+    "decision_id",
+    "decision_ref",
+    "action_ref",
+    "portfolio_rule_event_id",
+    "risk_decision_id",
+    "intent_id",
+    "client_order_id",
+    "trade_id",
+)
+_ORDER_ID_CANDIDATES = (
+    "order_id",
+    "client_order_id",
+    "broker_order_id",
+    "exchange_order_id",
+)
+_FILL_ID_CANDIDATES = ("fill_id", "fill_event_id", "exchange_fill_id")
+_OPTIONAL_REPLAY_FIELDS = frozenset((*_DIRECT_JOIN_FIELDS, "order_id", "fill_id"))
+_ENVELOPE_REPLAY_FIELDS = (*_CORE_CONTEXT_FIELDS, *_DIRECT_JOIN_FIELDS, "order_id", "fill_id")
+
+
+def _has_context_value(value: Any) -> bool:
+    if value in (None, ""):
+        return False
+    if isinstance(value, (dict, list, tuple, set)) and not value:
+        return False
+    return True
+
+
+def _first_present(*values: Any, default: Any = "") -> Any:
+    for value in values:
+        if _has_context_value(value):
+            return value
+    return default
+
+
+def _context_dict(value: Any) -> dict[str, Any]:
+    return dict(value) if isinstance(value, dict) else {}
+
+
+def _set_missing_context(payload: dict[str, Any], key: str, value: Any) -> None:
+    if value is None:
+        return
+    if key not in payload or payload.get(key) in (None, ""):
+        payload[key] = value
+
+
+def _metadata_to_dict(metadata: "EventMetadata | dict[str, Any] | None") -> dict[str, Any]:
+    if isinstance(metadata, EventMetadata):
+        return metadata.to_dict()
+    return _context_dict(metadata)
+
+
+def _lineage_context(
+    payload: dict[str, Any],
+    metadata: dict[str, Any],
+    envelope: dict[str, Any],
+    lineage: dict[str, Any] | None,
+) -> dict[str, Any]:
+    for value in (
+        lineage,
+        payload.get("lineage"),
+        metadata.get("lineage"),
+        envelope.get("lineage"),
+    ):
+        if isinstance(value, dict) and value:
+            return dict(value)
+    return {}
+
+
+def _value_from_sources(key: str, *sources: dict[str, Any]) -> Any:
+    return _first_present(*(source.get(key) for source in sources))
+
+
+def _value_from_candidate_keys(
+    keys: tuple[str, ...],
+    *sources: dict[str, Any],
+) -> Any:
+    return _first_present(*(source.get(key) for source in sources for key in keys))
+
+
+def _canonical_context(
+    event_type: str,
+    payload: dict[str, Any],
+    *,
+    metadata: "EventMetadata | dict[str, Any] | None" = None,
+    envelope: dict[str, Any] | None = None,
+    lineage: dict[str, Any] | None = None,
+    logical_event_id: str = "",
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    metadata_dict = _metadata_to_dict(metadata)
+    envelope_dict = _context_dict(envelope)
+    lineage_dict = _lineage_context(payload, metadata_dict, envelope_dict, lineage)
+    sources = (payload, metadata_dict, envelope_dict, lineage_dict)
+
+    context = {
+        "event_id": _value_from_sources("event_id", *sources),
+        "logical_event_id": _first_present(
+            _value_from_sources("logical_event_id", *sources),
+            logical_event_id,
+            _value_from_sources("event_id", *sources),
+        ),
+        "event_type": _first_present(
+            event_type,
+            _value_from_sources("event_type", *sources),
+        ),
+    }
+    for key in _CORE_CONTEXT_FIELDS:
+        context[key] = _value_from_sources(key, *sources)
+    if not context["assistant_strategy_id"] and context["strategy_id"]:
+        context["assistant_strategy_id"] = assistant_strategy_id(str(context["strategy_id"]))
+    if not context["exchange_timestamp"]:
+        context["exchange_timestamp"] = payload.get("timestamp", "")
+    for key in _DIRECT_JOIN_FIELDS:
+        context[key] = _value_from_sources(key, *sources[:-1])
+    context["order_id"] = _value_from_candidate_keys(_ORDER_ID_CANDIDATES, *sources[:-1])
+    context["fill_id"] = _value_from_candidate_keys(_FILL_ID_CANDIDATES, *sources[:-1])
+    return context, metadata_dict, lineage_dict
+
+
+def _payload_with_canonical_identity(
+    event_type: str,
+    payload: dict[str, Any],
+    *,
+    metadata: "EventMetadata | dict[str, Any] | None" = None,
+    envelope: dict[str, Any] | None = None,
+    lineage: dict[str, Any] | None = None,
+    logical_event_id: str = "",
+) -> dict[str, Any]:
+    """Return payload with canonical identity and replay join keys duplicated."""
+    enriched = dict(payload)
+    context, metadata_dict, lineage_dict = _canonical_context(
+        event_type,
+        enriched,
+        metadata=metadata,
+        envelope=envelope,
+        lineage=lineage,
+        logical_event_id=logical_event_id,
+    )
+    if metadata_dict:
+        enriched.setdefault("metadata", metadata_dict)
+    if lineage_dict:
+        enriched.setdefault("lineage", lineage_dict)
+    for key, value in context.items():
+        if key in _OPTIONAL_REPLAY_FIELDS and value in (None, ""):
+            continue
+        _set_missing_context(enriched, key, value)
+    return enriched
+
+
+def _copy_payload_context_to_envelope(
+    envelope: dict[str, Any],
+    payload: dict[str, Any],
+) -> None:
+    for key in _ENVELOPE_REPLAY_FIELDS:
+        value = payload.get(key)
+        if _has_context_value(value) and not _has_context_value(envelope.get(key)):
+            envelope[key] = value
+
+
 def _metadata_aliases(metadata: "EventMetadata", lineage: dict[str, Any] | None = None) -> dict[str, Any]:
     metadata_dict = metadata.to_dict()
     aliases = {
@@ -254,15 +427,15 @@ class GenericInstrumentationEvent:
 
     def to_dict(self) -> dict[str, Any]:
         lineage = dict(self.lineage or self.metadata.lineage)
-        payload = dict(self.payload)
-        payload.setdefault("metadata", self.metadata.to_dict())
-        payload.setdefault("lineage", lineage)
-        payload.setdefault("event_type", self.metadata.event_type)
-        payload.setdefault("event_id", self.metadata.event_id)
-        if self.logical_event_id:
-            payload.setdefault("logical_event_id", self.logical_event_id)
+        payload = _payload_with_canonical_identity(
+            self.metadata.event_type,
+            self.payload,
+            metadata=self.metadata,
+            lineage=lineage,
+            logical_event_id=self.logical_event_id or self.metadata.event_id,
+        )
         payload_hash = _event_payload_hash(payload)
-        return {
+        envelope = {
             "schema_version": ASSISTANT_EVENT_SCHEMA_VERSION,
             "event_id": self.metadata.event_id,
             "logical_event_id": self.logical_event_id or self.metadata.event_id,
@@ -276,12 +449,20 @@ class GenericInstrumentationEvent:
             "symbol": payload.get("symbol") or payload.get("pair", ""),
             "exchange_timestamp": self.metadata.exchange_timestamp.isoformat(),
             "local_timestamp": self.metadata.local_timestamp.isoformat(),
+            "config_version": self.metadata.config_version,
+            "deployment_id": self.metadata.deployment_id,
+            "code_sha": self.metadata.code_sha,
             "payload_hash": payload_hash,
             "priority": self.priority,
             "lineage": lineage,
             "source": dict(self.source),
             "payload": payload,
         }
+        _copy_payload_context_to_envelope(
+            envelope,
+            payload,
+        )
+        return envelope
 
 
 def canonical_event_envelope(
@@ -293,13 +474,33 @@ def canonical_event_envelope(
 ) -> dict[str, Any]:
     """Wrap legacy payloads in the canonical assistant event envelope."""
     if payload.get("schema_version") == ASSISTANT_EVENT_SCHEMA_VERSION and "payload" in payload:
-        if not source:
-            return payload
         canonical = dict(payload)
+        canonical_event_type = str(canonical.get("event_type") or event_type)
+        canonical_payload = canonical.get("payload")
+        canonical_payload = (
+            dict(canonical_payload)
+            if isinstance(canonical_payload, dict)
+            else {}
+        )
+        canonical["payload"] = _payload_with_canonical_identity(
+            canonical_event_type,
+            canonical_payload,
+            metadata=canonical_payload.get("metadata"),
+            envelope=canonical,
+            lineage=_context_dict(canonical.get("lineage")),
+            logical_event_id=str(canonical.get("logical_event_id") or ""),
+        )
+        _copy_payload_context_to_envelope(
+            canonical,
+            canonical["payload"],
+        )
+        canonical["payload_hash"] = _event_payload_hash(canonical["payload"])
         existing_source = canonical.get("source")
         merged_source = dict(existing_source) if isinstance(existing_source, dict) else {}
-        merged_source.update(source)
-        canonical["source"] = merged_source
+        if source:
+            merged_source.update(source)
+        if merged_source:
+            canonical["source"] = merged_source
         return canonical
 
     metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
@@ -309,12 +510,12 @@ def canonical_event_envelope(
     if not isinstance(lineage, dict):
         lineage = metadata.get("lineage") if isinstance(metadata.get("lineage"), dict) else {}
     strategy_id = str(payload.get("strategy_id") or metadata.get("strategy_id") or "")
-    canonical_payload = dict(payload)
-    canonical_payload.setdefault("event_type", event_type)
-    canonical_payload.setdefault("event_id", event_id)
-    canonical_payload.setdefault("logical_event_id", logical_event_id)
-    payload_hash = _event_payload_hash(canonical_payload)
-    return {
+    assistant_id = str(
+        payload.get("assistant_strategy_id")
+        or metadata.get("assistant_strategy_id")
+        or assistant_strategy_id(strategy_id)
+    )
+    envelope = {
         "schema_version": ASSISTANT_EVENT_SCHEMA_VERSION,
         "event_id": event_id,
         "logical_event_id": logical_event_id,
@@ -324,7 +525,7 @@ def canonical_event_envelope(
         "portfolio_id": str(payload.get("portfolio_id") or metadata.get("portfolio_id") or lineage.get("portfolio_id", "")),
         "account_alias": str(payload.get("account_alias") or metadata.get("account_alias") or lineage.get("account_alias", "")),
         "strategy_id": strategy_id,
-        "assistant_strategy_id": assistant_strategy_id(strategy_id),
+        "assistant_strategy_id": assistant_id,
         "symbol": str(payload.get("symbol") or payload.get("pair") or ""),
         "exchange_timestamp": (
             payload.get("exchange_timestamp")
@@ -336,12 +537,29 @@ def canonical_event_envelope(
             or metadata.get("local_timestamp")
             or datetime.now(timezone.utc).isoformat()
         ),
-        "payload_hash": payload_hash,
+        "config_version": str(payload.get("config_version") or metadata.get("config_version") or lineage.get("config_version", "")),
+        "deployment_id": str(payload.get("deployment_id") or metadata.get("deployment_id") or lineage.get("deployment_id", "")),
+        "code_sha": str(payload.get("code_sha") or metadata.get("code_sha") or lineage.get("code_sha", "")),
+        "payload_hash": "",
         "priority": payload.get("priority", "normal"),
         "lineage": lineage,
         "source": dict(source or {}),
-        "payload": canonical_payload,
     }
+    canonical_payload = _payload_with_canonical_identity(
+        event_type,
+        payload,
+        metadata=metadata,
+        envelope=envelope,
+        lineage=lineage,
+        logical_event_id=logical_event_id,
+    )
+    _copy_payload_context_to_envelope(
+        envelope,
+        canonical_payload,
+    )
+    envelope["payload_hash"] = _event_payload_hash(canonical_payload)
+    envelope["payload"] = canonical_payload
+    return envelope
 
 
 # ---------------------------------------------------------------------------
